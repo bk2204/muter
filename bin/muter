@@ -1,0 +1,346 @@
+#!/usr/bin/env perl
+package Muter::Main;
+
+require 5.010001;
+
+use strict;
+use warnings;
+
+use Getopt::Long ();
+use IO::Handle   ();
+use IO::File     ();
+
+sub script {
+	my (@args) = @_;
+
+	my $chain = '';
+	my $help;
+	Getopt::Long::GetOptionsFromArray(
+		\@args,
+		'chain|c=s' => \$chain,
+		'help' => \$help
+	) or return usage(1);
+
+	return usage(0) if $help;
+	return usage(1) unless $chain;
+
+	my $stdout = \*STDOUT;
+
+	run_chain($chain, load_handles(\@args), $stdout);
+
+	return 0;
+}
+
+sub load_handles {
+	my ($files) = @_;
+	my @handles = map { IO::File->new($_, 'r') } @$files;
+	@handles = (\*STDIN) unless @handles;
+	return \@handles;
+}
+
+sub run_chain {
+	my ($chain, $handles, $stdout, $blocksize) = @_;
+
+	$chain = Muter::Chain->new($chain);
+	$blocksize ||= 512;
+
+	foreach my $io (@$handles) {
+		$io->binmode(1);
+		while ($io->read(my $buf, $blocksize)) {
+			$stdout->print($chain->process($buf));
+		}
+	}
+	$stdout->print($chain->final(''));
+	return;
+}
+
+sub usage {
+	my ($ret) = @_;
+	my $fh = $ret ? \*STDERR : \*STDOUT;
+	$fh->print(<<EOM);
+muter -c CHAIN | --chain CHAIN [FILES...]
+
+Modify the bytes in the concatentation of FILES (or standard input) by using the
+specification in CHAIN.
+
+CHAIN is a colon-separated list of encoding transform.  A transform can be
+prefixed with - to reverse it (if possible).  A transform can be followed by a
+parenthesized argument as well.
+
+For example, '-hex:hash(sha256):base64' decodes a hex-encoded string, hashes it
+with SHA-256, and converts the result to base64.
+EOM
+	return $ret;
+}
+
+## no critic(ProhibitMultiplePackages)
+package Muter::Chain;
+
+sub new {
+	my ($class, $chain) = @_;
+	$class = ref($class) || $class;
+	my $self = bless {}, $class;
+	$self->{chain} = [$self->_instantiate($self->_parse_chain($chain))];
+	return $self;
+}
+
+sub process {
+	my ($self, $data) = @_;
+
+	foreach my $entry (@{$self->{chain}}) {
+		$data = $entry->{transform}->($data);
+	}
+	return $data;
+}
+
+sub final {
+	my ($self, $data) = @_;
+
+	foreach my $entry (@{$self->{chain}}) {
+		$data = $entry->{final}->($data);
+	}
+	return $data;
+}
+
+sub _parse_chain {
+	my (undef, $chain) = @_;
+	my @items = split /:/, $chain;
+	return map {
+		my $item = $_;
+		$item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/
+			or die "Chain entry '$item' is invalid";
+		{
+			name => $2,
+			method => ($1 ? 'decode' : 'encode'),
+			args => ($3 ? [$3] : []),
+		}
+	} @items;
+}
+
+sub _instantiate {
+	my (undef, @entries) = @_;
+	my $registry = Muter::Registry->instance;
+	foreach my $entry (@entries) {
+		my $class = $registry->info($entry->{name})->{class};
+		my $obj = $entry->{instance} = $class->new(
+			$entry->{args},
+			transform => $entry->{method}
+		);
+		my $func = $obj->can($entry->{method});
+		$entry->{transform} = sub {
+			return $obj->$func(shift);
+		};
+		$entry->{final} = sub {
+			return $obj->final(shift);
+		};
+	}
+	return @entries;
+}
+
+package Muter::Registry;
+
+my $instance;
+
+sub instance {
+	my $class = shift;
+	$class = ref($class) || $class;
+	my $self = {names => {}};
+	return $instance ||= bless $self, $class;
+}
+
+sub register {
+	my ($self, $class) = @_;
+	my $info = $class->metadata;
+	$self->{names}{$info->{name}} = {%$info, class => $class};
+	return 1;
+}
+
+sub info {
+	my ($self, $name) = @_;
+	my $info = $self->{names}{$name};
+	die "No such transform '$name'" unless $info;
+	return $info;
+}
+
+package Muter::Backend;
+
+sub new {
+	my ($class, $args, %opts) = @_;
+	$class = ref($class) || $class;
+	return bless {args => $args, options => \%opts}, $class;
+}
+
+sub metadata {
+	my ($class) = @_;
+	my $name = lc($class);
+	$name =~ s/^.*:://;
+	return {name => $name};
+}
+
+sub encode {
+	# Yada-yada operator requires Perl 5.12.
+	die 'Unimplemented';
+}
+
+sub decode {
+	my $self = shift;
+	my $name = $self->metadata->{name};
+	die "The $name technique doesn't have an inverse transformation.\n";
+}
+
+sub final {
+	return '';
+}
+
+package Muter::Backend::Chunked;
+
+use parent qw/-norequire Muter::Backend/;
+
+sub new {
+	my ($class, $args, %opts) = @_;
+	my $self = $class->SUPER::new($args, %opts);
+	$self->{chunk} = '';
+	$self->{enchunksize} = $opts{enchunksize} || $opts{chunksize};
+	$self->{dechunksize} = $opts{dechunksize} || $opts{chunksize};
+	$self->{method} = "$opts{transform}_chunk";
+	return $self;
+}
+
+sub encode {
+	my ($self, $data) = @_;
+	return $self->_with_chunk($data, $self->{enchunksize}, 'encode_chunk');
+}
+
+sub decode {
+	my ($self, $data) = @_;
+	return $self->_with_chunk($data, $self->{dechunksize}, 'decode_chunk');
+}
+
+sub final {
+	my ($self, $data) = @_;
+	my $meth = $self->{method};
+	return $self->$meth($self->{chunk} . $data);
+}
+
+sub _with_chunk {
+	my ($self, $data, $chunksize, $code) = @_;
+	my $chunk = $self->{chunk} . $data;
+	my $len = length($chunk);
+	my $rem = $len % $chunksize;
+	if ($rem) {
+		$self->{chunk} = substr($chunk, -$rem);
+		$chunk = substr($chunk, 0, -$rem);
+	}
+	else {
+		$self->{chunk} = '';
+	}
+	return $self->$code($chunk);
+}
+
+package Muter::Backend::Base64;
+
+use MIME::Base64 ();
+use parent qw/-norequire Muter::Backend::Chunked/;
+
+sub new {
+	my ($class, @args) = @_;
+	return $class->SUPER::new(@args, enchunksize => 3, dechunksize => 4);
+}
+
+sub encode_chunk {
+	my (undef, $data) = @_;
+	return MIME::Base64::encode($data, '');
+}
+
+sub decode_chunk {
+	my (undef, $data) = @_;
+	return MIME::Base64::decode($data);
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
+package Muter::Backend::URL64;
+
+use MIME::Base64 ();
+use parent qw/-norequire Muter::Backend::Base64/;
+
+sub encode_chunk {
+	my (undef, $data) = @_;
+	return MIME::Base64::encode_base64url($data);
+}
+
+sub decode_chunk {
+	my (undef, $data) = @_;
+	return MIME::Base64::decode_base64url($data);
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
+package Muter::Backend::Hex;
+
+use parent qw/-norequire Muter::Backend::Chunked/;
+
+sub new {
+	my ($class, @args) = @_;
+	return $class->SUPER::new(@args, enchunksize => 1, dechunksize => 2);
+}
+
+sub encode_chunk {
+	my (undef, $data) = @_;
+	return unpack("H*", $data);
+}
+
+sub decode_chunk {
+	my (undef, $data) = @_;
+	return pack("H*", $data);
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
+package Muter::Backend::Hash;
+
+use Digest::MD5;
+use Digest::SHA;
+
+use parent qw/-norequire Muter::Backend/;
+
+my $hashes = {};
+
+sub new {
+	my ($class, $args, @args) = @_;
+	my ($hash) = @$args;
+	my $self = $class->SUPER::new($args, @args);
+	$self->{hash} = $hashes->{$hash}->();
+	return $self;
+}
+
+sub encode {
+	my ($self, $data) = @_;
+	$self->{hash}->add($data);
+	return '';
+}
+
+sub final {
+	my ($self, $data) = @_;
+	$self->{hash}->add($data);
+	return $self->{hash}->digest;
+}
+
+sub register_hash {
+	my ($name, $code) = @_;
+	return $hashes->{$name} unless $code;
+	return $hashes->{$name} = $code;
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+register_hash('md5', sub { Digest::MD5->new });
+register_hash('sha1', sub { Digest::SHA->new });
+register_hash('sha224', sub { Digest::SHA->new(224) });
+register_hash('sha256', sub { Digest::SHA->new(256) });
+register_hash('sha384', sub { Digest::SHA->new(384) });
+register_hash('sha512', sub { Digest::SHA->new(512) });
+
+# Must be at the end.
+package Muter::Main;
+
+exit script(@ARGV) unless caller;

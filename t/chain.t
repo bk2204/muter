@@ -28,6 +28,10 @@ test_run_pattern('url64', "klmn\n", 'a2xtbgo', 'url64 pattern 3');
 test_run_pattern('url64', 'aa?', 'YWE_', 'url64 pattern 4');
 test_run_pattern('url64', 'bc>', 'YmM-', 'url64 pattern 5');
 
+test_run_pattern('uri', '', '', 'uri empty data');
+test_run_pattern('uri', 'test text', 'test%20text', 'uri pattern 1');
+test_run_pattern('uri', 'test/?^t~', 'test%2F%3F%5Et~', 'uri pattern 2');
+
 test_run_chain('-hex:base64', '00413780', 'AEE3gA==', 'simple chain');
 
 test_run_chain('-hex:hash(sha256):url64', '616263',

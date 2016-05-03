@@ -188,7 +188,8 @@ package Muter::Backend;
 sub new {
 	my ($class, $args, %opts) = @_;
 	$class = ref($class) || $class;
-	return bless {args => $args, options => \%opts}, $class;
+	my $self = {args => $args, options => \%opts, method => $opts{transform}};
+	return bless $self, $class;
 }
 
 sub metadata {
@@ -314,6 +315,45 @@ sub encode_chunk {
 sub decode_chunk {
 	my (undef, $data) = @_;
 	return pack("H*", $data);
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
+package Muter::Backend::URI;
+
+use parent qw/-norequire Muter::Backend/;
+
+sub new {
+	my ($class, $args, %opts) = @_;
+	my $self = $class->SUPER::new($args, %opts);
+	$self->{chunk} = '';
+	return $self;
+}
+
+sub encode {
+	my ($self, $data) = @_;
+	$data =~ s/([^A-Za-z0-9-._~])/ sprintf '%%%02X', ord($1)/ge;
+	return $data;
+}
+
+sub decode {
+	my ($self, $data) = @_;
+	$data = $self->{chunk} . $data;
+	if ($data =~ /^(.*)(%.?)$/) {
+		$data = $1;
+		$self->{chunk} = $2;
+	}
+	else {
+		$self->{chunk} = '';
+	}
+	$data =~ s/%([0-9a-fA-F]{2})/chr(hex($1))/ge;
+	return $data;
+}
+
+sub final {
+	my ($self, $data) = @_;
+	my $meth = $self->{method};
+	return $self->$meth($self->{chunk} . $data);
 }
 
 Muter::Registry->instance->register(__PACKAGE__);

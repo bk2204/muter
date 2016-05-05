@@ -4,6 +4,18 @@ Muter
 Muter is a tool to convert to and from various data formats, such as
 hexadecimal, Base64, and URI encoding.
 
+== Use
+
+Muter takes a series of bytes like cat (as filenames or from standard input) and
+produces a byte sequence to standard out.  The bytes are modified by the
+argument to -c (--chain) that specifies the encodings to perform.
+
+For example, a chain of `-hex:base64` decodes hex input and then re-encodes the
+data in Base64.  `base64:uri` would Base64-encode the data, and then URI-encode
+it, but `url64` would just encode using the URL-safe version of Base64.
+A chain of `hash(sha256):hex` would hash the input data and then hex-encode the
+SHA-256 hash.
+
 == Name
 
 Muter comes from the Spanish verb _mudar_ and the French verb _muter_, meaning

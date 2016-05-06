@@ -303,18 +303,38 @@ package Muter::Backend::Hex;
 use parent qw/-norequire Muter::Backend::Chunked/;
 
 sub new {
-	my ($class, @args) = @_;
-	return $class->SUPER::new(@args, enchunksize => 1, dechunksize => 2);
+	my ($class, $args, %opts) = @_;
+	my $self =  $class->SUPER::new(
+		$args, %opts,
+		enchunksize => 1,
+		dechunksize => 2
+	);
+	$self->{upper} = 1 if defined $args->[0] && $args->[0] eq 'upper';
+	return $self;
 }
 
 sub encode_chunk {
-	my (undef, $data) = @_;
-	return unpack("H*", $data);
+	my ($self, $data) = @_;
+	my $result = unpack("H*", $data);
+	return uc $result if $self->{upper};
+	return $result;
 }
 
 sub decode_chunk {
 	my (undef, $data) = @_;
 	return pack("H*", $data);
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
+package Muter::Backend::Base16;
+
+use parent qw/-norequire Muter::Backend::Hex/;
+
+sub new {
+	my ($class, $args, %opts) = @_;
+	my $self = $class->SUPER::new(['upper'], %opts);
+	return $self;
 }
 
 Muter::Registry->instance->register(__PACKAGE__);

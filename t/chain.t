@@ -32,6 +32,13 @@ test_run_pattern('uri', '', '', 'uri empty data');
 test_run_pattern('uri', 'test text', 'test%20text', 'uri pattern 1');
 test_run_pattern('uri', 'test/?^t~', 'test%2F%3F%5Et~', 'uri pattern 2');
 
+test_run_chain('hex', "\x01\x23\x45\x67\x89\xab\xcd\xef",
+	'0123456789abcdef', 'simple hex pattern');
+test_run_chain('hex(upper)', "\x01\x23\x45\x67\x89\xab\xcd\xef",
+	'0123456789ABCDEF', 'simple hex pattern (upper)');
+test_run_chain('base16', "\x01\x23\x45\x67\x89\xab\xcd\xef",
+	'0123456789ABCDEF', 'simple base16 pattern');
+
 test_run_chain('-hex:base64', '00413780', 'AEE3gA==', 'simple chain');
 
 test_run_chain('-hex:hash(sha256):url64', '616263',

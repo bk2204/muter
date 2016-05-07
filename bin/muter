@@ -339,6 +339,69 @@ sub new {
 
 Muter::Registry->instance->register(__PACKAGE__);
 
+package Muter::Backend::Base32;
+
+use parent qw/-norequire Muter::Backend::Chunked/;
+
+sub new {
+	my ($class, @args) = @_;
+	my $self = $class->SUPER::new(@args, enchunksize => 5, dechunksize => 8);
+	$self->{fmap} = [split //, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'];
+	$self->{rmap} = {'=' => 0};
+	@{$self->{rmap}}{values @{$self->{fmap}}} = keys @{$self->{fmap}};
+	return $self;
+}
+
+sub encode_chunk {
+	my ($self, $data) = @_;
+	my @data = map { ord } split //, $data;
+	my $result = '';
+	my $map = $self->{fmap};
+	my $lenmap = [0, 2, 4, 5, 7, 8];
+	while (my @chunk = splice(@data, 0, 5)) {
+		my $len = @chunk;
+		push @chunk, (0, 0, 0, 0);
+		my @converted = map { $self->{fmap}[$_ & 0x1f] } (
+			$chunk[0] >> 3,
+			($chunk[0] << 2) | ($chunk[1] >> 6),
+			($chunk[1] >> 1),
+			($chunk[1] << 4) | ($chunk[2] >> 4),
+			($chunk[2] << 1) | ($chunk[3] >> 7),
+			($chunk[3] >> 2),
+			($chunk[3] << 3) | ($chunk[4] >> 5),
+			$chunk[4]
+		);
+		my $chunk = substr(join('', @converted), 0, $lenmap->[$len]);
+		$chunk = substr($chunk . '======', 0, 8);
+		$result .= $chunk;
+	}
+	return $result;
+}
+
+sub decode_chunk {
+	my ($self, $data) = @_;
+	my $lenmap = [5, 4, undef, 3, 2, undef, 1];
+	$data =~ /(=+)$/;
+	my $truncate = $lenmap->[length $1 // 0];
+	my $result = '';
+	my @data = map { $self->{rmap}{$_} } split //, $data;
+	use bytes;
+	while (my @chunk = splice(@data, 0, 8)) {
+		my @converted = (
+			($chunk[0] << 3) | ($chunk[1] >> 2),
+			($chunk[1] << 6) | ($chunk[2] << 1) | ($chunk[3] >> 4),
+			($chunk[3] << 4) | ($chunk[4] >> 1),
+			($chunk[4] << 7) | ($chunk[5] << 2) | ($chunk[6] >> 3),
+			($chunk[6] << 5) | $chunk[7],
+		);
+		my $chunk = join('', map { chr($_ & 0xff) } @converted);
+		$result .= substr($chunk, 0, (@data ? 5 : $truncate));
+	}
+	return $result;
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
 package Muter::Backend::URI;
 
 use parent qw/-norequire Muter::Backend/;

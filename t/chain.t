@@ -126,6 +126,14 @@ foreach my $i (0..255) {
 	test_run_pattern('base32', chr($i), $patterns[$i], "base32 byte $i");
 }
 
+test_run_pattern('base32hex', '', '', 'empty b32hex pattern');
+test_run_pattern('base32hex', 'f', 'CO======', 'b32hex pattern 1');
+test_run_pattern('base32hex', 'fo', 'CPNG====', 'b32hex pattern 2');
+test_run_pattern('base32hex', 'foo', 'CPNMU===', 'b32hex pattern 3');
+test_run_pattern('base32hex', 'foob', 'CPNMUOG=', 'b32hex pattern 4');
+test_run_pattern('base32hex', 'fooba', 'CPNMUOJ1', 'b32hex pattern 5');
+test_run_pattern('base32hex', 'foobar', 'CPNMUOJ1E8======', 'b32hex pattern 6');
+
 test_run_chain('-hex:base64', '00413780', 'AEE3gA==', 'simple chain');
 
 test_run_chain('-hex:hash(sha256):url64', '616263',

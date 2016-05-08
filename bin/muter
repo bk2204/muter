@@ -347,6 +347,11 @@ sub new {
 	my ($class, @args) = @_;
 	my $self = $class->SUPER::new(@args, enchunksize => 5, dechunksize => 8);
 	$self->{fmap} = [split //, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'];
+	return $self->_initialize;
+}
+
+sub _initialize {
+	my ($self) = @_;
 	$self->{rmap} = {'=' => 0};
 	@{$self->{rmap}}{values @{$self->{fmap}}} = keys @{$self->{fmap}};
 	return $self;
@@ -398,6 +403,26 @@ sub decode_chunk {
 		$result .= substr($chunk, 0, (@data ? 5 : $truncate));
 	}
 	return $result;
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
+package Muter::Backend::Base32Hex;
+
+use parent qw/-norequire Muter::Backend::Base32/;
+
+sub new {
+	my ($class, @args) = @_;
+	my $self = $class->SUPER::new(@args);
+	$self->{fmap} = [split //, '0123456789ABCDEFGHIJKLMNOPQRSTUV'];
+	return $self->_initialize;
+}
+
+sub _initialize {
+	my ($self) = @_;
+	$self->{rmap} = {'=' => 0};
+	@{$self->{rmap}}{values @{$self->{fmap}}} = keys @{$self->{fmap}};
+	return $self;
 }
 
 Muter::Registry->instance->register(__PACKAGE__);

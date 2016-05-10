@@ -136,6 +136,13 @@ test_run_pattern('base32hex', 'foob', 'CPNMUOG=', 'b32hex pattern 4');
 test_run_pattern('base32hex', 'fooba', 'CPNMUOJ1', 'b32hex pattern 5');
 test_run_pattern('base32hex', 'foobar', 'CPNMUOJ1E8======', 'b32hex pattern 6');
 
+test_run_pattern('xml', q{"Hello, ol' New Jersey! <:>"},
+	'&quot;Hello, ol&apos; New Jersey! &lt;:&gt;&quot;', 'xml pattern 1');
+test_run_pattern('xml(hex)', q{"Hello, ol' New Jersey! <:>"},
+	'&#x22;Hello, ol&#x27; New Jersey! &#x3c;:&#x3e;&#x22;', 'xml pattern 2');
+test_run_pattern('xml(html)', q{"Hello, ol' New Jersey! <:>"},
+	'&quot;Hello, ol&#x27; New Jersey! &lt;:&gt;&quot;', 'xml pattern 3');
+
 test_run_chain('-hex:base64', '00413780', 'AEE3gA==', 'simple chain');
 
 test_run_chain('-hex:hash(sha256):url64', '616263',

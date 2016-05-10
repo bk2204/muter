@@ -489,6 +489,50 @@ sub decode_chunk {
 
 Muter::Registry->instance->register(__PACKAGE__);
 
+package Muter::Backend::XML;
+
+use parent qw/-norequire Muter::Backend::ChunkedDecode/;
+
+sub new {
+	my ($class, $args, %opts) = @_;
+	my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(&[^;]*)$/);
+	no warnings 'qw'; ## no critic (ProhibitNoWarnings)
+	my $maps = {
+		default => [qw/quot amp apos lt gt/],
+		html => [qw/quot amp #x27 lt gt/],
+		hex => [qw/#x22 #x38 #x27 #x3c #x3e/],
+	};
+	my $type = $args->[0] // 'default';
+	@{$self->{fmap}}{qw/" & ' < >/} = map { "&$_;" } @{$maps->{$type}};
+	@{$self->{rmap}}{@{$maps->{default}}} = qw/" & ' < >/;
+	return $self;
+}
+
+# XML encodes Unicode characters.  However, muter only works on byte sequences,
+# so immediately encode these into UTF-8.
+sub _decode_char {
+	my ($self, $char) = @_;
+	require Encode;
+	return chr($1) if $char =~ /^#([0-9]+)$/;
+	return chr(hex($1)) if $char =~ /^#x([a-fA-F0-9]+)$/;
+	return $self->{rmap}{$char} if exists $self->{rmap}{$char};
+	die "Unknown XML entity &$char;";
+}
+
+sub encode_chunk {
+	my ($self, $data) = @_;
+	$data =~ s/(["&'<>])/$self->{fmap}{$1}/ge;
+	return $data;
+}
+
+sub decode_chunk {
+	my ($self, $data) = @_;
+	$data =~ s/&([^;]+);/Encode::encode('UTF-8', $self->_decode_char($1))/ge;
+	return $data;
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
 package Muter::Backend::Hash;
 
 use Digest::MD5;

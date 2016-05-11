@@ -389,8 +389,9 @@ sub new {
 
 sub _initialize {
 	my ($self) = @_;
+	my $fmap = $self->{fmap};
 	$self->{rmap} = {'=' => 0};
-	@{$self->{rmap}}{values @{$self->{fmap}}} = keys @{$self->{fmap}};
+	@{$self->{rmap}}{@$fmap} = keys @$fmap;
 	return $self;
 }
 

@@ -31,6 +31,11 @@ test_run_pattern('url64', 'bc>', 'YmM-', 'url64 pattern 5');
 test_run_pattern('uri', '', '', 'uri empty data');
 test_run_pattern('uri', 'test text', 'test%20text', 'uri pattern 1');
 test_run_pattern('uri', 'test/?^t~', 'test%2F%3F%5Et~', 'uri pattern 2');
+test_run_pattern('uri(lower)', '', '', 'uri lower empty data');
+test_run_pattern('uri(lower)', 'test text', 'test%20text',
+	'uri lower pattern 1');
+test_run_pattern('uri(lower)', 'test/?^t~', 'test%2f%3f%5et~',
+	'uri lower pattern 2');
 
 test_run_chain('hex', "\x01\x23\x45\x67\x89\xab\xcd\xef",
 	'0123456789abcdef', 'simple hex pattern');

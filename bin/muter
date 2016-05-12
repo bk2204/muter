@@ -472,13 +472,15 @@ use parent qw/-norequire Muter::Backend::ChunkedDecode/;
 sub new {
 	my ($class, $args, %opts) = @_;
 	my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(%.?)$/);
+	my $arg = $args->[0] // '';
 	$self->{chunk} = '';
+	$self->{format} = '%%%02' . ($arg eq 'lower' ? 'x' : 'X');
 	return $self;
 }
 
 sub encode_chunk {
 	my ($self, $data) = @_;
-	$data =~ s/([^A-Za-z0-9-._~])/sprintf '%%%02X', ord($1)/ge;
+	$data =~ s/([^A-Za-z0-9-._~])/sprintf $self->{format}, ord($1)/ge;
 	return $data;
 }
 

@@ -148,6 +148,9 @@ test_run_pattern('xml(hex)', q{"Hello, ol' New Jersey! <:>"},
 test_run_pattern('xml(html)', q{"Hello, ol' New Jersey! <:>"},
 	'&quot;Hello, ol&#x27; New Jersey! &lt;:&gt;&quot;', 'xml pattern 3');
 
+test_run_chain('-xml', '&#x00a9;', '©', 'xml decode hex');
+test_run_chain('-xml', '&#xfeff;', "\xef\xbb\xbf", 'xml decode hex BOM');
+
 test_run_chain('-hex:base64', '00413780', 'AEE3gA==', 'simple chain');
 
 test_run_chain('-hex:hash(sha256):url64', '616263',

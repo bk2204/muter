@@ -1,0 +1,10 @@
+Flags: newline
+Input: abc
+ def
+ ghi
+Chain: hex
+Flags: inverse
+Output: 6162630a6465660a6768690a
+Chain: base64
+Flags: inverse
+Output: YWJjCmRlZgpnaGkK

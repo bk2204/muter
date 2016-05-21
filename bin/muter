@@ -194,7 +194,7 @@ sub new {
 
 sub metadata {
 	my ($class) = @_;
-	my $name = lc($class);
+	my $name = lc(ref $class || $class);
 	$name =~ s/^.*:://;
 	return {name => $name};
 }

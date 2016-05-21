@@ -578,6 +578,10 @@ register_hash('sha224', sub { Digest::SHA->new(224) });
 register_hash('sha256', sub { Digest::SHA->new(256) });
 register_hash('sha384', sub { Digest::SHA->new(384) });
 register_hash('sha512', sub { Digest::SHA->new(512) });
+register_hash('sha3-224', sub { require Digest::SHA3; Digest::SHA3->new(224) });
+register_hash('sha3-256', sub { require Digest::SHA3; Digest::SHA3->new(256) });
+register_hash('sha3-384', sub { require Digest::SHA3; Digest::SHA3->new(384) });
+register_hash('sha3-512', sub { require Digest::SHA3; Digest::SHA3->new(512) });
 
 # Must be at the end.
 package Muter::Main;

@@ -571,7 +571,7 @@ sub encode_chunk {
 sub decode_chunk {
 	my ($self, $data) = @_;
 	$data =~ s/=\n//g;
-	$data =~ s/=([0-9A-F]{2})/chr(ord($1))/ge;
+	$data =~ s/=([0-9A-F]{2})/chr(hex($1))/ge;
 	return $data;
 }
 

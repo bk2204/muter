@@ -536,6 +536,47 @@ sub decode_chunk {
 
 Muter::Registry->instance->register(__PACKAGE__);
 
+package Muter::Backend::QuotedPrintable;
+
+use parent qw/-norequire Muter::Backend::ChunkedDecode/;
+
+sub new {
+	my ($class, $args, %opts) = @_;
+	my $self = $class->SUPER::new($args, %opts,
+		regexp => qr/\A(.*)(=[^\n]?)\z/);
+	$self->{curlen} = 0;
+	return $self;
+}
+
+sub encode_chunk {
+	my ($self, $data) = @_;
+	$data =~ s/([^\x21-\x3c\x3e-\x7e])/sprintf '=%02X', ord($1)/ge;
+	my $result = '';
+	my $maxlen = 75;
+	while ($self->{curlen} + length($data) > $maxlen) {
+		my $chunk = substr($data, 0, $maxlen - $self->{curlen});
+		$chunk = $1 if $chunk =~ /^(.*)(=.?)$/;
+		$data = substr($data, length($chunk));
+		$result .= $chunk;
+		if ($data) {
+			$result .= "=\n";
+			$self->{curlen} = 0;
+		}
+	}
+	$result .= $data;
+	$self->{curlen} += length($data);
+	return $result;
+}
+
+sub decode_chunk {
+	my ($self, $data) = @_;
+	$data =~ s/=\n//g;
+	$data =~ s/=([0-9A-F]{2})/chr(ord($1))/ge;
+	return $data;
+}
+
+Muter::Registry->instance->register(__PACKAGE__);
+
 package Muter::Backend::Hash;
 
 use Digest::MD5;

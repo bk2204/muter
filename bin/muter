@@ -45,9 +45,7 @@ sub script {
 	return usage(0) if $help;
 	return usage(1) unless $chain;
 
-	my $stdout = \*STDOUT;
-
-	run_chain($chain, load_handles(\@args), $stdout);
+	run_chain($chain, load_handles(\@args), \*STDOUT);
 
 	return 0;
 }

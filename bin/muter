@@ -88,7 +88,12 @@ parenthesized argument as well.
 
 For example, '-hex:hash(sha256):base64' decodes a hex-encoded string, hashes it
 with SHA-256, and converts the result to base64.
+
+The following transforms are available:
 EOM
+	foreach my $name (Muter::Registry->instance->backends) {
+		$fh->print("  $name\n");
+	}
 	return $ret;
 }
 
@@ -179,6 +184,11 @@ sub info {
 	my $info = $self->{names}{$name};
 	die "No such transform '$name'" unless $info;
 	return $info;
+}
+
+sub backends {
+	my ($self) = @_;
+	return sort keys %{$self->{names}};
 }
 
 package Muter::Backend;

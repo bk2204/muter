@@ -663,13 +663,19 @@ sub final {
 	return $self->{hash}->digest;
 }
 
+sub metadata {
+	my ($self, $data) = @_;
+	my $meta = $self->SUPER::metadata;
+	$meta->{args} = { map { $_ => '' } keys %$hashes };
+	return $meta;
+}
+
 sub register_hash {
 	my ($name, $code) = @_;
 	return $hashes->{$name} unless $code;
 	return $hashes->{$name} = $code;
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
 register_hash('md5', sub { Digest::MD5->new });
 register_hash('sha1', sub { Digest::SHA->new });
 register_hash('sha224', sub { Digest::SHA->new(224) });
@@ -680,6 +686,7 @@ register_hash('sha3-224', sub { require Digest::SHA3; Digest::SHA3->new(224) });
 register_hash('sha3-256', sub { require Digest::SHA3; Digest::SHA3->new(256) });
 register_hash('sha3-384', sub { require Digest::SHA3; Digest::SHA3->new(384) });
 register_hash('sha3-512', sub { require Digest::SHA3; Digest::SHA3->new(512) });
+Muter::Registry->instance->register(__PACKAGE__);
 
 # Must be at the end.
 package Muter::Main;

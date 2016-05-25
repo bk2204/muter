@@ -91,8 +91,13 @@ with SHA-256, and converts the result to base64.
 
 The following transforms are available:
 EOM
-	foreach my $name (Muter::Registry->instance->backends) {
+	my $reg = Muter::Registry->instance;
+	foreach my $name ($reg->backends) {
 		$fh->print("  $name\n");
+		my $meta = $reg->info($name);
+		if ($meta->{args} && ref($meta->{args}) eq 'HASH') {
+			$fh->print("    ", join(', ', sort keys %{$meta->{args}}), "\n");
+		}
 	}
 	return $ret;
 }
@@ -358,6 +363,18 @@ sub new {
 	return $self;
 }
 
+sub metadata {
+	my $self = shift;
+	my $meta = $self->SUPER::metadata;
+	return {
+		%$meta,
+		args => {
+			upper => 'Use uppercase letters',
+			lower => 'Use lowercase letters',
+		}
+	};
+}
+
 sub encode_chunk {
 	my ($self, $data) = @_;
 	my $result = unpack("H*", $data);
@@ -380,6 +397,13 @@ sub new {
 	my ($class, $args, %opts) = @_;
 	my $self = $class->SUPER::new(['upper'], %opts);
 	return $self;
+}
+
+sub metadata {
+	my $self = shift;
+	my $meta = $self->SUPER::metadata;
+	delete $meta->{args};
+	return $meta;
 }
 
 Muter::Registry->instance->register(__PACKAGE__);
@@ -486,6 +510,18 @@ sub new {
 	return $self;
 }
 
+sub metadata {
+	my $self = shift;
+	my $meta = $self->SUPER::metadata;
+	return {
+		%$meta,
+		args => {
+			'upper' => 'Use uppercase letters',
+			'lower' => 'Use lowercase letters',
+		}
+	};
+}
+
 sub encode_chunk {
 	my ($self, $data) = @_;
 	$data =~ s/([^A-Za-z0-9-._~])/sprintf $self->{format}, ord($1)/ge;
@@ -517,6 +553,19 @@ sub new {
 	@{$self->{fmap}}{qw/" & ' < >/} = map { "&$_;" } @{$maps->{$type}};
 	@{$self->{rmap}}{@{$maps->{default}}} = qw/" & ' < >/;
 	return $self;
+}
+
+sub metadata {
+	my $self = shift;
+	my $meta = $self->SUPER::metadata;
+	return {
+		%$meta,
+		args => {
+			default => 'Use XML entity names',
+			html => 'Use HTML-friendly entity names for XML entities',
+			hex => 'Use hexadecimal entity names for XML entities',
+		}
+	};
 }
 
 # XML encodes Unicode characters.  However, muter only works on byte sequences,

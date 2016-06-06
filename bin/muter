@@ -156,11 +156,12 @@ sub _instantiate {
 			transform => $entry->{method}
 		);
 		my $func = $obj->can($entry->{method});
+		my $final = $obj->can("$entry->{method}_final");
 		$entry->{transform} = sub {
 			return $obj->$func(shift);
 		};
 		$entry->{final} = sub {
-			return $obj->final(shift);
+			return $obj->$final(shift);
 		};
 	}
 	return @entries;
@@ -223,7 +224,11 @@ sub decode {
 	die "The $name technique doesn't have an inverse transformation.\n";
 }
 
-sub final {
+sub encode_final {
+	return '';
+}
+
+sub decode_final {
 	return '';
 }
 
@@ -237,7 +242,6 @@ sub new {
 	$self->{chunk} = '';
 	$self->{enchunksize} = $opts{enchunksize} || $opts{chunksize};
 	$self->{dechunksize} = $opts{dechunksize} || $opts{chunksize};
-	$self->{method} = "$opts{transform}_chunk";
 	return $self;
 }
 
@@ -251,10 +255,14 @@ sub decode {
 	return $self->_with_chunk($data, $self->{dechunksize}, 'decode_chunk');
 }
 
-sub final {
+sub encode_final {
 	my ($self, $data) = @_;
-	my $meth = $self->{method};
-	return $self->$meth($self->{chunk} . $data);
+	return $self->encode_chunk($self->{chunk} . $data);
+}
+
+sub decode_final {
+	my ($self, $data) = @_;
+	return $self->decode_chunk($self->{chunk} . $data);
 }
 
 sub _with_chunk {
@@ -280,7 +288,6 @@ sub new {
 	my ($class, $args, %opts) = @_;
 	my $self = $class->SUPER::new($args, %opts);
 	$self->{chunk} = '';
-	$self->{method} = "$opts{transform}_chunk";
 	$self->{regexp} = $opts{regexp};
 	return $self;
 }
@@ -303,10 +310,14 @@ sub decode {
 	return $self->decode_chunk($data);
 }
 
-sub final {
+sub encode_final {
 	my ($self, $data) = @_;
-	my $meth = $self->{method};
-	return $self->$meth($self->{chunk} . $data);
+	return $self->encode_chunk($self->{chunk} . $data);
+}
+
+sub decode_final {
+	my ($self, $data) = @_;
+	return $self->decode_chunk($self->{chunk} . $data);
 }
 
 package Muter::Backend::Base64;
@@ -657,7 +668,7 @@ sub encode {
 	return '';
 }
 
-sub final {
+sub encode_final {
 	my ($self, $data) = @_;
 	$self->{hash}->add($data);
 	return $self->{hash}->digest;

@@ -117,7 +117,7 @@ sub process {
 	my ($self, $data) = @_;
 
 	foreach my $entry (@{$self->{chain}}) {
-		$data = $entry->{transform}->($data);
+		$data = $entry->{instance}->process($data);
 	}
 	return $data;
 }
@@ -126,7 +126,7 @@ sub final {
 	my ($self, $data) = @_;
 
 	foreach my $entry (@{$self->{chain}}) {
-		$data = $entry->{final}->($data);
+		$data = $entry->{instance}->final($data);
 	}
 	return $data;
 }
@@ -151,18 +151,10 @@ sub _instantiate {
 	my $registry = Muter::Registry->instance;
 	foreach my $entry (@entries) {
 		my $class = $registry->info($entry->{name})->{class};
-		my $obj = $entry->{instance} = $class->new(
+		$entry->{instance} = $class->new(
 			$entry->{args},
 			transform => $entry->{method}
 		);
-		my $func = $obj->can($entry->{method});
-		my $final = $obj->can("$entry->{method}_final");
-		$entry->{transform} = sub {
-			return $obj->$func(shift);
-		};
-		$entry->{final} = sub {
-			return $obj->$final(shift);
-		};
 	}
 	return @entries;
 }
@@ -203,7 +195,10 @@ sub new {
 	my ($class, $args, %opts) = @_;
 	$class = ref($class) || $class;
 	my $self = {args => $args, options => \%opts, method => $opts{transform}};
-	return bless $self, $class;
+	bless $self, $class;
+	$self->{m_process} = $self->can($opts{transform});
+	$self->{m_final} = $self->can("$opts{transform}_final");
+	return $self;
 }
 
 sub metadata {
@@ -211,6 +206,18 @@ sub metadata {
 	my $name = lc(ref $class || $class);
 	$name =~ s/^.*:://;
 	return {name => $name};
+}
+
+sub process {
+	my ($self, $data) = @_;
+	my $func = $self->{m_process};
+	return $self->$func($data);
+}
+
+sub final {
+	my ($self, $data) = @_;
+	my $func = $self->{m_final};
+	return $self->$func($data);
 }
 
 sub encode {

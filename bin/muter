@@ -253,23 +253,10 @@ sub final {
 	return $self->$func($data);
 }
 
-sub encode {
-	# Yada-yada operator requires Perl 5.12.
-	die 'Unimplemented';
-}
-
 sub decode {
 	my $self = shift;
 	my $name = $self->metadata->{name};
 	die "The $name technique doesn't have an inverse transformation.\n";
-}
-
-sub encode_final {
-	return '';
-}
-
-sub decode_final {
-	return '';
 }
 
 package Muter::Backend::Chunked;

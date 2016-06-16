@@ -11,7 +11,7 @@ use Test::More;
 
 use IO::File;
 use IO::Scalar;
-use Muter;
+use App::Muter;
 
 my $testdir = "$FindBin::Bin/tests";
 
@@ -97,7 +97,7 @@ sub run_chain {
 	my $ifh = IO::Scalar->new(\$input);
 	my $ofh = IO::Scalar->new(\$output);
 
-	Muter::Main::run_chain($chain, [$ifh], $ofh, $blocksize);
+	App::Muter::Main::run_chain($chain, [$ifh], $ofh, $blocksize);
 
 	return $output;
 }

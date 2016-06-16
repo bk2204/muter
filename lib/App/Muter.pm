@@ -20,7 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-package Muter::Main;
+package App::Muter::Main;
 
 require 5.010001;
 
@@ -60,7 +60,7 @@ sub load_handles {
 sub run_chain {
 	my ($chain, $handles, $stdout, $blocksize) = @_;
 
-	$chain = Muter::Chain->new($chain);
+	$chain = App::Muter::Chain->new($chain);
 	$blocksize ||= 512;
 
 	foreach my $io (@$handles) {
@@ -91,7 +91,7 @@ with SHA-256, and converts the result to base64.
 
 The following transforms are available:
 EOM
-	my $reg = Muter::Registry->instance;
+	my $reg = App::Muter::Registry->instance;
 	foreach my $name ($reg->backends) {
 		$fh->print("  $name\n");
 		my $meta = $reg->info($name);
@@ -103,7 +103,7 @@ EOM
 }
 
 ## no critic(ProhibitMultiplePackages)
-package Muter::Chain;
+package App::Muter::Chain;
 
 sub new {
 	my ($class, $chain) = @_;
@@ -148,7 +148,7 @@ sub _parse_chain {
 
 sub _instantiate {
 	my (undef, @entries) = @_;
-	my $registry = Muter::Registry->instance;
+	my $registry = App::Muter::Registry->instance;
 	foreach my $entry (@entries) {
 		my $class = $registry->info($entry->{name})->{class};
 		$entry->{instance} = $class->new(
@@ -159,7 +159,7 @@ sub _instantiate {
 	return @entries;
 }
 
-package Muter::Registry;
+package App::Muter::Registry;
 
 my $instance;
 
@@ -189,7 +189,7 @@ sub backends {
 	return sort keys %{$self->{names}};
 }
 
-package Muter::Backend;
+package App::Muter::Backend;
 
 =method $class->new($args, %opts)
 
@@ -259,9 +259,9 @@ sub decode {
 	die "The $name technique doesn't have an inverse transformation.\n";
 }
 
-package Muter::Backend::Chunked;
+package App::Muter::Backend::Chunked;
 
-use parent qw/-norequire Muter::Backend/;
+use parent qw/-norequire App::Muter::Backend/;
 
 sub new {
 	my ($class, $args, %opts) = @_;
@@ -307,9 +307,9 @@ sub _with_chunk {
 	return $self->$code($chunk);
 }
 
-package Muter::Backend::ChunkedDecode;
+package App::Muter::Backend::ChunkedDecode;
 
-use parent qw/-norequire Muter::Backend/;
+use parent qw/-norequire App::Muter::Backend/;
 
 sub new {
 	my ($class, $args, %opts) = @_;
@@ -347,10 +347,10 @@ sub decode_final {
 	return $self->decode_chunk($self->{chunk} . $data);
 }
 
-package Muter::Backend::Base64;
+package App::Muter::Backend::Base64;
 
 use MIME::Base64 ();
-use parent qw/-norequire Muter::Backend::Chunked/;
+use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
 	my ($class, @args) = @_;
@@ -367,12 +367,12 @@ sub decode_chunk {
 	return MIME::Base64::decode($data);
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::URL64;
+package App::Muter::Backend::URL64;
 
 use MIME::Base64 ();
-use parent qw/-norequire Muter::Backend::Base64/;
+use parent qw/-norequire App::Muter::Backend::Base64/;
 
 sub encode_chunk {
 	my (undef, $data) = @_;
@@ -384,11 +384,11 @@ sub decode_chunk {
 	return MIME::Base64::decode_base64url($data);
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::Hex;
+package App::Muter::Backend::Hex;
 
-use parent qw/-norequire Muter::Backend::Chunked/;
+use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
 	my ($class, $args, %opts) = @_;
@@ -425,11 +425,11 @@ sub decode_chunk {
 	return pack("H*", $data);
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::Base16;
+package App::Muter::Backend::Base16;
 
-use parent qw/-norequire Muter::Backend::Hex/;
+use parent qw/-norequire App::Muter::Backend::Hex/;
 
 sub new {
 	my ($class, $args, %opts) = @_;
@@ -444,11 +444,11 @@ sub metadata {
 	return $meta;
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::Base32;
+package App::Muter::Backend::Base32;
 
-use parent qw/-norequire Muter::Backend::Chunked/;
+use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
 	my ($class, @args) = @_;
@@ -513,11 +513,11 @@ sub decode_chunk {
 	return $result;
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::Base32Hex;
+package App::Muter::Backend::Base32Hex;
 
-use parent qw/-norequire Muter::Backend::Base32/;
+use parent qw/-norequire App::Muter::Backend::Base32/;
 
 sub new {
 	my ($class, @args) = @_;
@@ -533,11 +533,11 @@ sub _initialize {
 	return $self;
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::URI;
+package App::Muter::Backend::URI;
 
-use parent qw/-norequire Muter::Backend::ChunkedDecode/;
+use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
 	my ($class, $args, %opts) = @_;
@@ -572,11 +572,11 @@ sub decode_chunk {
 	return $data;
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::XML;
+package App::Muter::Backend::XML;
 
-use parent qw/-norequire Muter::Backend::ChunkedDecode/;
+use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
 	my ($class, $args, %opts) = @_;
@@ -629,11 +629,11 @@ sub decode_chunk {
 	return $data;
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::QuotedPrintable;
+package App::Muter::Backend::QuotedPrintable;
 
-use parent qw/-norequire Muter::Backend::ChunkedDecode/;
+use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
 	my ($class, $args, %opts) = @_;
@@ -670,14 +670,14 @@ sub decode_chunk {
 	return $data;
 }
 
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
-package Muter::Backend::Hash;
+package App::Muter::Backend::Hash;
 
 use Digest::MD5;
 use Digest::SHA;
 
-use parent qw/-norequire Muter::Backend/;
+use parent qw/-norequire App::Muter::Backend/;
 
 my $hashes = {};
 
@@ -724,9 +724,9 @@ register_hash('sha3-224', sub { require Digest::SHA3; Digest::SHA3->new(224) });
 register_hash('sha3-256', sub { require Digest::SHA3; Digest::SHA3->new(256) });
 register_hash('sha3-384', sub { require Digest::SHA3; Digest::SHA3->new(384) });
 register_hash('sha3-512', sub { require Digest::SHA3; Digest::SHA3->new(512) });
-Muter::Registry->instance->register(__PACKAGE__);
+App::Muter::Registry->instance->register(__PACKAGE__);
 
 # Must be at the end.
-package Muter::Main;
+package App::Muter::Main;
 
 exit script(@ARGV) unless caller;

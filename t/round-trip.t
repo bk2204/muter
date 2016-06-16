@@ -10,7 +10,7 @@ use lib "$FindBin::Bin/../lib";
 use Test::More;
 
 use IO::Scalar;
-use Muter;
+use App::Muter;
 
 my @patterns = (
 	"\x00A7\x80",
@@ -79,7 +79,7 @@ sub run_chain {
 	my $ifh = IO::Scalar->new(\$input);
 	my $ofh = IO::Scalar->new(\$output);
 
-	Muter::Main::run_chain($chain, [$ifh], $ofh, $blocksize);
+	App::Muter::Main::run_chain($chain, [$ifh], $ofh, $blocksize);
 
 	return $output;
 }

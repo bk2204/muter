@@ -32,51 +32,51 @@ use IO::Handle   ();
 use IO::File     ();
 
 sub script {
-	my (@args) = @_;
+    my (@args) = @_;
 
-	my $chain = '';
-	my $help;
-	Getopt::Long::GetOptionsFromArray(
-		\@args,
-		'chain|c=s' => \$chain,
-		'help' => \$help
-	) or return usage(1);
+    my $chain = '';
+    my $help;
+    Getopt::Long::GetOptionsFromArray(
+        \@args,
+        'chain|c=s' => \$chain,
+        'help' => \$help
+    ) or return usage(1);
 
-	return usage(0) if $help;
-	return usage(1) unless $chain;
+    return usage(0) if $help;
+    return usage(1) unless $chain;
 
-	run_chain($chain, load_handles(\@args), \*STDOUT);
+    run_chain($chain, load_handles(\@args), \*STDOUT);
 
-	return 0;
+    return 0;
 }
 
 sub load_handles {
-	my ($files) = @_;
-	my @handles = map { IO::File->new($_, 'r') } @$files;
-	@handles = (\*STDIN) unless @handles;
-	return \@handles;
+    my ($files) = @_;
+    my @handles = map { IO::File->new($_, 'r') } @$files;
+    @handles = (\*STDIN) unless @handles;
+    return \@handles;
 }
 
 sub run_chain {
-	my ($chain, $handles, $stdout, $blocksize) = @_;
+    my ($chain, $handles, $stdout, $blocksize) = @_;
 
-	$chain = App::Muter::Chain->new($chain);
-	$blocksize ||= 512;
+    $chain = App::Muter::Chain->new($chain);
+    $blocksize ||= 512;
 
-	foreach my $io (@$handles) {
-		$io->binmode(1);
-		while ($io->read(my $buf, $blocksize)) {
-			$stdout->print($chain->process($buf));
-		}
-	}
-	$stdout->print($chain->final(''));
-	return;
+    foreach my $io (@$handles) {
+        $io->binmode(1);
+        while ($io->read(my $buf, $blocksize)) {
+            $stdout->print($chain->process($buf));
+        }
+    }
+    $stdout->print($chain->final(''));
+    return;
 }
 
 sub usage {
-	my ($ret) = @_;
-	my $fh = $ret ? \*STDERR : \*STDOUT;
-	$fh->print(<<EOM);
+    my ($ret) = @_;
+    my $fh = $ret ? \*STDERR : \*STDOUT;
+    $fh->print(<<EOM);
 muter -c CHAIN | --chain CHAIN [FILES...]
 
 Modify the bytes in the concatentation of FILES (or standard input) by using the
@@ -91,105 +91,105 @@ with SHA-256, and converts the result to base64.
 
 The following transforms are available:
 EOM
-	my $reg = App::Muter::Registry->instance;
-	foreach my $name ($reg->backends) {
-		$fh->print("  $name\n");
-		my $meta = $reg->info($name);
-		if ($meta->{args} && ref($meta->{args}) eq 'HASH') {
-			$fh->print("    ", join(', ', sort keys %{$meta->{args}}), "\n");
-		}
-	}
-	return $ret;
-}
+        my $reg = App::Muter::Registry->instance;
+        foreach my $name ($reg->backends) {
+            $fh->print("  $name\n");
+            my $meta = $reg->info($name);
+            if ($meta->{args} && ref($meta->{args}) eq 'HASH') {
+                $fh->print("    ", join(', ', sort keys %{$meta->{args}}), "\n");
+            }
+        }
+        return $ret;
+    }
 
-## no critic(ProhibitMultiplePackages)
-package App::Muter::Chain;
+    ## no critic(ProhibitMultiplePackages)
+    package App::Muter::Chain;
 
-sub new {
-	my ($class, $chain) = @_;
-	$class = ref($class) || $class;
-	my $self = bless {}, $class;
-	$self->{chain} = [$self->_instantiate($self->_parse_chain($chain))];
-	return $self;
-}
+    sub new {
+        my ($class, $chain) = @_;
+        $class = ref($class) || $class;
+        my $self = bless {}, $class;
+        $self->{chain} = [$self->_instantiate($self->_parse_chain($chain))];
+        return $self;
+    }
 
-sub process {
-	my ($self, $data) = @_;
+    sub process {
+        my ($self, $data) = @_;
 
-	foreach my $entry (@{$self->{chain}}) {
-		$data = $entry->{instance}->process($data);
-	}
-	return $data;
-}
+        foreach my $entry (@{$self->{chain}}) {
+            $data = $entry->{instance}->process($data);
+        }
+        return $data;
+    }
 
-sub final {
-	my ($self, $data) = @_;
+    sub final {
+        my ($self, $data) = @_;
 
-	foreach my $entry (@{$self->{chain}}) {
-		$data = $entry->{instance}->final($data);
-	}
-	return $data;
-}
+        foreach my $entry (@{$self->{chain}}) {
+            $data = $entry->{instance}->final($data);
+        }
+        return $data;
+    }
 
-sub _parse_chain {
-	my (undef, $chain) = @_;
-	my @items = split /:/, $chain;
-	return map {
-		my $item = $_;
-		$item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/
-			or die "Chain entry '$item' is invalid";
-		{
-			name => $2,
-			method => ($1 ? 'decode' : 'encode'),
-			args => ($3 ? [$3] : []),
-		}
-	} @items;
-}
+    sub _parse_chain {
+        my (undef, $chain) = @_;
+        my @items = split /:/, $chain;
+        return map {
+            my $item = $_;
+            $item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/
+                or die "Chain entry '$item' is invalid";
+            {
+                name => $2,
+                method => ($1 ? 'decode' : 'encode'),
+                args => ($3 ? [$3] : []),
+            }
+        } @items;
+    }
 
-sub _instantiate {
-	my (undef, @entries) = @_;
-	my $registry = App::Muter::Registry->instance;
-	foreach my $entry (@entries) {
-		my $class = $registry->info($entry->{name})->{class};
-		$entry->{instance} = $class->new(
-			$entry->{args},
-			transform => $entry->{method}
-		);
-	}
-	return @entries;
-}
+    sub _instantiate {
+        my (undef, @entries) = @_;
+        my $registry = App::Muter::Registry->instance;
+        foreach my $entry (@entries) {
+            my $class = $registry->info($entry->{name})->{class};
+            $entry->{instance} = $class->new(
+                $entry->{args},
+                transform => $entry->{method}
+            );
+        }
+        return @entries;
+    }
 
-package App::Muter::Registry;
+    package App::Muter::Registry;
 
-my $instance;
+    my $instance;
 
-sub instance {
-	my $class = shift;
-	$class = ref($class) || $class;
-	my $self = {names => {}};
-	return $instance ||= bless $self, $class;
-}
+    sub instance {
+        my $class = shift;
+        $class = ref($class) || $class;
+        my $self = {names => {}};
+        return $instance ||= bless $self, $class;
+    }
 
-sub register {
-	my ($self, $class) = @_;
-	my $info = $class->metadata;
-	$self->{names}{$info->{name}} = {%$info, class => $class};
-	return 1;
-}
+    sub register {
+        my ($self, $class) = @_;
+        my $info = $class->metadata;
+        $self->{names}{$info->{name}} = {%$info, class => $class};
+        return 1;
+    }
 
-sub info {
-	my ($self, $name) = @_;
-	my $info = $self->{names}{$name};
-	die "No such transform '$name'" unless $info;
-	return $info;
-}
+    sub info {
+        my ($self, $name) = @_;
+        my $info = $self->{names}{$name};
+        die "No such transform '$name'" unless $info;
+        return $info;
+    }
 
-sub backends {
-	my ($self) = @_;
-	return sort keys %{$self->{names}};
-}
+    sub backends {
+        my ($self) = @_;
+        return sort keys %{$self->{names}};
+    }
 
-package App::Muter::Backend;
+    package App::Muter::Backend;
 
 =method $class->new($args, %opts)
 
@@ -207,13 +207,13 @@ Returns the new object.
 =cut
 
 sub new {
-	my ($class, $args, %opts) = @_;
-	$class = ref($class) || $class;
-	my $self = {args => $args, options => \%opts, method => $opts{transform}};
-	bless $self, $class;
-	$self->{m_process} = $self->can($opts{transform});
-	$self->{m_final} = $self->can("$opts{transform}_final");
-	return $self;
+    my ($class, $args, %opts) = @_;
+    $class = ref($class) || $class;
+    my $self = {args => $args, options => \%opts, method => $opts{transform}};
+    bless $self, $class;
+    $self->{m_process} = $self->can($opts{transform});
+    $self->{m_final} = $self->can("$opts{transform}_final");
+    return $self;
 }
 
 =method $class->metadata
@@ -235,28 +235,28 @@ identifier used in the chain.
 =cut
 
 sub metadata {
-	my ($class) = @_;
-	my $name = lc(ref $class || $class);
-	$name =~ s/^.*:://;
-	return {name => $name};
+    my ($class) = @_;
+    my $name = lc(ref $class || $class);
+    $name =~ s/^.*:://;
+    return {name => $name};
 }
 
 sub process {
-	my ($self, $data) = @_;
-	my $func = $self->{m_process};
-	return $self->$func($data);
+    my ($self, $data) = @_;
+    my $func = $self->{m_process};
+    return $self->$func($data);
 }
 
 sub final {
-	my ($self, $data) = @_;
-	my $func = $self->{m_final};
-	return $self->$func($data);
+    my ($self, $data) = @_;
+    my $func = $self->{m_final};
+    return $self->$func($data);
 }
 
 sub decode {
-	my $self = shift;
-	my $name = $self->metadata->{name};
-	die "The $name technique doesn't have an inverse transformation.\n";
+    my $self = shift;
+    my $name = $self->metadata->{name};
+    die "The $name technique doesn't have an inverse transformation.\n";
 }
 
 package App::Muter::Backend::Chunked;
@@ -264,47 +264,47 @@ package App::Muter::Backend::Chunked;
 use parent qw/-norequire App::Muter::Backend/;
 
 sub new {
-	my ($class, $args, %opts) = @_;
-	my $self = $class->SUPER::new($args, %opts);
-	$self->{chunk} = '';
-	$self->{enchunksize} = $opts{enchunksize} || $opts{chunksize};
-	$self->{dechunksize} = $opts{dechunksize} || $opts{chunksize};
-	return $self;
+    my ($class, $args, %opts) = @_;
+    my $self = $class->SUPER::new($args, %opts);
+    $self->{chunk} = '';
+    $self->{enchunksize} = $opts{enchunksize} || $opts{chunksize};
+    $self->{dechunksize} = $opts{dechunksize} || $opts{chunksize};
+    return $self;
 }
 
 sub encode {
-	my ($self, $data) = @_;
-	return $self->_with_chunk($data, $self->{enchunksize}, 'encode_chunk');
+    my ($self, $data) = @_;
+    return $self->_with_chunk($data, $self->{enchunksize}, 'encode_chunk');
 }
 
 sub decode {
-	my ($self, $data) = @_;
-	return $self->_with_chunk($data, $self->{dechunksize}, 'decode_chunk');
+    my ($self, $data) = @_;
+    return $self->_with_chunk($data, $self->{dechunksize}, 'decode_chunk');
 }
 
 sub encode_final {
-	my ($self, $data) = @_;
-	return $self->encode_chunk($self->{chunk} . $data);
+    my ($self, $data) = @_;
+    return $self->encode_chunk($self->{chunk} . $data);
 }
 
 sub decode_final {
-	my ($self, $data) = @_;
-	return $self->decode_chunk($self->{chunk} . $data);
+    my ($self, $data) = @_;
+    return $self->decode_chunk($self->{chunk} . $data);
 }
 
 sub _with_chunk {
-	my ($self, $data, $chunksize, $code) = @_;
-	my $chunk = $self->{chunk} . $data;
-	my $len = length($chunk);
-	my $rem = $len % $chunksize;
-	if ($rem) {
-		$self->{chunk} = substr($chunk, -$rem);
-		$chunk = substr($chunk, 0, -$rem);
-	}
-	else {
-		$self->{chunk} = '';
-	}
-	return $self->$code($chunk);
+    my ($self, $data, $chunksize, $code) = @_;
+    my $chunk = $self->{chunk} . $data;
+    my $len = length($chunk);
+    my $rem = $len % $chunksize;
+    if ($rem) {
+        $self->{chunk} = substr($chunk, -$rem);
+        $chunk = substr($chunk, 0, -$rem);
+    }
+    else {
+        $self->{chunk} = '';
+    }
+    return $self->$code($chunk);
 }
 
 package App::Muter::Backend::ChunkedDecode;
@@ -312,39 +312,39 @@ package App::Muter::Backend::ChunkedDecode;
 use parent qw/-norequire App::Muter::Backend/;
 
 sub new {
-	my ($class, $args, %opts) = @_;
-	my $self = $class->SUPER::new($args, %opts);
-	$self->{chunk} = '';
-	$self->{regexp} = $opts{regexp};
-	return $self;
+    my ($class, $args, %opts) = @_;
+    my $self = $class->SUPER::new($args, %opts);
+    $self->{chunk} = '';
+    $self->{regexp} = $opts{regexp};
+    return $self;
 }
 
 sub encode {
-	my ($self, $data) = @_;
-	return $self->encode_chunk($data);
+    my ($self, $data) = @_;
+    return $self->encode_chunk($data);
 }
 
 sub decode {
-	my ($self, $data) = @_;
-	$data = $self->{chunk} . $data;
-	if ($data =~ $self->{regexp}) {
-		$data = $1;
-		$self->{chunk} = $2;
-	}
-	else {
-		$self->{chunk} = '';
-	}
-	return $self->decode_chunk($data);
+    my ($self, $data) = @_;
+    $data = $self->{chunk} . $data;
+    if ($data =~ $self->{regexp}) {
+        $data = $1;
+        $self->{chunk} = $2;
+    }
+    else {
+        $self->{chunk} = '';
+    }
+    return $self->decode_chunk($data);
 }
 
 sub encode_final {
-	my ($self, $data) = @_;
-	return $self->encode_chunk($self->{chunk} . $data);
+    my ($self, $data) = @_;
+    return $self->encode_chunk($self->{chunk} . $data);
 }
 
 sub decode_final {
-	my ($self, $data) = @_;
-	return $self->decode_chunk($self->{chunk} . $data);
+    my ($self, $data) = @_;
+    return $self->decode_chunk($self->{chunk} . $data);
 }
 
 package App::Muter::Backend::Base64;
@@ -353,18 +353,18 @@ use MIME::Base64 ();
 use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
-	my ($class, @args) = @_;
-	return $class->SUPER::new(@args, enchunksize => 3, dechunksize => 4);
+    my ($class, @args) = @_;
+    return $class->SUPER::new(@args, enchunksize => 3, dechunksize => 4);
 }
 
 sub encode_chunk {
-	my (undef, $data) = @_;
-	return MIME::Base64::encode($data, '');
+    my (undef, $data) = @_;
+    return MIME::Base64::encode($data, '');
 }
 
 sub decode_chunk {
-	my (undef, $data) = @_;
-	return MIME::Base64::decode($data);
+    my (undef, $data) = @_;
+    return MIME::Base64::decode($data);
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -375,13 +375,13 @@ use MIME::Base64 ();
 use parent qw/-norequire App::Muter::Backend::Base64/;
 
 sub encode_chunk {
-	my (undef, $data) = @_;
-	return MIME::Base64::encode_base64url($data);
+    my (undef, $data) = @_;
+    return MIME::Base64::encode_base64url($data);
 }
 
 sub decode_chunk {
-	my (undef, $data) = @_;
-	return MIME::Base64::decode_base64url($data);
+    my (undef, $data) = @_;
+    return MIME::Base64::decode_base64url($data);
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -391,38 +391,38 @@ package App::Muter::Backend::Hex;
 use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
-	my ($class, $args, %opts) = @_;
-	my $self =  $class->SUPER::new(
-		$args, %opts,
-		enchunksize => 1,
-		dechunksize => 2
-	);
-	$self->{upper} = 1 if defined $args->[0] && $args->[0] eq 'upper';
-	return $self;
+    my ($class, $args, %opts) = @_;
+    my $self =  $class->SUPER::new(
+        $args, %opts,
+        enchunksize => 1,
+        dechunksize => 2
+    );
+    $self->{upper} = 1 if defined $args->[0] && $args->[0] eq 'upper';
+    return $self;
 }
 
 sub metadata {
-	my $self = shift;
-	my $meta = $self->SUPER::metadata;
-	return {
-		%$meta,
-		args => {
-			upper => 'Use uppercase letters',
-			lower => 'Use lowercase letters',
-		}
-	};
+    my $self = shift;
+    my $meta = $self->SUPER::metadata;
+    return {
+        %$meta,
+        args => {
+            upper => 'Use uppercase letters',
+            lower => 'Use lowercase letters',
+        }
+    };
 }
 
 sub encode_chunk {
-	my ($self, $data) = @_;
-	my $result = unpack("H*", $data);
-	return uc $result if $self->{upper};
-	return $result;
+    my ($self, $data) = @_;
+    my $result = unpack("H*", $data);
+    return uc $result if $self->{upper};
+    return $result;
 }
 
 sub decode_chunk {
-	my (undef, $data) = @_;
-	return pack("H*", $data);
+    my (undef, $data) = @_;
+    return pack("H*", $data);
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -432,16 +432,16 @@ package App::Muter::Backend::Base16;
 use parent qw/-norequire App::Muter::Backend::Hex/;
 
 sub new {
-	my ($class, $args, %opts) = @_;
-	my $self = $class->SUPER::new(['upper'], %opts);
-	return $self;
+    my ($class, $args, %opts) = @_;
+    my $self = $class->SUPER::new(['upper'], %opts);
+    return $self;
 }
 
 sub metadata {
-	my $self = shift;
-	my $meta = $self->SUPER::metadata;
-	delete $meta->{args};
-	return $meta;
+    my $self = shift;
+    my $meta = $self->SUPER::metadata;
+    delete $meta->{args};
+    return $meta;
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -451,66 +451,66 @@ package App::Muter::Backend::Base32;
 use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
-	my ($class, @args) = @_;
-	my $self = $class->SUPER::new(@args, enchunksize => 5, dechunksize => 8);
-	$self->{fmap} = [split //, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'];
-	return $self->_initialize;
+    my ($class, @args) = @_;
+    my $self = $class->SUPER::new(@args, enchunksize => 5, dechunksize => 8);
+    $self->{fmap} = [split //, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'];
+    return $self->_initialize;
 }
 
 sub _initialize {
-	my ($self) = @_;
-	my $fmap = $self->{fmap};
-	$self->{rmap} = {'=' => 0};
-	@{$self->{rmap}}{@$fmap} = keys @$fmap;
-	return $self;
+    my ($self) = @_;
+    my $fmap = $self->{fmap};
+    $self->{rmap} = {'=' => 0};
+    @{$self->{rmap}}{@$fmap} = keys @$fmap;
+    return $self;
 }
 
 sub encode_chunk {
-	my ($self, $data) = @_;
-	my @data = map { ord } split //, $data;
-	my $result = '';
-	my $map = $self->{fmap};
-	my $lenmap = [0, 2, 4, 5, 7, 8];
-	while (my @chunk = splice(@data, 0, 5)) {
-		my $len = @chunk;
-		push @chunk, (0, 0, 0, 0);
-		my @converted = map { $self->{fmap}[$_ & 0x1f] } (
-			$chunk[0] >> 3,
-			($chunk[0] << 2) | ($chunk[1] >> 6),
-			($chunk[1] >> 1),
-			($chunk[1] << 4) | ($chunk[2] >> 4),
-			($chunk[2] << 1) | ($chunk[3] >> 7),
-			($chunk[3] >> 2),
-			($chunk[3] << 3) | ($chunk[4] >> 5),
-			$chunk[4]
-		);
-		my $chunk = substr(join('', @converted), 0, $lenmap->[$len]);
-		$chunk = substr($chunk . '======', 0, 8);
-		$result .= $chunk;
-	}
-	return $result;
+    my ($self, $data) = @_;
+    my @data = map { ord } split //, $data;
+    my $result = '';
+    my $map = $self->{fmap};
+    my $lenmap = [0, 2, 4, 5, 7, 8];
+    while (my @chunk = splice(@data, 0, 5)) {
+        my $len = @chunk;
+        push @chunk, (0, 0, 0, 0);
+        my @converted = map { $self->{fmap}[$_ & 0x1f] } (
+            $chunk[0] >> 3,
+            ($chunk[0] << 2) | ($chunk[1] >> 6),
+            ($chunk[1] >> 1),
+            ($chunk[1] << 4) | ($chunk[2] >> 4),
+            ($chunk[2] << 1) | ($chunk[3] >> 7),
+            ($chunk[3] >> 2),
+            ($chunk[3] << 3) | ($chunk[4] >> 5),
+            $chunk[4]
+        );
+        my $chunk = substr(join('', @converted), 0, $lenmap->[$len]);
+        $chunk = substr($chunk . '======', 0, 8);
+        $result .= $chunk;
+    }
+    return $result;
 }
 
 sub decode_chunk {
-	my ($self, $data) = @_;
-	my $lenmap = [5, 4, undef, 3, 2, undef, 1];
-	$data =~ /(=+)$/;
-	my $truncate = $lenmap->[length $1 // 0];
-	my $result = '';
-	my @data = map { $self->{rmap}{$_} } split //, $data;
-	use bytes;
-	while (my @chunk = splice(@data, 0, 8)) {
-		my @converted = (
-			($chunk[0] << 3) | ($chunk[1] >> 2),
-			($chunk[1] << 6) | ($chunk[2] << 1) | ($chunk[3] >> 4),
-			($chunk[3] << 4) | ($chunk[4] >> 1),
-			($chunk[4] << 7) | ($chunk[5] << 2) | ($chunk[6] >> 3),
-			($chunk[6] << 5) | $chunk[7],
-		);
-		my $chunk = join('', map { chr($_ & 0xff) } @converted);
-		$result .= substr($chunk, 0, (@data ? 5 : $truncate));
-	}
-	return $result;
+    my ($self, $data) = @_;
+    my $lenmap = [5, 4, undef, 3, 2, undef, 1];
+    $data =~ /(=+)$/;
+    my $truncate = $lenmap->[length $1 // 0];
+    my $result = '';
+    my @data = map { $self->{rmap}{$_} } split //, $data;
+    use bytes;
+    while (my @chunk = splice(@data, 0, 8)) {
+        my @converted = (
+            ($chunk[0] << 3) | ($chunk[1] >> 2),
+            ($chunk[1] << 6) | ($chunk[2] << 1) | ($chunk[3] >> 4),
+            ($chunk[3] << 4) | ($chunk[4] >> 1),
+            ($chunk[4] << 7) | ($chunk[5] << 2) | ($chunk[6] >> 3),
+            ($chunk[6] << 5) | $chunk[7],
+        );
+        my $chunk = join('', map { chr($_ & 0xff) } @converted);
+        $result .= substr($chunk, 0, (@data ? 5 : $truncate));
+    }
+    return $result;
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -520,17 +520,17 @@ package App::Muter::Backend::Base32Hex;
 use parent qw/-norequire App::Muter::Backend::Base32/;
 
 sub new {
-	my ($class, @args) = @_;
-	my $self = $class->SUPER::new(@args);
-	$self->{fmap} = [split //, '0123456789ABCDEFGHIJKLMNOPQRSTUV'];
-	return $self->_initialize;
+    my ($class, @args) = @_;
+    my $self = $class->SUPER::new(@args);
+    $self->{fmap} = [split //, '0123456789ABCDEFGHIJKLMNOPQRSTUV'];
+    return $self->_initialize;
 }
 
 sub _initialize {
-	my ($self) = @_;
-	$self->{rmap} = {'=' => 0};
-	@{$self->{rmap}}{values @{$self->{fmap}}} = keys @{$self->{fmap}};
-	return $self;
+    my ($self) = @_;
+    $self->{rmap} = {'=' => 0};
+    @{$self->{rmap}}{values @{$self->{fmap}}} = keys @{$self->{fmap}};
+    return $self;
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -540,36 +540,36 @@ package App::Muter::Backend::URI;
 use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
-	my ($class, $args, %opts) = @_;
-	my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(%.?)$/);
-	my $arg = $args->[0] // '';
-	$self->{chunk} = '';
-	$self->{format} = '%%%02' . ($arg eq 'lower' ? 'x' : 'X');
-	return $self;
+    my ($class, $args, %opts) = @_;
+    my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(%.?)$/);
+    my $arg = $args->[0] // '';
+    $self->{chunk} = '';
+    $self->{format} = '%%%02' . ($arg eq 'lower' ? 'x' : 'X');
+    return $self;
 }
 
 sub metadata {
-	my $self = shift;
-	my $meta = $self->SUPER::metadata;
-	return {
-		%$meta,
-		args => {
-			'upper' => 'Use uppercase letters',
-			'lower' => 'Use lowercase letters',
-		}
-	};
+    my $self = shift;
+    my $meta = $self->SUPER::metadata;
+    return {
+        %$meta,
+        args => {
+            'upper' => 'Use uppercase letters',
+            'lower' => 'Use lowercase letters',
+        }
+    };
 }
 
 sub encode_chunk {
-	my ($self, $data) = @_;
-	$data =~ s/([^A-Za-z0-9-._~])/sprintf $self->{format}, ord($1)/ge;
-	return $data;
+    my ($self, $data) = @_;
+    $data =~ s/([^A-Za-z0-9-._~])/sprintf $self->{format}, ord($1)/ge;
+    return $data;
 }
 
 sub decode_chunk {
-	my ($self, $data) = @_;
-	$data =~ s/%([0-9a-fA-F]{2})/chr(hex($1))/ge;
-	return $data;
+    my ($self, $data) = @_;
+    $data =~ s/%([0-9a-fA-F]{2})/chr(hex($1))/ge;
+    return $data;
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -579,54 +579,54 @@ package App::Muter::Backend::XML;
 use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
-	my ($class, $args, %opts) = @_;
-	my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(&[^;]*)$/);
-	no warnings 'qw'; ## no critic (ProhibitNoWarnings)
-	my $maps = {
-		default => [qw/quot amp apos lt gt/],
-		html => [qw/quot amp #x27 lt gt/],
-		hex => [qw/#x22 #x38 #x27 #x3c #x3e/],
-	};
-	my $type = $args->[0] // 'default';
-	@{$self->{fmap}}{qw/" & ' < >/} = map { "&$_;" } @{$maps->{$type}};
-	@{$self->{rmap}}{@{$maps->{default}}} = qw/" & ' < >/;
-	return $self;
+    my ($class, $args, %opts) = @_;
+    my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(&[^;]*)$/);
+    no warnings 'qw'; ## no critic (ProhibitNoWarnings)
+    my $maps = {
+        default => [qw/quot amp apos lt gt/],
+        html => [qw/quot amp #x27 lt gt/],
+        hex => [qw/#x22 #x38 #x27 #x3c #x3e/],
+    };
+    my $type = $args->[0] // 'default';
+    @{$self->{fmap}}{qw/" & ' < >/} = map { "&$_;" } @{$maps->{$type}};
+    @{$self->{rmap}}{@{$maps->{default}}} = qw/" & ' < >/;
+    return $self;
 }
 
 sub metadata {
-	my $self = shift;
-	my $meta = $self->SUPER::metadata;
-	return {
-		%$meta,
-		args => {
-			default => 'Use XML entity names',
-			html => 'Use HTML-friendly entity names for XML entities',
-			hex => 'Use hexadecimal entity names for XML entities',
-		}
-	};
+    my $self = shift;
+    my $meta = $self->SUPER::metadata;
+    return {
+        %$meta,
+        args => {
+            default => 'Use XML entity names',
+            html => 'Use HTML-friendly entity names for XML entities',
+            hex => 'Use hexadecimal entity names for XML entities',
+        }
+    };
 }
 
 # XML encodes Unicode characters.  However, muter only works on byte sequences,
 # so immediately encode these into UTF-8.
 sub _decode_char {
-	my ($self, $char) = @_;
-	require Encode;
-	return chr($1) if $char =~ /^#([0-9]+)$/;
-	return chr(hex($1)) if $char =~ /^#x([a-fA-F0-9]+)$/;
-	return $self->{rmap}{$char} if exists $self->{rmap}{$char};
-	die "Unknown XML entity &$char;";
+    my ($self, $char) = @_;
+    require Encode;
+    return chr($1) if $char =~ /^#([0-9]+)$/;
+    return chr(hex($1)) if $char =~ /^#x([a-fA-F0-9]+)$/;
+    return $self->{rmap}{$char} if exists $self->{rmap}{$char};
+    die "Unknown XML entity &$char;";
 }
 
 sub encode_chunk {
-	my ($self, $data) = @_;
-	$data =~ s/(["&'<>])/$self->{fmap}{$1}/ge;
-	return $data;
+    my ($self, $data) = @_;
+    $data =~ s/(["&'<>])/$self->{fmap}{$1}/ge;
+    return $data;
 }
 
 sub decode_chunk {
-	my ($self, $data) = @_;
-	$data =~ s/&([^;]+);/Encode::encode('UTF-8', $self->_decode_char($1))/ge;
-	return $data;
+    my ($self, $data) = @_;
+    $data =~ s/&([^;]+);/Encode::encode('UTF-8', $self->_decode_char($1))/ge;
+    return $data;
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -636,38 +636,38 @@ package App::Muter::Backend::QuotedPrintable;
 use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
-	my ($class, $args, %opts) = @_;
-	my $self = $class->SUPER::new($args, %opts,
-		regexp => qr/\A(.*)(=[^\n]?)\z/);
-	$self->{curlen} = 0;
-	return $self;
+    my ($class, $args, %opts) = @_;
+    my $self = $class->SUPER::new($args, %opts,
+        regexp => qr/\A(.*)(=[^\n]?)\z/);
+    $self->{curlen} = 0;
+    return $self;
 }
 
 sub encode_chunk {
-	my ($self, $data) = @_;
-	$data =~ s/([^\x21-\x3c\x3e-\x7e])/sprintf '=%02X', ord($1)/ge;
-	my $result = '';
-	my $maxlen = 75;
-	while ($self->{curlen} + length($data) > $maxlen) {
-		my $chunk = substr($data, 0, $maxlen - $self->{curlen});
-		$chunk = $1 if $chunk =~ /^(.*)(=.?)$/;
-		$data = substr($data, length($chunk));
-		$result .= $chunk;
-		if ($data) {
-			$result .= "=\n";
-			$self->{curlen} = 0;
-		}
-	}
-	$result .= $data;
-	$self->{curlen} += length($data);
-	return $result;
+    my ($self, $data) = @_;
+    $data =~ s/([^\x21-\x3c\x3e-\x7e])/sprintf '=%02X', ord($1)/ge;
+    my $result = '';
+    my $maxlen = 75;
+    while ($self->{curlen} + length($data) > $maxlen) {
+        my $chunk = substr($data, 0, $maxlen - $self->{curlen});
+        $chunk = $1 if $chunk =~ /^(.*)(=.?)$/;
+        $data = substr($data, length($chunk));
+        $result .= $chunk;
+        if ($data) {
+            $result .= "=\n";
+            $self->{curlen} = 0;
+        }
+    }
+    $result .= $data;
+    $self->{curlen} += length($data);
+    return $result;
 }
 
 sub decode_chunk {
-	my ($self, $data) = @_;
-	$data =~ s/=\n//g;
-	$data =~ s/=([0-9A-F]{2})/chr(hex($1))/ge;
-	return $data;
+    my ($self, $data) = @_;
+    $data =~ s/=\n//g;
+    $data =~ s/=([0-9A-F]{2})/chr(hex($1))/ge;
+    return $data;
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
@@ -682,36 +682,36 @@ use parent qw/-norequire App::Muter::Backend/;
 my $hashes = {};
 
 sub new {
-	my ($class, $args, @args) = @_;
-	my ($hash) = @$args;
-	my $self = $class->SUPER::new($args, @args);
-	$self->{hash} = $hashes->{$hash}->();
-	return $self;
+    my ($class, $args, @args) = @_;
+    my ($hash) = @$args;
+    my $self = $class->SUPER::new($args, @args);
+    $self->{hash} = $hashes->{$hash}->();
+    return $self;
 }
 
 sub encode {
-	my ($self, $data) = @_;
-	$self->{hash}->add($data);
-	return '';
+    my ($self, $data) = @_;
+    $self->{hash}->add($data);
+    return '';
 }
 
 sub encode_final {
-	my ($self, $data) = @_;
-	$self->{hash}->add($data);
-	return $self->{hash}->digest;
+    my ($self, $data) = @_;
+    $self->{hash}->add($data);
+    return $self->{hash}->digest;
 }
 
 sub metadata {
-	my ($self, $data) = @_;
-	my $meta = $self->SUPER::metadata;
-	$meta->{args} = { map { $_ => '' } keys %$hashes };
-	return $meta;
+    my ($self, $data) = @_;
+    my $meta = $self->SUPER::metadata;
+    $meta->{args} = { map { $_ => '' } keys %$hashes };
+    return $meta;
 }
 
 sub register_hash {
-	my ($name, $code) = @_;
-	return $hashes->{$name} unless $code;
-	return $hashes->{$name} = $code;
+    my ($name, $code) = @_;
+    return $hashes->{$name} unless $code;
+    return $hashes->{$name} = $code;
 }
 
 register_hash('md5', sub { Digest::MD5->new });

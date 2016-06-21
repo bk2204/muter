@@ -91,105 +91,105 @@ with SHA-256, and converts the result to base64.
 
 The following transforms are available:
 EOM
-        my $reg = App::Muter::Registry->instance;
-        foreach my $name ($reg->backends) {
-            $fh->print("  $name\n");
-            my $meta = $reg->info($name);
-            if ($meta->{args} && ref($meta->{args}) eq 'HASH') {
-                $fh->print("    ", join(', ', sort keys %{$meta->{args}}), "\n");
-            }
+    my $reg = App::Muter::Registry->instance;
+    foreach my $name ($reg->backends) {
+        $fh->print("  $name\n");
+        my $meta = $reg->info($name);
+        if ($meta->{args} && ref($meta->{args}) eq 'HASH') {
+            $fh->print("    ", join(', ', sort keys %{$meta->{args}}), "\n");
         }
-        return $ret;
     }
+    return $ret;
+}
 
-    ## no critic(ProhibitMultiplePackages)
-    package App::Muter::Chain;
+## no critic(ProhibitMultiplePackages)
+package App::Muter::Chain;
 
-    sub new {
-        my ($class, $chain) = @_;
-        $class = ref($class) || $class;
-        my $self = bless {}, $class;
-        $self->{chain} = [$self->_instantiate($self->_parse_chain($chain))];
-        return $self;
+sub new {
+    my ($class, $chain) = @_;
+    $class = ref($class) || $class;
+    my $self = bless {}, $class;
+    $self->{chain} = [$self->_instantiate($self->_parse_chain($chain))];
+    return $self;
+}
+
+sub process {
+    my ($self, $data) = @_;
+
+    foreach my $entry (@{$self->{chain}}) {
+        $data = $entry->{instance}->process($data);
     }
+    return $data;
+}
 
-    sub process {
-        my ($self, $data) = @_;
+sub final {
+    my ($self, $data) = @_;
 
-        foreach my $entry (@{$self->{chain}}) {
-            $data = $entry->{instance}->process($data);
+    foreach my $entry (@{$self->{chain}}) {
+        $data = $entry->{instance}->final($data);
+    }
+    return $data;
+}
+
+sub _parse_chain {
+    my (undef, $chain) = @_;
+    my @items = split /:/, $chain;
+    return map {
+        my $item = $_;
+        $item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/
+            or die "Chain entry '$item' is invalid";
+        {
+            name => $2,
+            method => ($1 ? 'decode' : 'encode'),
+            args => ($3 ? [$3] : []),
         }
-        return $data;
+    } @items;
+}
+
+sub _instantiate {
+    my (undef, @entries) = @_;
+    my $registry = App::Muter::Registry->instance;
+    foreach my $entry (@entries) {
+        my $class = $registry->info($entry->{name})->{class};
+        $entry->{instance} = $class->new(
+            $entry->{args},
+            transform => $entry->{method}
+        );
     }
+    return @entries;
+}
 
-    sub final {
-        my ($self, $data) = @_;
+package App::Muter::Registry;
 
-        foreach my $entry (@{$self->{chain}}) {
-            $data = $entry->{instance}->final($data);
-        }
-        return $data;
-    }
+my $instance;
 
-    sub _parse_chain {
-        my (undef, $chain) = @_;
-        my @items = split /:/, $chain;
-        return map {
-            my $item = $_;
-            $item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/
-                or die "Chain entry '$item' is invalid";
-            {
-                name => $2,
-                method => ($1 ? 'decode' : 'encode'),
-                args => ($3 ? [$3] : []),
-            }
-        } @items;
-    }
+sub instance {
+    my $class = shift;
+    $class = ref($class) || $class;
+    my $self = {names => {}};
+    return $instance ||= bless $self, $class;
+}
 
-    sub _instantiate {
-        my (undef, @entries) = @_;
-        my $registry = App::Muter::Registry->instance;
-        foreach my $entry (@entries) {
-            my $class = $registry->info($entry->{name})->{class};
-            $entry->{instance} = $class->new(
-                $entry->{args},
-                transform => $entry->{method}
-            );
-        }
-        return @entries;
-    }
+sub register {
+    my ($self, $class) = @_;
+    my $info = $class->metadata;
+    $self->{names}{$info->{name}} = {%$info, class => $class};
+    return 1;
+}
 
-    package App::Muter::Registry;
+sub info {
+    my ($self, $name) = @_;
+    my $info = $self->{names}{$name};
+    die "No such transform '$name'" unless $info;
+    return $info;
+}
 
-    my $instance;
+sub backends {
+    my ($self) = @_;
+    return sort keys %{$self->{names}};
+}
 
-    sub instance {
-        my $class = shift;
-        $class = ref($class) || $class;
-        my $self = {names => {}};
-        return $instance ||= bless $self, $class;
-    }
-
-    sub register {
-        my ($self, $class) = @_;
-        my $info = $class->metadata;
-        $self->{names}{$info->{name}} = {%$info, class => $class};
-        return 1;
-    }
-
-    sub info {
-        my ($self, $name) = @_;
-        my $info = $self->{names}{$name};
-        die "No such transform '$name'" unless $info;
-        return $info;
-    }
-
-    sub backends {
-        my ($self) = @_;
-        return sort keys %{$self->{names}};
-    }
-
-    package App::Muter::Backend;
+package App::Muter::Backend;
 
 =method $class->new($args, %opts)
 

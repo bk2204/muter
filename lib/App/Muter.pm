@@ -612,7 +612,6 @@ sub metadata {
 # so immediately encode these into UTF-8.
 sub _decode_char {
     my ($self, $char) = @_;
-    require Encode;
     return chr($1) if $char =~ /^#([0-9]+)$/;
     return chr(hex($1)) if $char =~ /^#x([a-fA-F0-9]+)$/;
     return $self->{rmap}{$char} if exists $self->{rmap}{$char};
@@ -627,6 +626,7 @@ sub encode_chunk {
 
 sub decode_chunk {
     my ($self, $data) = @_;
+    require Encode;
     $data =~ s/&([^;]+);/Encode::encode('UTF-8', $self->_decode_char($1))/ge;
     return $data;
 }

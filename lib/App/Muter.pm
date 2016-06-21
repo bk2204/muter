@@ -188,7 +188,8 @@ sub info {
 
 sub backends {
     my ($self) = @_;
-    return sort keys %{$self->{names}};
+    my @backends = sort keys %{$self->{names}};
+    return @backends;
 }
 
 package App::Muter::Backend;

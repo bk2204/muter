@@ -131,19 +131,21 @@ sub final {
     return $data;
 }
 
+sub _chain_entry {
+    my ($item) = @_;
+    $item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/
+        or die "Chain entry '$item' is invalid";
+    return {
+        name => $2,
+        method => ($1 ? 'decode' : 'encode'),
+        args => ($3 ? [$3] : []),
+    };
+}
+
 sub _parse_chain {
     my (undef, $chain) = @_;
     my @items = split /:/, $chain;
-    return map {
-        my $item = $_;
-        $item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/
-            or die "Chain entry '$item' is invalid";
-        {
-            name => $2,
-            method => ($1 ? 'decode' : 'encode'),
-            args => ($3 ? [$3] : []),
-        }
-    } @items;
+    return map { _chain_entry($_) } @items;
 }
 
 sub _instantiate {

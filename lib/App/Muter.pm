@@ -39,8 +39,9 @@ sub script {
     Getopt::Long::GetOptionsFromArray(
         \@args,
         'chain|c=s' => \$chain,
-        'help' => \$help
-    ) or return usage(1);
+        'help'      => \$help
+        ) or
+        return usage(1);
 
     return usage(0) if $help;
     return usage(1) unless $chain;
@@ -133,12 +134,12 @@ sub final {
 
 sub _chain_entry {
     my ($item) = @_;
-    $item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/
-        or die "Chain entry '$item' is invalid";
+    $item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/ or
+        die "Chain entry '$item' is invalid";
     return {
-        name => $2,
+        name   => $2,
         method => ($1 ? 'decode' : 'encode'),
-        args => ($3 ? [$3] : []),
+        args   => ($3 ? [$3] : []),
     };
 }
 
@@ -153,10 +154,8 @@ sub _instantiate {
     my $registry = App::Muter::Registry->instance;
     foreach my $entry (@entries) {
         my $class = $registry->info($entry->{name})->{class};
-        $entry->{instance} = $class->new(
-            $entry->{args},
-            transform => $entry->{method}
-        );
+        $entry->{instance} =
+            $class->new($entry->{args}, transform => $entry->{method});
     }
     return @entries;
 }
@@ -215,7 +214,7 @@ sub new {
     my $self = {args => $args, options => \%opts, method => $opts{transform}};
     bless $self, $class;
     $self->{m_process} = $self->can($opts{transform});
-    $self->{m_final} = $self->can("$opts{transform}_final");
+    $self->{m_final}   = $self->can("$opts{transform}_final");
     return $self;
 }
 
@@ -269,7 +268,7 @@ use parent qw/-norequire App::Muter::Backend/;
 sub new {
     my ($class, $args, %opts) = @_;
     my $self = $class->SUPER::new($args, %opts);
-    $self->{chunk} = '';
+    $self->{chunk}       = '';
     $self->{enchunksize} = $opts{enchunksize} || $opts{chunksize};
     $self->{dechunksize} = $opts{dechunksize} || $opts{chunksize};
     return $self;
@@ -298,8 +297,8 @@ sub decode_final {
 sub _with_chunk {
     my ($self, $data, $chunksize, $code) = @_;
     my $chunk = $self->{chunk} . $data;
-    my $len = length($chunk);
-    my $rem = $len % $chunksize;
+    my $len   = length($chunk);
+    my $rem   = $len % $chunksize;
     if ($rem) {
         $self->{chunk} = substr($chunk, -$rem);
         $chunk = substr($chunk, 0, -$rem);
@@ -317,7 +316,7 @@ use parent qw/-norequire App::Muter::Backend/;
 sub new {
     my ($class, $args, %opts) = @_;
     my $self = $class->SUPER::new($args, %opts);
-    $self->{chunk} = '';
+    $self->{chunk}  = '';
     $self->{regexp} = $opts{regexp};
     return $self;
 }
@@ -395,7 +394,7 @@ use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
     my ($class, $args, %opts) = @_;
-    my $self =  $class->SUPER::new(
+    my $self = $class->SUPER::new(
         $args, %opts,
         enchunksize => 1,
         dechunksize => 2
@@ -470,9 +469,9 @@ sub _initialize {
 
 sub encode_chunk {
     my ($self, $data) = @_;
-    my @data = map { ord } split //, $data;
+    my @data   = map { ord } split //, $data;
     my $result = '';
-    my $map = $self->{fmap};
+    my $map    = $self->{fmap};
     my $lenmap = [0, 2, 4, 5, 7, 8];
     while (my @chunk = splice(@data, 0, 5)) {
         my $len = @chunk;
@@ -499,8 +498,8 @@ sub decode_chunk {
     my $lenmap = [5, 4, undef, 3, 2, undef, 1];
     $data =~ /(=+)$/;
     my $truncate = $lenmap->[length $1 // 0];
-    my $result = '';
-    my @data = map { $self->{rmap}{$_} } split //, $data;
+    my $result   = '';
+    my @data     = map { $self->{rmap}{$_} } split //, $data;
     use bytes;
     while (my @chunk = splice(@data, 0, 8)) {
         my @converted = (
@@ -584,11 +583,11 @@ use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 sub new {
     my ($class, $args, %opts) = @_;
     my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(&[^;]*)$/);
-    no warnings 'qw'; ## no critic (ProhibitNoWarnings)
+    no warnings 'qw';    ## no critic (ProhibitNoWarnings)
     my $maps = {
         default => [qw/quot amp apos lt gt/],
-        html => [qw/quot amp #x27 lt gt/],
-        hex => [qw/#x22 #x38 #x27 #x3c #x3e/],
+        html    => [qw/quot amp #x27 lt gt/],
+        hex     => [qw/#x22 #x38 #x27 #x3c #x3e/],
     };
     my $type = $args->[0] // 'default';
     @{$self->{fmap}}{qw/" & ' < >/} = map { "&$_;" } @{$maps->{$type}};
@@ -603,8 +602,8 @@ sub metadata {
         %$meta,
         args => {
             default => 'Use XML entity names',
-            html => 'Use HTML-friendly entity names for XML entities',
-            hex => 'Use hexadecimal entity names for XML entities',
+            html    => 'Use HTML-friendly entity names for XML entities',
+            hex     => 'Use hexadecimal entity names for XML entities',
         }
     };
 }
@@ -613,8 +612,8 @@ sub metadata {
 # so immediately encode these into UTF-8.
 sub _decode_char {
     my ($self, $char) = @_;
-    return chr($1) if $char =~ /^#([0-9]+)$/;
-    return chr(hex($1)) if $char =~ /^#x([a-fA-F0-9]+)$/;
+    return chr($1)              if $char =~ /^#([0-9]+)$/;
+    return chr(hex($1))         if $char =~ /^#x([a-fA-F0-9]+)$/;
     return $self->{rmap}{$char} if exists $self->{rmap}{$char};
     die "Unknown XML entity &$char;";
 }
@@ -640,8 +639,8 @@ use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
-    my $self = $class->SUPER::new($args, %opts,
-        regexp => qr/\A(.*)(=[^\n]?)\z/);
+    my $self =
+        $class->SUPER::new($args, %opts, regexp => qr/\A(.*)(=[^\n]?)\z/);
     $self->{curlen} = 0;
     return $self;
 }
@@ -707,7 +706,7 @@ sub encode_final {
 sub metadata {
     my ($self, $data) = @_;
     my $meta = $self->SUPER::metadata;
-    $meta->{args} = { map { $_ => '' } keys %$hashes };
+    $meta->{args} = {map { $_ => '' } keys %$hashes};
     return $meta;
 }
 
@@ -717,12 +716,12 @@ sub register_hash {
     return $hashes->{$name} = $code;
 }
 
-register_hash('md5', sub { Digest::MD5->new });
-register_hash('sha1', sub { Digest::SHA->new });
-register_hash('sha224', sub { Digest::SHA->new(224) });
-register_hash('sha256', sub { Digest::SHA->new(256) });
-register_hash('sha384', sub { Digest::SHA->new(384) });
-register_hash('sha512', sub { Digest::SHA->new(512) });
+register_hash('md5',      sub { Digest::MD5->new });
+register_hash('sha1',     sub { Digest::SHA->new });
+register_hash('sha224',   sub { Digest::SHA->new(224) });
+register_hash('sha256',   sub { Digest::SHA->new(256) });
+register_hash('sha384',   sub { Digest::SHA->new(384) });
+register_hash('sha512',   sub { Digest::SHA->new(512) });
 register_hash('sha3-224', sub { require Digest::SHA3; Digest::SHA3->new(224) });
 register_hash('sha3-256', sub { require Digest::SHA3; Digest::SHA3->new(256) });
 register_hash('sha3-384', sub { require Digest::SHA3; Digest::SHA3->new(384) });

@@ -76,7 +76,7 @@ sub run_chain {
 sub usage {
     my ($ret) = @_;
     my $fh = $ret ? \*STDERR : \*STDOUT;
-    $fh->print(<<EOM);
+    $fh->print(<<'EOM');
 muter -c CHAIN | --chain CHAIN [FILES...]
 
 Modify the bytes in the concatentation of FILES (or standard input) by using the

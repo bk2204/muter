@@ -106,6 +106,8 @@ EOM
 ## no critic(ProhibitMultiplePackages)
 package App::Muter::Chain;
 
+use List::Util ();
+
 sub new {
     my ($class, $chain) = @_;
     $class = ref($class) || $class;
@@ -117,19 +119,13 @@ sub new {
 sub process {
     my ($self, $data) = @_;
 
-    foreach my $entry (@{$self->{chain}}) {
-        $data = $entry->{instance}->process($data);
-    }
-    return $data;
+    return List::Util::reduce { $b->process($a) } $data, @{$self->{chain}};
 }
 
 sub final {
     my ($self, $data) = @_;
 
-    foreach my $entry (@{$self->{chain}}) {
-        $data = $entry->{instance}->final($data);
-    }
-    return $data;
+    return List::Util::reduce { $b->final($a) } $data, @{$self->{chain}};
 }
 
 sub _chain_entry {
@@ -152,12 +148,10 @@ sub _parse_chain {
 sub _instantiate {
     my (undef, @entries) = @_;
     my $registry = App::Muter::Registry->instance;
-    foreach my $entry (@entries) {
-        my $class = $registry->info($entry->{name})->{class};
-        $entry->{instance} =
-            $class->new($entry->{args}, transform => $entry->{method});
-    }
-    return @entries;
+    return map {
+        my $class = $registry->info($_->{name})->{class};
+        $class->new($_->{args}, transform => $_->{method});
+    } @entries;
 }
 
 package App::Muter::Registry;

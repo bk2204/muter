@@ -490,8 +490,8 @@ sub encode_chunk {
 sub decode_chunk {
     my ($self, $data) = @_;
     my $lenmap = [5, 4, undef, 3, 2, undef, 1];
-    $data =~ /(=+)$/;
-    my $truncate = $lenmap->[length $1 // 0];
+    my $trailing = $data =~ /(=+)$/ ? length $1 : 0;
+    my $truncate = $lenmap->[$trailing];
     my $result   = '';
     my @data     = map { $self->{rmap}{$_} } split //, $data;
     use bytes;

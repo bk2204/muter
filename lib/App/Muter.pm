@@ -130,12 +130,12 @@ sub final {
 
 sub _chain_entry {
     my ($item) = @_;
-    $item =~ /^(-?)(\w+)(?:\(([^,]+)\))?$/ or
+    $item =~ /^(-?)(\w+)(?:\(([^)]+)\))?$/ or
         die "Chain entry '$item' is invalid";
     return {
         name   => $2,
         method => ($1 ? 'decode' : 'encode'),
-        args   => ($3 ? [$3] : []),
+        args   => ($3 ? [split /,/, $3] : []),
     };
 }
 

@@ -60,6 +60,27 @@ my @examples = (
                 args   => ['sha256'],
             }
         ]
+    }, {
+        chain  => '-hex(upper):xml(html):hash(sha256):vis(glob,space,tab)',
+        parsed => [
+            {
+                name   => 'hex',
+                method => 'decode',
+                args   => ['upper'],
+            }, {
+                name   => 'xml',
+                method => 'encode',
+                args   => ['html'],
+            }, {
+                name   => 'hash',
+                method => 'encode',
+                args   => ['sha256'],
+            }, {
+                name   => 'vis',
+                method => 'encode',
+                args   => [qw/glob space tab/],
+            }
+        ]
     },
 );
 

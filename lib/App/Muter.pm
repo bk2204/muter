@@ -668,6 +668,44 @@ sub decode_chunk {
 
 App::Muter::Registry->instance->register(__PACKAGE__);
 
+package App::Muter::Backend::Vis;
+
+use parent qw/-norequire App::Muter::Backend/;
+
+sub new {
+    my ($class, $args, %opts) = @_;
+    my $self = $class->SUPER::new($args, %opts);
+    my $map =
+        {map { $_ => chr($_) } (unpack('C*', " \t\n"), 0x21 .. 0x7e)};
+    $map->{ord('\\')} = "\\\\";
+    $self->{map} = $map;
+    return $self;
+}
+
+sub _encode {
+    my ($byte, $map) = @_;
+    use bytes;
+    return $map->{$byte} if exists $map->{$byte};
+    my $ascii = $byte & 0x7f;
+    my $meta = $byte & 0x80 ? 'M' : '';
+    return "\\$meta^" . chr($ascii ^ 0x40) if $ascii < 0x20 || $ascii == 0x7f;
+    return "\\M-" . chr($byte ^ 0x80) if $byte >= 0xa1 && $byte <= 0xfe;
+    return "\\240" if $byte == 0xa0;
+    die sprintf "byte value %#02x", $byte;
+}
+
+sub encode {
+    my ($self, $data) = @_;
+    return join('', map { _encode($_, $self->{map}) } unpack('C*', $data));
+}
+
+sub encode_final {
+    goto &encode;
+}
+
+App::Muter::Registry->instance->register(__PACKAGE__);
+
+
 package App::Muter::Backend::Hash;
 
 use Digest::MD5;

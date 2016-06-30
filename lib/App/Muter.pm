@@ -358,6 +358,17 @@ sub encode_chunk {
     return MIME::Base64::encode($data, '');
 }
 
+sub _filter {
+    my ($self, $data) = @_;
+    $data =~ tr{A-Za-z0-9+/=}{}cd;
+    return $data;
+}
+
+sub decode {
+    my ($self, $data) = @_;
+    return $self->SUPER::decode($self->_filter($data));
+}
+
 sub decode_chunk {
     my (undef, $data) = @_;
     return MIME::Base64::decode($data);
@@ -373,6 +384,11 @@ use parent qw/-norequire App::Muter::Backend::Base64/;
 sub encode_chunk {
     my (undef, $data) = @_;
     return MIME::Base64::encode_base64url($data);
+}
+
+sub _filter {
+    my (undef, $data) = @_;
+    return $data;
 }
 
 sub decode_chunk {

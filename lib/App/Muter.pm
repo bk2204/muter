@@ -692,19 +692,25 @@ sub new {
     my ($class, $args, %opts) = @_;
     my $self =
         $class->SUPER::new($args, %opts, regexp => qr/\A(.*?)(\\.{0,2})\z/);
-    $self->_setup_maps();
+    $self->_setup_maps(map { $_ => 1 } @$args);
     return $self;
 }
 
 sub _setup_maps {
-    my ($self) = @_;
+    my ($self, %flags) = @_;
     my $default = {
-        (map { $_ => _encode($_, {}) } (0x00 .. 0x1f, 0x7f .. 0xff)),
-        (map { $_ => chr($_) } (unpack('C*', " \t\n"), 0x21 .. 0x7e)),
+        (map { $_ => _encode($_, {}) } (0x00 .. 0x20, 0x7f .. 0xff)),
+        (map { $_ => chr($_) } 0x21 .. 0x7e),
+        0x5c => "\\\\",
     };
-    $default->{ord('\\')} = "\\\\";
-    $self->{map}          = $default;
-    $self->{rmap}         = {reverse %$default};
+    my @chars = (
+        ($flags{sp} || $flags{space} || $flags{white} ? () : (0x20)),
+        ($flags{tab} || $flags{white} ? () : (0x09)),
+        ($flags{nl}  || $flags{white} ? () : (0x0a)),
+    );
+    my $extras = {map { $_ => chr($_) } (0x09, 0x0a, 0x20)};
+    $self->{map} = {%$default, map { $_ => chr($_) } @chars};
+    $self->{rmap} = {reverse(%$default), reverse(%$extras),};
 }
 
 sub _encode {
@@ -715,7 +721,7 @@ sub _encode {
     my $meta = $byte & 0x80 ? 'M' : '';
     return "\\$meta^" . chr($ascii ^ 0x40) if $ascii < 0x20 || $ascii == 0x7f;
     return "\\M-" . chr($byte ^ 0x80) if $byte >= 0xa1 && $byte <= 0xfe;
-    return "\\240" if $byte == 0xa0;
+    return sprintf "\\%03o", $byte if $ascii == 0x20;
     die sprintf "byte value %#02x", $byte;
 }
 
@@ -737,6 +743,21 @@ sub decode_chunk {
     return join('',
         map { $self->_decode($_) }
             split /(\\(?:M[-^].|\^.|[0-7]{3}|\\))/, $data);
+}
+
+sub metadata {
+    my $self = shift;
+    my $meta = $self->SUPER::metadata;
+    return {
+        %$meta,
+        args => {
+            sp    => 'Encode space',
+            space => 'Encode space',
+            tab   => 'Encode tab',
+            nl    => 'Encode newline',
+            white => 'Encode space, tab, and newline',
+        }
+    };
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);

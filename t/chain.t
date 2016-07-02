@@ -68,6 +68,19 @@ test_run_pattern('base32', '    ',   'EAQCAIA=',         'base32 pattern 10');
 test_run_pattern('base32', '     ',  'EAQCAIBA',         'base32 pattern 11');
 test_run_pattern('base32', '      ', 'EAQCAIBAEA======', 'base32 pattern 12');
 
+test_run_pattern('vis', '',            '',            'empty vis pattern');
+test_run_pattern('vis', 'abcdef',      'abcdef',      'vis pattern 1');
+test_run_pattern('vis', "a b\tc\ndef", "a b\tc\ndef", 'vis pattern 2');
+test_run_pattern('vis(space)', "a b\tc\ndef", "a\\040b\tc\ndef",
+    'vis pattern 3');
+test_run_pattern('vis(sp)',  "a b\tc\ndef", "a\\040b\tc\ndef", 'vis pattern 4');
+test_run_pattern('vis(tab)', "a b\tc\ndef", "a b\\^Ic\ndef",   'vis pattern 5');
+test_run_pattern('vis(nl)',  "a b\tc\ndef", "a b\tc\\^Jdef",   'vis pattern 6');
+test_run_pattern('vis(sp,tab)', "a b\tc\ndef", "a\\040b\\^Ic\ndef",
+    'vis pattern 7');
+test_run_pattern('vis(white)', "a b\tc\ndef", "a\\040b\\^Ic\\^Jdef",
+    'vis pattern 8');
+
 # Patterns from TCL testsuite.  Public domain.
 my @patterns = qw(
     AA====== AE====== AI====== AM======

@@ -686,11 +686,12 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::Vis;
 
-use parent qw/-norequire App::Muter::Backend/;
+use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
-    my $self = $class->SUPER::new($args, %opts);
+    my $self =
+        $class->SUPER::new($args, %opts, regexp => qr/\A(.*?)(\\.{0,2})\z/);
     $self->_setup_maps();
     return $self;
 }
@@ -702,7 +703,8 @@ sub _setup_maps {
         (map { $_ => chr($_) } (unpack('C*', " \t\n"), 0x21 .. 0x7e)),
     };
     $default->{ord('\\')} = "\\\\";
-    $self->{map} = $default;
+    $self->{map}          = $default;
+    $self->{rmap}         = {reverse %$default};
 }
 
 sub _encode {
@@ -717,13 +719,24 @@ sub _encode {
     die sprintf "byte value %#02x", $byte;
 }
 
-sub encode {
+sub encode_chunk {
     my ($self, $data) = @_;
     return join('', map { $self->{map}{$_} } unpack('C*', $data));
 }
 
-sub encode_final {
-    goto &encode;
+sub _decode {
+    my ($self, $val) = @_;
+    use bytes;
+    return '' if !length $val;
+    return chr($self->{rmap}{$val}) if $val =~ /^\\/;
+    return join('', map { chr($self->{rmap}{$_}) } split //, $val);
+}
+
+sub decode_chunk {
+    my ($self, $data) = @_;
+    return join('',
+        map { $self->_decode($_) }
+            split /(\\(?:M[-^].|\^.|[0-7]{3}|\\))/, $data);
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);

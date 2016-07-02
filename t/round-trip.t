@@ -36,6 +36,7 @@ my @techniques = qw/
     xml(hex)
     xml(html)
     quotedprintable
+    vis
     /;
 
 foreach my $tech (@techniques) {

@@ -691,11 +691,18 @@ use parent qw/-norequire App::Muter::Backend/;
 sub new {
     my ($class, $args, %opts) = @_;
     my $self = $class->SUPER::new($args, %opts);
-    my $map =
-        {map { $_ => chr($_) } (unpack('C*', " \t\n"), 0x21 .. 0x7e)};
-    $map->{ord('\\')} = "\\\\";
-    $self->{map} = $map;
+    $self->_setup_maps();
     return $self;
+}
+
+sub _setup_maps {
+    my ($self) = @_;
+    my $default = {
+        (map { $_ => _encode($_, {}) } (0x00 .. 0x1f, 0x7f .. 0xff)),
+        (map { $_ => chr($_) } (unpack('C*', " \t\n"), 0x21 .. 0x7e)),
+    };
+    $default->{ord('\\')} = "\\\\";
+    $self->{map} = $default;
 }
 
 sub _encode {
@@ -712,7 +719,7 @@ sub _encode {
 
 sub encode {
     my ($self, $data) = @_;
-    return join('', map { _encode($_, $self->{map}) } unpack('C*', $data));
+    return join('', map { $self->{map}{$_} } unpack('C*', $data));
 }
 
 sub encode_final {
@@ -720,7 +727,6 @@ sub encode_final {
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);
-
 
 package App::Muter::Backend::Hash;
 

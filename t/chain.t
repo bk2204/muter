@@ -80,6 +80,18 @@ test_run_pattern('vis(sp,tab)', "a b\tc\ndef", "a\\040b\\^Ic\ndef",
     'vis pattern 7');
 test_run_pattern('vis(white)', "a b\tc\ndef", "a\\040b\\^Ic\\^Jdef",
     'vis pattern 8');
+test_run_pattern('vis(cstyle)', "a b\tc\ndef", "a b\tc\ndef", 'vis pattern 9');
+test_run_pattern('vis(cstyle,white)', "a b\tc\ndef", "a\\sb\\tc\\ndef",
+    'vis pattern 10');
+test_run_pattern(
+    'vis(cstyle,white)',        "a\x00b\x00\x002c\x00\ndef",
+    "a\\0b\\0\\0002c\\0\\ndef", 'vis pattern 11'
+);
+test_run_pattern(
+    'vis(cstyle,white)',         "a\x00b\x00\x00\x008c\x00\ndef",
+    "a\\0b\\0\\0\\08c\\0\\ndef", 'vis pattern 12'
+);
+test_run_pattern('vis(cstyle)', "\x00A7\x80", "\\0A7\\M^@", 'vis pattern 13');
 
 # Patterns from TCL testsuite.  Public domain.
 my @patterns = qw(

@@ -693,6 +693,7 @@ sub new {
     my $self =
         $class->SUPER::new($args, %opts, regexp => qr/\A(.*?)(\\.{0,2})\z/);
     $self->_setup_maps(map { $_ => 1 } @$args);
+    $self->{chunk} = '';
     return $self;
 }
 
@@ -703,14 +704,36 @@ sub _setup_maps {
         (map { $_ => chr($_) } 0x21 .. 0x7e),
         0x5c => "\\\\",
     };
+    my $cstyle = {
+        (
+            map { $_ => _encode($_, {}) }
+                (0x01 .. 0x06, 0x0e .. 0x1f, 0x7f .. 0xff)
+        ),
+        (map { $_ => chr($_) } 0x21 .. 0x7e),
+        0x00 => "\\000",
+        0x07 => "\\a",
+        0x08 => "\\b",
+        0x09 => "\\t",
+        0x0a => "\\n",
+        0x0b => "\\v",
+        0x0c => "\\f",
+        0x0d => "\\r",
+        0x20 => "\\s",
+        0x5c => "\\\\",
+    };
+    my $wanted_map = $flags{cstyle} ? $cstyle : $default;
     my @chars = (
         ($flags{sp} || $flags{space} || $flags{white} ? () : (0x20)),
         ($flags{tab} || $flags{white} ? () : (0x09)),
         ($flags{nl}  || $flags{white} ? () : (0x0a)),
     );
     my $extras = {map { $_ => chr($_) } (0x09, 0x0a, 0x20)};
-    $self->{map} = {%$default, map { $_ => chr($_) } @chars};
-    $self->{rmap} = {reverse(%$default), reverse(%$extras),};
+    $self->{map} = {%$wanted_map, map { $_ => chr($_) } @chars};
+    $self->{rmap} = {
+        reverse(%$wanted_map), reverse(%$extras),
+        reverse(%$cstyle), "\\0" => 0x00
+    };
+    return;
 }
 
 sub _encode {
@@ -725,24 +748,42 @@ sub _encode {
     die sprintf "byte value %#02x", $byte;
 }
 
+sub encode {
+    my ($self, $data) = @_;
+    $data = $self->{chunk} . $data;
+    if (length $data && substr($data, -1) eq "\0") {
+        $data = substr($data, 0, -1);
+        $self->{chunk} = "\0";
+    }
+    else {
+        $self->{chunk} = '';
+    }
+    return $self->SUPER::encode($data);
+}
+
 sub encode_chunk {
     my ($self, $data) = @_;
-    return join('', map { $self->{map}{$_} } unpack('C*', $data));
+    my $result = join('', map { $self->{map}{$_} } unpack('C*', $data));
+    # Do this twice to fix multiple consecutive NUL bytes.
+    $result =~ s/\\000($|[^0-7])/\\0$1/g for 1 .. 2;
+    return $result;
 }
 
 sub _decode {
     my ($self, $val) = @_;
     use bytes;
     return '' if !length $val;
-    return chr($self->{rmap}{$val}) if $val =~ /^\\/;
+    return chr($self->{rmap}{$val} // die "val '$_'") if $val =~ /^\\/;
     return join('', map { chr($self->{rmap}{$_}) } split //, $val);
 }
 
 sub decode_chunk {
     my ($self, $data) = @_;
+    print STDERR "data is '$data'\n";
     return join('',
         map { $self->_decode($_) }
-            split /(\\(?:M[-^].|\^.|[0-7]{3}|\\))/, $data);
+            split /(\\(?:M[-^].|\^.|[0-7]{3}|\\|[0abtnvfrs]))/,
+        $data);
 }
 
 sub metadata {
@@ -751,11 +792,12 @@ sub metadata {
     return {
         %$meta,
         args => {
-            sp    => 'Encode space',
-            space => 'Encode space',
-            tab   => 'Encode tab',
-            nl    => 'Encode newline',
-            white => 'Encode space, tab, and newline',
+            sp     => 'Encode space',
+            space  => 'Encode space',
+            tab    => 'Encode tab',
+            nl     => 'Encode newline',
+            white  => 'Encode space, tab, and newline',
+            cstyle => 'Encode using C-like escape sequences',
         }
     };
 }

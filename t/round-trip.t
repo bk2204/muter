@@ -37,6 +37,7 @@ my @techniques = qw/
     xml(html)
     quotedprintable
     vis
+    vis(cstyle)
     /;
 
 foreach my $tech (@techniques) {

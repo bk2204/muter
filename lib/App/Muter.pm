@@ -699,8 +699,14 @@ sub new {
 
 sub _setup_maps {
     my ($self, %flags) = @_;
+    $self->{flags} = \%flags;
     my $default = {
         (map { $_ => _encode($_, {}) } (0x00 .. 0x20, 0x7f .. 0xff)),
+        (map { $_ => chr($_) } 0x21 .. 0x7e),
+        0x5c => "\\\\",
+    };
+    my $octal = {
+        (map { $_ => sprintf("\\%03o", $_) } (0x00 .. 0x20, 0x7f .. 0xff)),
         (map { $_ => chr($_) } 0x21 .. 0x7e),
         0x5c => "\\\\",
     };
@@ -721,7 +727,8 @@ sub _setup_maps {
         0x20 => "\\s",
         0x5c => "\\\\",
     };
-    my $wanted_map = $flags{cstyle} ? $cstyle : $default;
+    my $wanted_map =
+        $flags{cstyle} ? $cstyle : $flags{octal} ? $octal : $default;
     my @chars = (
         ($flags{sp} || $flags{space} || $flags{white} ? () : (0x20)),
         ($flags{tab} || $flags{white} ? () : (0x09)),
@@ -731,7 +738,8 @@ sub _setup_maps {
     $self->{map} = {%$wanted_map, map { $_ => chr($_) } @chars};
     $self->{rmap} = {
         reverse(%$wanted_map), reverse(%$extras),
-        reverse(%$cstyle), "\\0" => 0x00
+        reverse(%$octal),      reverse(%$cstyle),
+        "\\0" => 0x00
     };
     return;
 }
@@ -764,8 +772,10 @@ sub encode {
 sub encode_chunk {
     my ($self, $data) = @_;
     my $result = join('', map { $self->{map}{$_} } unpack('C*', $data));
-    # Do this twice to fix multiple consecutive NUL bytes.
-    $result =~ s/\\000($|[^0-7])/\\0$1/g for 1 .. 2;
+    if ($self->{flags}{cstyle}) {
+        # Do this twice to fix multiple consecutive NUL bytes.
+        $result =~ s/\\000($|[^0-7])/\\0$1/g for 1 .. 2;
+    }
     return $result;
 }
 

@@ -779,7 +779,6 @@ sub _decode {
 
 sub decode_chunk {
     my ($self, $data) = @_;
-    print STDERR "data is '$data'\n";
     return join('',
         map { $self->_decode($_) }
             split /(\\(?:M[-^].|\^.|[0-7]{3}|\\|[0abtnvfrs]))/,

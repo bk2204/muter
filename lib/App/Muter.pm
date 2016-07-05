@@ -735,7 +735,8 @@ sub _setup_maps {
         ($flags{nl}  || $flags{white} ? () : (0x0a)),
     );
     my @glob_chars = (0x23, 0x2a, 0x3f, 0x5b);
-    @{$wanted_map}{@glob_chars} = map { sprintf("\\%03o", $_) } @glob_chars if $flags{glob};
+    @{$wanted_map}{@glob_chars} = map { sprintf("\\%03o", $_) } @glob_chars
+        if $flags{glob};
     my $extras = {map { $_ => chr($_) } (0x09, 0x0a, 0x20)};
     $self->{map} = {%$wanted_map, map { $_ => chr($_) } @chars};
     $self->{rmap} = {
@@ -809,6 +810,8 @@ sub metadata {
             nl     => 'Encode newline',
             white  => 'Encode space, tab, and newline',
             cstyle => 'Encode using C-like escape sequences',
+            octal  => 'Encode using octal escape sequences',
+            glob   => 'Encode character recognized by glob(3) and hash mark',
         }
     };
 }

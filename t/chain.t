@@ -91,7 +91,8 @@ test_run_pattern(
     'vis(cstyle,white)',         "a\x00b\x00\x00\x008c\x00\ndef",
     "a\\0b\\0\\0\\08c\\0\\ndef", 'vis pattern 12'
 );
-test_run_pattern('vis(cstyle)', "\x00A7\x80", "\\0A7\\M^@", 'vis pattern 13');
+test_run_pattern('vis(cstyle)', "\x00A7\x80", "\\0A7\\M^@",   'vis pattern 13');
+test_run_pattern('vis(octal)',  "\x00A7\x80", "\\000A7\\200", 'vis pattern 14');
 
 # Patterns from TCL testsuite.  Public domain.
 my @patterns = qw(

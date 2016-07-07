@@ -22,6 +22,8 @@ my @patterns = (
     "\x01\x23\x45\x67\x89\xab\xcd\xef",
     "\xef\xbb\xbf",
     q{"Hello, ol' New Jersey! <:>"},
+    # Triggered a bug in vis.
+    "\x86\xe8\x9c\xd2\x09\x12\x7f\x53\xf7\xb8\x92\x0c",
 );
 
 my @techniques = qw/

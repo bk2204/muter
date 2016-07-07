@@ -324,7 +324,7 @@ sub decode {
     my ($self, $data) = @_;
     $data = $self->{chunk} . $data;
     if ($data =~ $self->{regexp}) {
-        $data = $1;
+        $data = $1 // '';
         $self->{chunk} = $2;
     }
     else {
@@ -690,8 +690,8 @@ use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
-    my $self =
-        $class->SUPER::new($args, %opts, regexp => qr/\A(.*?)(\\.{0,2})\z/);
+    my $self = $class->SUPER::new($args, %opts,
+        regexp => qr/\A(.*?[^^\\])?(\\.{0,3})\z/);
     $self->_setup_maps(map { $_ => 1 } @$args);
     $self->{chunk} = '';
     return $self;

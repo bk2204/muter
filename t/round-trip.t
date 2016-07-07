@@ -9,6 +9,7 @@ use lib "$FindBin::Bin/../lib";
 
 use Test::More;
 
+use Digest::SHA;
 use IO::Scalar;
 use App::Muter;
 
@@ -24,7 +25,11 @@ my @patterns = (
     q{"Hello, ol' New Jersey! <:>"},
     # Triggered a bug in vis.
     "\x86\xe8\x9c\xd2\x09\x12\x7f\x53\xf7\xb8\x92\x0c",
+    # Triggered a bug in xml.
+    "&abc",
 );
+
+my @random_patterns = map { byte_pattern($_) } 0 .. 20;
 
 my @techniques = qw/
     hex
@@ -46,7 +51,12 @@ foreach my $tech (@techniques) {
     subtest "Technique $tech" => sub {
         my $num = 0;
         foreach my $input (@patterns) {
-            test_run_pattern($tech, $input, "pattern " . $num++);
+            test_run_pattern($tech, $input, "fixed pattern " . $num++);
+        }
+        $num = 0;
+        foreach my $input (@random_patterns) {
+            is(length($input), $num, "byte pattern is of proper length");
+            test_run_pattern($tech, $input, "byte pattern " . $num++);
         }
     };
 }
@@ -86,4 +96,16 @@ sub run_chain {
     App::Muter::Main::run_chain($chain, [$ifh], $ofh, $blocksize);
 
     return $output;
+}
+
+# These are "random" patterns of a given length.  They're designed to be
+# reproducible, but handle a variety of byte patterns.
+sub byte_pattern {
+    my ($len) = @_;
+    my $s     = '';
+    my $count = 0;
+    while (length($s) < $len) {
+        $s .= Digest::SHA::sha512(pack("NN", $len, $count));
+    }
+    return substr($s, 0, $len);
 }

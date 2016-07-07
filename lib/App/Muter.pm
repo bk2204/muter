@@ -691,7 +691,7 @@ use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 sub new {
     my ($class, $args, %opts) = @_;
     my $self = $class->SUPER::new($args, %opts,
-        regexp => qr/\A(.*?[^^\\])?(\\.{0,3})\z/);
+        regexp => qr/\A(.*?[^^\\-])?(\\.{0,3})\z/);
     $self->_setup_maps(map { $_ => 1 } @$args);
     $self->{chunk} = '';
     return $self;

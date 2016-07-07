@@ -597,7 +597,7 @@ sub new {
     my $maps = {
         default => [qw/quot amp apos lt gt/],
         html    => [qw/quot amp #x27 lt gt/],
-        hex     => [qw/#x22 #x38 #x27 #x3c #x3e/],
+        hex     => [qw/#x22 #x26 #x27 #x3c #x3e/],
     };
     my $type = $args->[0] // 'default';
     @{$self->{fmap}}{qw/" & ' < >/} = map { "&$_;" } @{$maps->{$type}};

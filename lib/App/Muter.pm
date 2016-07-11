@@ -701,11 +701,9 @@ sub new {
 sub _setup_maps {
     my ($self, %flags) = @_;
     $self->{flags} = \%flags;
-    my $standard = {(map { $_ => chr($_) } 0x21 .. 0x7e), 0x5c => "\\\\"};
-    my $default =
-        {(map { $_ => _encode($_, {}) } (0x00 .. 0x20, 0x7f .. 0xff))};
-    my $octal =
-        {(map { $_ => sprintf("\\%03o", $_) } (0x00 .. 0x20, 0x7f .. 0xff))};
+    my $standard = {_id_map(0x21 .. 0x7e), 0x5c => "\\\\"};
+    my $default = {_meta_map(0x00 .. 0x20, 0x7f .. 0xff)};
+    my $octal = {_octal_map(0x00 .. 0x20, 0x7f .. 0xff)};
     my $cstyle = {
         %$default,
         0x00 => "\\000",
@@ -725,11 +723,10 @@ sub _setup_maps {
         ($flags{tab} || $flags{white} ? () : (0x09)),
         ($flags{nl}  || $flags{white} ? () : (0x0a)),
     );
-    my %glob_chars = map { $_ => sprintf("\\%03o", $_) }
-        ($flags{glob} ? (0x23, 0x2a, 0x3f, 0x5b) : ());
-    my $extras = {map { $_ => chr($_) } (0x09, 0x0a, 0x20)};
+    my %glob_chars = _octal_map($flags{glob} ? (0x23, 0x2a, 0x3f, 0x5b) : ());
+    my $extras = {_id_map(0x09, 0x0a, 0x20)};
     $self->{map} =
-        {%$standard, %$wanted_map, %glob_chars, map { $_ => chr($_) } @chars};
+        {%$standard, %$wanted_map, %glob_chars, _id_map(@chars)};
     $self->{rmap} = {
         reverse(%$standard), reverse(%$wanted_map),
         reverse(%$extras),   reverse(%$octal),
@@ -739,10 +736,21 @@ sub _setup_maps {
     return;
 }
 
+sub _id_map {
+    return map { $_ => chr($_) } @_;
+}
+
+sub _octal_map {
+    return map { $_ => sprintf('\%03o', $_) } @_;
+}
+
+sub _meta_map {
+    return map { $_ => _encode($_) } @_;
+}
+
 sub _encode {
-    my ($byte, $map) = @_;
+    my ($byte) = @_;
     use bytes;
-    return $map->{$byte} if exists $map->{$byte};
     my $ascii = $byte & 0x7f;
     for ($byte) {
         when ([0x00 .. 0x1f, 0x7f]) { return '\^' . chr($ascii ^ 0x40) }

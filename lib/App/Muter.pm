@@ -701,22 +701,13 @@ sub new {
 sub _setup_maps {
     my ($self, %flags) = @_;
     $self->{flags} = \%flags;
-    my $default = {
-        (map { $_ => _encode($_, {}) } (0x00 .. 0x20, 0x7f .. 0xff)),
-        (map { $_ => chr($_) } 0x21 .. 0x7e),
-        0x5c => "\\\\",
-    };
-    my $octal = {
-        (map { $_ => sprintf("\\%03o", $_) } (0x00 .. 0x20, 0x7f .. 0xff)),
-        (map { $_ => chr($_) } 0x21 .. 0x7e),
-        0x5c => "\\\\",
-    };
+    my $standard = {(map { $_ => chr($_) } 0x21 .. 0x7e), 0x5c => "\\\\"};
+    my $default =
+        {(map { $_ => _encode($_, {}) } (0x00 .. 0x20, 0x7f .. 0xff))};
+    my $octal =
+        {(map { $_ => sprintf("\\%03o", $_) } (0x00 .. 0x20, 0x7f .. 0xff))};
     my $cstyle = {
-        (
-            map { $_ => _encode($_, {}) }
-                (0x01 .. 0x06, 0x0e .. 0x1f, 0x7f .. 0xff)
-        ),
-        (map { $_ => chr($_) } 0x21 .. 0x7e),
+        %$default,
         0x00 => "\\000",
         0x07 => "\\a",
         0x08 => "\\b",
@@ -726,7 +717,6 @@ sub _setup_maps {
         0x0c => "\\f",
         0x0d => "\\r",
         0x20 => "\\s",
-        0x5c => "\\\\",
     };
     my $wanted_map =
         $flags{cstyle} ? $cstyle : $flags{octal} ? $octal : $default;
@@ -735,14 +725,15 @@ sub _setup_maps {
         ($flags{tab} || $flags{white} ? () : (0x09)),
         ($flags{nl}  || $flags{white} ? () : (0x0a)),
     );
-    my @glob_chars = (0x23, 0x2a, 0x3f, 0x5b);
-    @{$wanted_map}{@glob_chars} = map { sprintf("\\%03o", $_) } @glob_chars
-        if $flags{glob};
+    my %glob_chars = map { $_ => sprintf("\\%03o", $_) }
+        ($flags{glob} ? (0x23, 0x2a, 0x3f, 0x5b) : ());
     my $extras = {map { $_ => chr($_) } (0x09, 0x0a, 0x20)};
-    $self->{map} = {%$wanted_map, map { $_ => chr($_) } @chars};
+    $self->{map} =
+        {%$standard, %$wanted_map, %glob_chars, map { $_ => chr($_) } @chars};
     $self->{rmap} = {
-        reverse(%$wanted_map), reverse(%$extras),
-        reverse(%$octal),      reverse(%$cstyle),
+        reverse(%$standard), reverse(%$wanted_map),
+        reverse(%$extras),   reverse(%$octal),
+        reverse(%$cstyle),   reverse(%glob_chars),
         "\\0" => 0x00
     };
     return;

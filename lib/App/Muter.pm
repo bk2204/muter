@@ -26,6 +26,7 @@ require 5.010001;
 
 use strict;
 use warnings;
+use experimental 'switch';
 
 use Getopt::Long ();
 use IO::Handle   ();
@@ -752,11 +753,15 @@ sub _encode {
     use bytes;
     return $map->{$byte} if exists $map->{$byte};
     my $ascii = $byte & 0x7f;
-    my $meta = $byte & 0x80 ? 'M' : '';
-    return "\\$meta^" . chr($ascii ^ 0x40) if $ascii < 0x20 || $ascii == 0x7f;
-    return "\\M-" . chr($byte ^ 0x80) if $byte >= 0xa1 && $byte <= 0xfe;
-    return sprintf "\\%03o", $byte if $ascii == 0x20;
-    die sprintf "byte value %#02x", $byte;
+    for ($byte) {
+        when ([0x00 .. 0x1f, 0x7f]) { return '\^' . chr($ascii ^ 0x40) }
+        when ([0x80 .. 0x9f, 0xff]) { return '\M^' . chr($ascii ^ 0x40) }
+        when ([0xa1 .. 0xfe]) { return '\M-' . chr($ascii) }
+        when (0x20)           { return '\040' }
+        when (0xa0)           { return '\240' }
+        default { die sprintf 'Found byte value %#02x', $byte; }
+    }
+    return;
 }
 
 sub encode {

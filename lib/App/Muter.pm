@@ -467,6 +467,8 @@ sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args, enchunksize => 5, dechunksize => 8);
     $self->{fmap} = [split //, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'];
+    $self->{func} = 'base32';
+    $self->{manual} = grep { $_ eq 'manual' } @args || !eval { require MIME::Base32 };
     return $self->_initialize;
 }
 
@@ -475,11 +477,16 @@ sub _initialize {
     my $fmap = $self->{fmap};
     $self->{rmap} = {'=' => 0};
     @{$self->{rmap}}{@$fmap} = keys @$fmap;
+    unless ($self->{manual}) {
+        $self->{eref} = MIME::Base32->can("encode_$self->{func}");
+        $self->{dref} = MIME::Base32->can("decode_$self->{func}");
+    }
     return $self;
 }
 
 sub encode_chunk {
     my ($self, $data) = @_;
+    return $self->{eref}->($data) if $self->{eref};
     my @data   = map { ord } split //, $data;
     my $result = '';
     my $map    = $self->{fmap};
@@ -506,6 +513,7 @@ sub encode_chunk {
 
 sub decode_chunk {
     my ($self, $data) = @_;
+    return $self->{dref}->($data) if $self->{dref};
     my $lenmap = [5, 4, undef, 3, 2, undef, 1];
     my $trailing = $data =~ /(=+)$/ ? length $1 : 0;
     my $truncate = $lenmap->[$trailing];
@@ -536,6 +544,7 @@ sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
     $self->{fmap} = [split //, '0123456789ABCDEFGHIJKLMNOPQRSTUV'];
+    $self->{func} = 'base32hex';
     return $self->_initialize;
 }
 

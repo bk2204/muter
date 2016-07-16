@@ -468,7 +468,8 @@ sub new {
     my $self = $class->SUPER::new(@args, enchunksize => 5, dechunksize => 8);
     $self->{fmap} = [split //, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'];
     $self->{func} = 'base32';
-    $self->{manual} = grep { $_ eq 'manual' } @args || !eval { require MIME::Base32 };
+    $self->{manual} =
+        grep { $_ eq 'manual' } @args || !eval { require MIME::Base32 };
     return $self->_initialize;
 }
 
@@ -520,6 +521,7 @@ sub decode_chunk {
     my $result   = '';
     my @data     = map { $self->{rmap}{$_} } split //, $data;
     use bytes;
+
     while (my @chunk = splice(@data, 0, 8)) {
         my @converted = (
             ($chunk[0] << 3) | ($chunk[1] >> 2),

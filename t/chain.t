@@ -193,12 +193,7 @@ test_run_pattern(
     '&quot;Hello, ol&#x27; New Jersey! &lt;:&gt;&quot;',
     'xml pattern 3'
 );
-test_run_chain(
-    'xml(hex)',
-    '&abc',
-    '&#x26;abc',
-    'xml pattern 4'
-);
+test_run_chain('xml(hex)', '&abc', '&#x26;abc', 'xml pattern 4');
 
 test_run_chain('-xml', '&#x00a9;', '©',           'xml decode hex');
 test_run_chain('-xml', '&#xfeff;', "\xef\xbb\xbf", 'xml decode hex BOM');

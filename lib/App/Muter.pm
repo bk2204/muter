@@ -833,6 +833,109 @@ sub metadata {
 
 App::Muter::Registry->instance->register(__PACKAGE__);
 
+package App::Muter::Backend::Ascii85;
+
+use parent qw/-norequire App::Muter::Backend::Chunked/;
+
+sub new {
+    my ($class, @args) = @_;
+    my $self = $class->SUPER::new(@args, enchunksize => 4, dechunksize => 5);
+    $self->{start} = '';
+    return $self;
+}
+
+sub encode {
+    my ($self, $data) = @_;
+    return '' unless length $data;
+    my $prefix = defined $self->{start} ? '<~' : '';
+    $self->{start} = undef;
+    return $prefix . $self->SUPER::encode($data);
+}
+
+sub encode_final {
+    my ($self, $data) = @_;
+    return $self->SUPER::encode_final($data) .
+        (defined $self->{start} ? '' : '~>');
+}
+
+sub _encode_seq {
+    my ($x, $flag) = @_;
+    return 'z' if !$x && !$flag;
+    my @res;
+    for (0 .. 4) {
+        push @res, $x % 85;
+        $x = int($x / 85);
+    }
+    return map { chr($_ + 33) } reverse @res;
+}
+
+sub encode_chunk {
+    my (undef, $data) = @_;
+    my $rem = length($data) % 4;
+    my $pad = $rem ? (4 - $rem) : 0;
+    $data .= "\0" x $pad;
+    my @chunks = unpack("N*", $data);
+    my @last = $pad ? (pop @chunks) : ();
+    my $res = join('', map { _encode_seq($_) } @chunks);
+    $res .= join('', map { _encode_seq($_, 1) } @last);
+    $res = substr($res, 0, -$pad) if $pad;
+    return $res;
+}
+
+sub decode {
+    my ($self, $data) = @_;
+
+    return '' unless length $data;
+
+    if (defined $self->{start}) {
+        $self->{start} .= $data;
+        if (length $self->{start} > 2) {
+            $self->{start} =~ /^<~/ or die 'Invalid Ascii85 prefix';
+            $data = substr($self->{start}, 2);
+            $self->{start} = undef;
+        }
+        else {
+            return '';
+        }
+    }
+    return $self->decode_chunk($self->{chunk} . $data);
+}
+
+sub _decode_seq {
+    my ($s) = @_;
+    return 0 if $s eq 'z';
+    die 'Invalid Ascii85 encoding' if $s gt 's8W-!';
+    my $val = List::Util::reduce { $a * 85 + ($b - 33) } (0, unpack('C*', $s));
+    return $val;
+}
+
+sub decode_chunk {
+    my ($self, $data) = @_;
+    my @chunks;
+    while ($data =~ s/^(z|[^~]{5})//s) {
+        push @chunks, _decode_seq($1);
+    }
+    $self->{chunk} = $data;
+    return pack('N*', @chunks);
+}
+
+sub decode_final {
+    my ($self, $data) = @_;
+    $data = $self->{chunk} . $data;
+    return '' if defined $self->{start};
+    my $res = $self->decode_chunk($data);
+    $data = $self->{chunk};
+    $data =~ s/~>$// or die "Missing Ascii85 trailer";
+    my $rem = length($data) % 5;
+    my $pad = $rem ? (5 - $rem) : 0;
+    $data .= "u" x $pad;
+    $res  .= $self->decode_chunk($data);
+    $res = substr($res, 0, -$pad) if $pad;
+    return $res;
+}
+
+App::Muter::Registry->instance->register(__PACKAGE__);
+
 package App::Muter::Backend::Hash;
 
 use Digest::MD5;

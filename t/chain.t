@@ -175,6 +175,33 @@ test_run_pattern('base32hex', 'foob',  'CPNMUOG=', 'b32hex pattern 4');
 test_run_pattern('base32hex', 'fooba', 'CPNMUOJ1', 'b32hex pattern 5');
 test_run_pattern('base32hex', 'foobar', 'CPNMUOJ1E8======', 'b32hex pattern 6');
 
+# Test cases from the ascii85 Ruby gem.
+test_run_pattern('ascii85', '',       '',         'empty ascii85 pattern');
+test_run_pattern('ascii85', ' ',      '<~+9~>',   'ascii85 pattern 1');
+test_run_pattern('ascii85', "\0",     '<~!!~>',   'ascii85 pattern 2');
+test_run_pattern('ascii85', "\0" x 2, '<~!!!~>',  'ascii85 pattern 3');
+test_run_pattern('ascii85', "\0" x 3, '<~!!!!~>', 'ascii85 pattern 4');
+test_run_pattern('ascii85', "\0" x 4, '<~z~>',    'ascii85 pattern 5');
+test_run_pattern('ascii85', "\0" x 5, '<~z!!~>',  'ascii85 pattern 6');
+test_run_pattern('ascii85', "A\0\0\0\0", '<~5l^lb!!~>',   'ascii85 pattern 7');
+test_run_pattern('ascii85', "A",         '<~5l~>',        'ascii85 pattern 8');
+test_run_pattern('ascii85', "AB",        '<~5sb~>',       'ascii85 pattern 9');
+test_run_pattern('ascii85', "ABC",       '<~5sdp~>',      'ascii85 pattern 10');
+test_run_pattern('ascii85', "ABCD",      '<~5sdq,~>',     'ascii85 pattern 11');
+test_run_pattern('ascii85', "ABCDE",     '<~5sdq,70~>',   'ascii85 pattern 12');
+test_run_pattern('ascii85', "ABCDEF",    '<~5sdq,77I~>',  'ascii85 pattern 13');
+test_run_pattern('ascii85', "ABCDEFG",   '<~5sdq,77Kc~>', 'ascii85 pattern 14');
+test_run_pattern('ascii85', "ABCDEFGH", '<~5sdq,77Kd<~>', 'ascii85 pattern 15');
+test_run_pattern('ascii85', "ABCDEFGHI", '<~5sdq,77Kd<8H~>',
+    'ascii85 pattern 16');
+test_run_pattern('ascii85', "Ascii85", '<~6$$OMBfIs~>', 'ascii85 pattern 17');
+test_run_pattern(
+    'ascii85',
+    'Antidisestablishmentarianism' =>
+        '<~6#LdYA8-*rF*(i"Ch[s(D.RU,@<-\'jDJ=0/~>',
+    'ascii85 pattern 18'
+);
+
 test_run_pattern(
     'xml',
     q{"Hello, ol' New Jersey! <:>"},

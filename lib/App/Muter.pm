@@ -889,14 +889,11 @@ sub decode {
 
     if (defined $self->{start}) {
         $self->{start} .= $data;
-        if (length $self->{start} > 2) {
-            $self->{start} =~ /^<~/ or die 'Invalid Ascii85 prefix';
-            $data = substr($self->{start}, 2);
-            $self->{start} = undef;
-        }
-        else {
-            return '';
-        }
+        return '' unless length $self->{start} > 2;
+
+        $self->{start} =~ /^<~/ or die 'Invalid Ascii85 prefix';
+        $data = substr($self->{start}, 2);
+        $self->{start} = undef;
     }
     return $self->decode_chunk($self->{chunk} . $data);
 }
@@ -912,9 +909,7 @@ sub _decode_seq {
 sub decode_chunk {
     my ($self, $data) = @_;
     my @chunks;
-    while ($data =~ s/^(z|[^~]{5})//s) {
-        push @chunks, _decode_seq($1);
-    }
+    push @chunks, _decode_seq($1) while $data =~ s/^(z|[^~]{5})//s;
     $self->{chunk} = $data;
     return pack('N*', @chunks);
 }
@@ -928,8 +923,7 @@ sub decode_final {
     $data =~ s/~>$// or die "Missing Ascii85 trailer";
     my $rem = length($data) % 5;
     my $pad = $rem ? (5 - $rem) : 0;
-    $data .= "u" x $pad;
-    $res  .= $self->decode_chunk($data);
+    $res .= $self->decode_chunk($data . 'u' x $pad);
     $res = substr($res, 0, -$pad) if $pad;
     return $res;
 }

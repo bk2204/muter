@@ -21,6 +21,14 @@ test_run_pattern('base64', "klmn\n",  'a2xtbgo=',     'base64 pattern 3');
 test_run_pattern('base64', 'aa?',     'YWE/',         'base64 pattern 4');
 test_run_pattern('base64', 'bc>',     'YmM+',         'base64 pattern 5');
 
+test_run_pattern('base64(yui)', '', '', 'base64(yui) empty data');
+test_run_pattern('base64(yui)', 'abcdefg', 'YWJjZGVmZw--',
+    'base64(yui) pattern 1');
+test_run_pattern('base64(yui)', 'hij',    'aGlq',     'base64(yui) pattern 2');
+test_run_pattern('base64(yui)', "klmn\n", 'a2xtbgo-', 'base64(yui) pattern 3');
+test_run_pattern('base64(yui)', 'aa?',    'YWE_',     'base64(yui) pattern 4');
+test_run_pattern('base64(yui)', 'bc>',    'YmM.',     'base64(yui) pattern 5');
+
 test_run_pattern('url64', '',        '',           'url64 empty data');
 test_run_pattern('url64', 'abcdefg', 'YWJjZGVmZw', 'url64 pattern 1');
 test_run_pattern('url64', 'hij',     'aGlq',       'url64 pattern 2');

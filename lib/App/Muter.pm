@@ -350,13 +350,23 @@ use MIME::Base64 ();
 use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
-    my ($class, @args) = @_;
-    return $class->SUPER::new(@args, enchunksize => 3, dechunksize => 4);
+    my ($class, $args, %opts) = @_;
+    my $self =
+        $class->SUPER::new($args, %opts, enchunksize => 3, dechunksize => 4);
+    if (grep { $_ eq 'yui' } @$args) {
+        $self->{exfrm} = sub { (my $x = shift) =~ tr{+/=}{._-}; return $x };
+        $self->{dxfrm} = sub { (my $x = shift) =~ tr{._-}{+/=}; return $x };
+    }
+    else {
+        $self->{exfrm} = sub { return shift };
+        $self->{dxfrm} = sub { return shift };
+    }
+    return $self;
 }
 
 sub encode_chunk {
-    my (undef, $data) = @_;
-    return MIME::Base64::encode($data, '');
+    my ($self, $data) = @_;
+    return $self->{exfrm}->(MIME::Base64::encode($data, ''));
 }
 
 sub _filter {
@@ -367,6 +377,7 @@ sub _filter {
 
 sub decode {
     my ($self, $data) = @_;
+    $data = $self->{dxfrm}->($data);
     return $self->SUPER::decode($self->_filter($data));
 }
 

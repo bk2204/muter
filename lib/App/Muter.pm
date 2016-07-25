@@ -131,13 +131,23 @@ sub final {
 
 sub _chain_entry {
     my ($item) = @_;
-    $item =~ /^(-?)(\w+)(?:\(([^)]+)\))?$/ or
-        die "Chain entry '$item' is invalid";
-    return {
-        name   => $2,
-        method => ($1 ? 'decode' : 'encode'),
-        args   => ($3 ? [split /,/, $3] : []),
-    };
+    if ($item =~ /^(-?)(\w+)(?:\(([^)]+)\))?$/) {
+        return {
+            name   => $2,
+            method => ($1 ? 'decode' : 'encode'),
+            args   => ($3 ? [split /,/, $3] : []),
+        };
+    }
+    elsif ($item =~ /^(-?)(\w+),([^)]+)$/) {
+        return {
+            name   => $2,
+            method => ($1 ? 'decode' : 'encode'),
+            args   => ($3 ? [split /,/, $3] : []),
+        };
+    }
+    else {
+        die "Chain entry $item is invalid";
+    }
 }
 
 sub _parse_chain {

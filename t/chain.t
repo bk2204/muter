@@ -101,6 +101,10 @@ test_run_pattern(
 );
 test_run_pattern('vis(cstyle)', "\x00A7\x80", "\\0A7\\M^@",   'vis pattern 13');
 test_run_pattern('vis(octal)',  "\x00A7\x80", "\\000A7\\200", 'vis pattern 14');
+test_run_pattern(
+    'vis,cstyle,white',          "a\x00b\x00\x00\x008c\x00\ndef",
+    "a\\0b\\0\\0\\08c\\0\\ndef", 'vis pattern 15'
+);
 
 # Patterns from TCL testsuite.  Public domain.
 my @patterns = qw(
@@ -229,6 +233,8 @@ test_run_pattern(
     'xml pattern 3'
 );
 test_run_chain('xml(hex)', '&abc', '&#x26;abc', 'xml pattern 4');
+test_run_chain('xml,hex', '&abc', '&#x26;abc',
+    'xml pattern 4 (without parentheses)');
 
 test_run_chain('-xml', '&#x00a9;', '©',           'xml decode hex');
 test_run_chain('-xml', '&#xfeff;', "\xef\xbb\xbf", 'xml decode hex BOM');
@@ -240,6 +246,13 @@ test_run_chain(
     '616263',
     'ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0',
     'simple chain with consuming filter'
+);
+
+test_run_chain(
+    '-hex:hash,sha256:url64',
+    '616263',
+    'ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0',
+    'simple chain with no parentheses'
 );
 
 done_testing;

@@ -85,11 +85,12 @@ Modify the bytes in the concatentation of FILES (or standard input) by using the
 specification in CHAIN.
 
 CHAIN is a colon-separated list of encoding transform.  A transform can be
-prefixed with - to reverse it (if possible).  A transform can be followed by a
-parenthesized argument as well.
+prefixed with - to reverse it (if possible).  A transform can be followed by one
+or more comma-separated parenthesized arguments as well.  Instead of
+parentheses, a single comma may be used.
 
-For example, '-hex:hash(sha256):base64' decodes a hex-encoded string, hashes it
-with SHA-256, and converts the result to base64.
+For example, '-hex:hash(sha256):base64' (or '-hex:hash,sha256:base64') decodes a
+hex-encoded string, hashes it with SHA-256, and converts the result to base64.
 
 The following transforms are available:
 EOM

@@ -44,6 +44,12 @@ test_run_pattern('uri(lower)', 'test text', 'test%20text',
     'uri lower pattern 1');
 test_run_pattern('uri(lower)', 'test/?^t~', 'test%2f%3f%5et~',
     'uri lower pattern 2');
+test_run_pattern('uri(form)', '',          '',          'uri form empty data');
+test_run_pattern('uri(form)', 'test text', 'test+text', 'uri form pattern 1');
+test_run_pattern('uri(form)', 'test/?^t~', 'test%2F%3F%5Et~',
+    'uri form pattern 2');
+test_run_pattern('uri(lower,form)', 'test /?^t~', 'test+%2f%3f%5et~',
+    'uri multi');
 
 test_run_chain(
     'hex',              "\x01\x23\x45\x67\x89\xab\xcd\xef",

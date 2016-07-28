@@ -588,9 +588,10 @@ use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
 sub new {
     my ($class, $args, %opts) = @_;
     my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(%.?)$/);
-    my $arg = $args->[0] // '';
-    $self->{chunk} = '';
-    $self->{format} = '%%%02' . ($arg eq 'lower' ? 'x' : 'X');
+    my $lower = grep { $_ eq 'lower' } @$args;
+    $self->{chunk}  = '';
+    $self->{format} = '%%%02' . ($lower ? 'x' : 'X');
+    $self->{form}   = grep { $_ eq 'form' } @$args;
     return $self;
 }
 
@@ -602,6 +603,7 @@ sub metadata {
         args => {
             'upper' => 'Use uppercase letters',
             'lower' => 'Use lowercase letters',
+            'form'  => 'Encode space as +',
         }
     };
 }
@@ -609,12 +611,14 @@ sub metadata {
 sub encode_chunk {
     my ($self, $data) = @_;
     $data =~ s/([^A-Za-z0-9-._~])/sprintf $self->{format}, ord($1)/ge;
+    $data =~ s/%20/+/g if $self->{form};
     return $data;
 }
 
 sub decode_chunk {
     my ($self, $data) = @_;
     $data =~ s/%([0-9a-fA-F]{2})/chr(hex($1))/ge;
+    $data =~ tr/+/ / if $self->{form};
     return $data;
 }
 

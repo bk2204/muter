@@ -249,11 +249,32 @@ sub metadata {
     return {name => $name};
 }
 
+=method $self->process($data)
+
+Process a chunk of data.  Returns the processed chunk.  Note that for buffering
+reasons, the data returned may be larger or smaller than the original data
+passed in.
+
+=cut
+
+
 sub process {
     my ($self, $data) = @_;
     my $func = $self->{m_process};
     return $self->$func($data);
 }
+
+
+=method $self->final($data)
+
+Process the final chunk of data.  Returns the processed chunk.  Note that for
+buffering reasons, the data returned may be larger or smaller than the original
+data passed in.
+
+Calling this function is obligatory.  If all actual data has been passed to the
+process function, this function can simply be called with the empty string.
+
+=cut
 
 sub final {
     my ($self, $data) = @_;

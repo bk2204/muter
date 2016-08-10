@@ -238,6 +238,11 @@ keys are defined:
 The name of this backend.  This should be a lowercase string and is the
 identifier used in the chain.
 
+=item args
+
+A hashref mapping possible arguments to the transform to a human-readable
+description.
+
 =back
 
 =cut

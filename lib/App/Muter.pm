@@ -37,14 +37,16 @@ sub script {
 
     my $chain = '';
     my $help;
+    my $verbose;
     Getopt::Long::GetOptionsFromArray(
         \@args,
         'chain|c=s' => \$chain,
+        'verbose|v' => \$verbose,
         'help'      => \$help
         ) or
         return usage(1);
 
-    return usage(0) if $help;
+    return usage(0, $verbose) if $help;
     return usage(1) unless $chain;
 
     run_chain($chain, load_handles(\@args), \*STDOUT);
@@ -76,7 +78,7 @@ sub run_chain {
 }
 
 sub usage {
-    my ($ret) = @_;
+    my ($ret, $verbose) = @_;
     my $fh = $ret ? \*STDERR : \*STDOUT;
     $fh->print(<<'EOM');
 muter -c CHAIN | --chain CHAIN [FILES...]
@@ -99,7 +101,15 @@ EOM
         $fh->print("  $name\n");
         my $meta = $reg->info($name);
         if ($meta->{args} && ref($meta->{args}) eq 'HASH') {
-            $fh->print("    ", join(', ', sort keys %{$meta->{args}}), "\n");
+            my @keys = sort keys %{$meta->{args}};
+            if ($verbose) {
+                $fh->printf("    %-10s: %s\n", $_, $meta->{args}->{$_})
+                    for @keys;
+            }
+            else {
+                $fh->print("    ", join(', ', sort keys %{$meta->{args}}),
+                    "\n");
+            }
         }
     }
     return $ret;
@@ -262,13 +272,11 @@ passed in.
 
 =cut
 
-
 sub process {
     my ($self, $data) = @_;
     my $func = $self->{m_process};
     return $self->$func($data);
 }
-
 
 =method $self->final($data)
 

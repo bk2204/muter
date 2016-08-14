@@ -1014,7 +1014,7 @@ sub encode_final {
 sub metadata {
     my ($self, $data) = @_;
     my $meta = $self->SUPER::metadata;
-    $meta->{args} = {map { $_ => '' } keys %$hashes};
+    $meta->{args} = {map { $_ => "Use the $_ hash algorithm" } keys %$hashes};
     return $meta;
 }
 

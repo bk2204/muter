@@ -116,6 +116,18 @@ EOM
 }
 
 ## no critic(ProhibitMultiplePackages)
+package App::Muter::Interface;
+
+sub process {
+    my ($chain, $data) = @_;
+
+    $chain = App::Muter::Chain->new($chain);
+    my $result = $chain->process($data);
+    $result .= $chain->final('');
+
+    return $result;
+}
+
 package App::Muter::Chain;
 
 use List::Util ();

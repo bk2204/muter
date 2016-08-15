@@ -283,6 +283,8 @@ sub test_run_chain {
         is(run_chain($chain, $input, 4),   $output, "$desc (4-byte chunks)");
         is(run_chain($chain, $input, 16),  $output, "$desc (16-byte chunks)");
         is(run_chain($chain, $input, 512), $output, "$desc (512-byte chunks)");
+        is(App::Muter::Interface::process($chain, $input),
+            $output, "$desc (one-shot)");
     };
     return;
 }

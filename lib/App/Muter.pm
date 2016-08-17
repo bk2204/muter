@@ -46,6 +46,8 @@ sub script {
         ) or
         return usage(1);
 
+    App::Muter::Registry->instance->load_backends();
+
     return usage(0, $verbose) if $help;
     return usage(1) unless $chain;
 
@@ -190,6 +192,8 @@ sub _instantiate {
 
 package App::Muter::Registry;
 
+use File::Spec;
+
 my $instance;
 
 sub instance {
@@ -217,6 +221,17 @@ sub backends {
     my ($self) = @_;
     my @backends = sort keys %{$self->{names}};
     return @backends;
+}
+
+sub load_backends {
+    my ($self) = @_;
+    my @modules = map {
+        /^([A-Za-z0-9]+)\.pm$/ ? ($1) : ()
+    } map {
+        my $dh;
+        opendir($dh, $_) ? readdir($dh) : ()
+    } map { File::Spec->catfile($_, qw/App Muter Backend/) } @INC;
+    eval "require App::Muter::Backend::$_;" for @modules;
 }
 
 package App::Muter::Backend;

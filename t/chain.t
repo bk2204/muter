@@ -12,6 +12,8 @@ use Test::More;
 use IO::Scalar;
 use App::Muter;
 
+App::Muter::Registry->instance->load_backends();
+
 test_run_pattern('hex', "\x00A7\x80", '00413780', 'basic hex');
 
 test_run_pattern('base64', '',        '',             'base64 empty data');
@@ -186,7 +188,9 @@ my @patterns = qw(
 
 foreach my $i (0 .. 255) {
     use bytes;
-    test_run_pattern('base32', chr($i), $patterns[$i], "base32 byte $i");
+    my $byte = chr($i);
+    test_run_pattern('base32',   $byte, $patterns[$i], "base32 byte $i");
+    test_run_pattern('identity', $byte, $byte,         "identity byte $i");
 }
 
 test_run_pattern('base32hex', '',      '',         'empty b32hex pattern');

@@ -423,8 +423,12 @@ use parent qw/-norequire App::Muter::Backend::Chunked/;
 
 sub new {
     my ($class, $args, %opts) = @_;
-    my $self =
-        $class->SUPER::new($args, %opts, enchunksize => 3, dechunksize => 4);
+    my $nl = (grep { $_ eq 'mime' } @$args) ? "\n" : '';
+    my $self = $class->SUPER::new(
+        $args, %opts,
+        enchunksize => $nl ? 57 : 3, dechunksize => 4
+    );
+    $self->{nl} = $nl;
     if (grep { $_ eq 'yui' } @$args) {
         $self->{exfrm} = sub { (my $x = shift) =~ tr{+/=}{._-}; return $x };
         $self->{dxfrm} = sub { (my $x = shift) =~ tr{._-}{+/=}; return $x };
@@ -438,7 +442,7 @@ sub new {
 
 sub encode_chunk {
     my ($self, $data) = @_;
-    return $self->{exfrm}->(MIME::Base64::encode($data, ''));
+    return $self->{exfrm}->(MIME::Base64::encode($data, $self->{nl}));
 }
 
 sub _filter {

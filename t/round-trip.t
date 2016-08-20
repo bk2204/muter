@@ -34,6 +34,7 @@ my @random_patterns = map { byte_pattern($_) } 0 .. 20;
 my @techniques = qw/
     hex
     base64
+    base64(mime)
     url64
     uri
     uri(lower)

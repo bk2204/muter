@@ -225,9 +225,7 @@ sub backends {
 
 sub load_backends {
     my ($self) = @_;
-    my @modules = map {
-        /^([A-Za-z0-9]+)\.pm$/ ? ($1) : ()
-    } map {
+    my @modules = map { /^([A-Za-z0-9]+)\.pm$/ ? ($1) : () } map {
         my $dh;
         opendir($dh, $_) ? readdir($dh) : ()
     } map { File::Spec->catfile($_, qw/App Muter Backend/) } @INC;
@@ -426,7 +424,8 @@ sub new {
     my $nl = (grep { $_ eq 'mime' } @$args) ? "\n" : '';
     my $self = $class->SUPER::new(
         $args, %opts,
-        enchunksize => $nl ? 57 : 3, dechunksize => 4
+        enchunksize => $nl ? 57 : 3,
+        dechunksize => 4
     );
     $self->{nl} = $nl;
     if (grep { $_ eq 'yui' } @$args) {

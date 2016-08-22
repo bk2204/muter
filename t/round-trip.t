@@ -67,7 +67,8 @@ done_testing;
 sub test_run_pattern {
     my ($chain, $input, $desc) = @_;
 
-    test_run_chain("$chain:-$chain", $input, $input, "$desc");
+    test_run_chain("$chain:-$chain", $input, $input, "$desc") or
+        diag explain run_chain($chain, $input);
     if ($chain =~ /^([^(]+)\(.*\)/) {
         test_run_chain("$chain:-$1", $input, $input, "$desc (base)");
     }
@@ -77,7 +78,7 @@ sub test_run_pattern {
 sub test_run_chain {
     my ($chain, $input, $output, $desc) = @_;
 
-    subtest $desc => sub {
+    return subtest $desc => sub {
         is(run_chain($chain, $input, 1),   $output, "$desc (1-byte chunks)");
         is(run_chain($chain, $input, 2),   $output, "$desc (2-byte chunks)");
         is(run_chain($chain, $input, 3),   $output, "$desc (3-byte chunks)");
@@ -85,7 +86,6 @@ sub test_run_chain {
         is(run_chain($chain, $input, 16),  $output, "$desc (16-byte chunks)");
         is(run_chain($chain, $input, 512), $output, "$desc (512-byte chunks)");
     };
-    return;
 }
 
 sub run_chain {

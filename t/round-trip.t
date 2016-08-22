@@ -46,6 +46,7 @@ my @techniques = qw/
     quotedprintable
     vis
     vis(cstyle)
+    ascii85
     /;
 
 foreach my $tech (@techniques) {

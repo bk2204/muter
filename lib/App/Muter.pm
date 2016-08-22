@@ -1007,7 +1007,7 @@ sub decode_chunk {
 sub decode_final {
     my ($self, $data) = @_;
     $data = $self->{chunk} . $data;
-    return '' if defined $self->{start};
+    return '' if defined $self->{start} && !length $data;
     my $res = $self->decode_chunk($data);
     $data = $self->{chunk};
     $data =~ s/~>$// or die "Missing Ascii85 trailer";

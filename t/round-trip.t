@@ -33,6 +33,7 @@ my @random_patterns = map { byte_pattern($_) } 0 .. 20;
 
 my @techniques = qw/
     ascii85
+    base16
     base32
     base32hex
     base64
@@ -47,6 +48,8 @@ my @techniques = qw/
     xml(html)
     vis
     vis(cstyle)
+    vis(octal)
+    vis(white)
     /;
 
 foreach my $tech (@techniques) {

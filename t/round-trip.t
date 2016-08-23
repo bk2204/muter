@@ -32,21 +32,21 @@ my @patterns = (
 my @random_patterns = map { byte_pattern($_) } 0 .. 20;
 
 my @techniques = qw/
-    hex
-    base64
-    base64(mime)
-    url64
-    uri
-    uri(lower)
+    ascii85
     base32
     base32hex
+    base64
+    base64(mime)
+    hex
+    quotedprintable
+    uri
+    uri(lower)
+    url64
     xml
     xml(hex)
     xml(html)
-    quotedprintable
     vis
     vis(cstyle)
-    ascii85
     /;
 
 foreach my $tech (@techniques) {

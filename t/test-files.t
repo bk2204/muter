@@ -13,6 +13,8 @@ use IO::File;
 use IO::Scalar;
 use App::Muter;
 
+App::Muter::Registry->instance->load_backends();
+
 my $testdir = "$FindBin::Bin/tests";
 
 opendir(my $dh, $testdir) or die;

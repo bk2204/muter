@@ -228,6 +228,14 @@ test_run_pattern(
     'ascii85 pattern 18'
 );
 
+test_run_pattern('uuencode', "Cat", "#0V%T\n`\n", "uuencode pattern 1");
+test_run_pattern(
+    'uuencode',
+    "http://www.wikipedia.org\r\n",
+    "::'1T<#HO+W=W=RYW:6MI<&5D:6\$N;W)G#0H`\n`\n",
+    "uuencode pattern 2"
+);
+
 test_run_pattern(
     'xml',
     q{"Hello, ol' New Jersey! <:>"},

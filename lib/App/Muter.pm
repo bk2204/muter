@@ -28,9 +28,12 @@ use strict;
 use warnings;
 use experimental 'switch';
 
+use FindBin      ();
 use Getopt::Long ();
 use IO::Handle   ();
 use IO::File     ();
+
+use File::stat;
 
 sub script {
     my (@args) = @_;
@@ -46,7 +49,11 @@ sub script {
         ) or
         return usage(1);
 
-    App::Muter::Registry->instance->load_backends();
+    {
+        local @INC = @INC;
+        set_load_path($FindBin::RealBin);
+        App::Muter::Registry->instance->load_backends();
+    }
 
     return usage(0, $verbose) if $help;
     return usage(1) unless $chain;
@@ -54,6 +61,19 @@ sub script {
     run_chain($chain, load_handles(\@args), \*STDOUT);
 
     return 0;
+}
+
+sub set_load_path {
+    my $path    = shift;
+    my $libpath = $path;
+    return unless $libpath =~ s{/App$}{};
+    my $gitpath = "$libpath/../.git";
+    my @uids    = map {
+        my $st = stat($_);
+        ($st && !($st->mode & 0002)) ? $st->uid : -1;
+    } ($path, $libpath, $gitpath);
+    return unless List::Util::uniq(@uids) == 1 && $uids[0] != -1;
+    push @INC, $libpath;
 }
 
 sub load_handles {

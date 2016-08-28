@@ -66,10 +66,11 @@ sub set_load_path {
     my $gitpath = "$libpath/../.git";
     my @uids    = map {
         my $st = stat($_);
-        ($st && !($st->mode & 0002)) ? $st->uid : -1;
+        ($st && !($st->mode & 2)) ? $st->uid : -1;
     } ($path, $libpath, $gitpath);
     return unless List::Util::uniq(@uids) == 1 && $uids[0] != -1;
     push @INC, $libpath;
+    return;
 }
 
 sub load_backends {
@@ -252,7 +253,9 @@ sub load_backends {
         my $dh;
         opendir($dh, $_) ? readdir($dh) : ()
     } map { File::Spec->catfile($_, qw/App Muter Backend/) } @INC;
-    eval "require App::Muter::Backend::$_;" for @modules;
+    eval "require App::Muter::Backend::$_;"    ##no critic(ProhibitStringyEval)
+        for @modules;
+    return;
 }
 
 package App::Muter::Backend;
@@ -860,15 +863,15 @@ sub _setup_maps {
     return;
 }
 
-sub _id_map {
+sub _id_map {    ## no critic(RequireArgUnpacking)
     return map { $_ => chr($_) } @_;
 }
 
-sub _octal_map {
+sub _octal_map {    ## no critic(RequireArgUnpacking)
     return map { $_ => sprintf('\%03o', $_) } @_;
 }
 
-sub _meta_map {
+sub _meta_map {     ## no critic(RequireArgUnpacking)
     return map { $_ => _encode($_) } @_;
 }
 

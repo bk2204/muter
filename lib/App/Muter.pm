@@ -49,11 +49,7 @@ sub script {
         ) or
         return usage(1);
 
-    {
-        local @INC = @INC;
-        set_load_path($FindBin::RealBin);
-        App::Muter::Registry->instance->load_backends();
-    }
+    load_backends();
 
     return usage(0, $verbose) if $help;
     return usage(1) unless $chain;
@@ -74,6 +70,13 @@ sub set_load_path {
     } ($path, $libpath, $gitpath);
     return unless List::Util::uniq(@uids) == 1 && $uids[0] != -1;
     push @INC, $libpath;
+}
+
+sub load_backends {
+    local @INC = @INC;
+    set_load_path($FindBin::RealBin);
+    App::Muter::Registry->instance->load_backends();
+    return;
 }
 
 sub load_handles {

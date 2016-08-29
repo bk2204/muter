@@ -20,17 +20,17 @@ my @backends = App::Muter::Registry->instance->backends;
 my $seed = $ENV{'TEST_SEED'} // time;
 diag "Seed is $seed.";
 diag "Generating pseudo-random data.";
-my $input = generate_input($seed);
+my $testdata = generate_input($seed);
 
-test_backend($_) for grep { $_ ne 'hash' } @backends;
+test_backend($_, $testdata) for grep { $_ ne 'hash' } @backends;
 
 done_testing;
 
 sub test_backend {
-    my ($backend) = @_;
+    my ($backend, $input) = @_;
     my $start = [Time::HiRes::gettimeofday()];
-    my $out = eval { run_chain($backend, $input, 512) };
-    my $end = [Time::HiRes::gettimeofday()];
+    my $out   = eval { run_chain($backend, $input, 512) };
+    my $end   = [Time::HiRes::gettimeofday()];
     cmp_ok(
         length $out, '>=',
         2 * 1024 * 1024,

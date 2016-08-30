@@ -42,6 +42,7 @@ my @techniques = qw/
     quotedprintable
     uri
     uri(lower)
+    uri(form)
     url64
     xml
     xml(hex)

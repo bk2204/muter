@@ -708,7 +708,7 @@ sub encode_chunk {
 sub decode_chunk {
     my ($self, $data) = @_;
     $data =~ s/%([0-9a-fA-F]{2})/chr(hex($1))/ge;
-    $data =~ tr/+/ / if $self->{form};
+    $data =~ tr/+/ /;
     return $data;
 }
 

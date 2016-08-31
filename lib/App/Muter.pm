@@ -1007,8 +1007,7 @@ sub decode {
         $self->{start} .= $data;
         return '' unless length $self->{start} > 2;
 
-        $self->{start} =~ /^<~/ or die 'Invalid Ascii85 prefix';
-        $data = substr($self->{start}, 2);
+        ($data = $self->{start}) =~ s/^<~// or die 'Invalid Ascii85 prefix';
         $self->{start} = undef;
     }
     return $self->decode_chunk($self->{chunk} . $data);

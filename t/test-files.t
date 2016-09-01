@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use experimental 'switch';
 
 use FindBin;
 
@@ -29,21 +30,23 @@ foreach my $test (@files) {
     my $fh = IO::File->new($file, '<') or die;
     while (my $line = <$fh>) {
         $entries{$state} //= {};
-        if ($line =~ /^Flags:\s+(.*)$/) {
-            set_flags($entries{$state}, $line);
-        }
-        elsif ($line =~ /^Input:\s(.*)$/) {
-            $entries{$state}{data} = $1;
-        }
-        elsif ($line =~ /^Output:\s(.*)$/) {
-            $entries{$state}{data} = $1;
-        }
-        elsif ($line =~ /^Chain:\s(.*)$/) {
-            $state = $count++;
-            $entries{$state}{chain} = $1;
-        }
-        elsif ($line =~ /^\s(.*)/) {
-            $entries{$state}{data} .= "\n$1";
+        for ($line) {
+            when (/^Flags:\s+(.*)$/) {
+                set_flags($entries{$state}, $line);
+            }
+            when (/^Input:\s(.*)$/) {
+                $entries{$state}{data} = $1;
+            }
+            when (/^Output:\s(.*)$/) {
+                $entries{$state}{data} = $1;
+            }
+            when (/^Chain:\s(.*)$/) {
+                $state = $count++;
+                $entries{$state}{chain} = $1;
+            }
+            when (/^\s(.*)/) {
+                $entries{$state}{data} .= "\n$1";
+            }
         }
     }
     close($fh);

@@ -20,7 +20,6 @@ Output: 3730e8c0f6cdc6392c6066619d29dce21de8fbc9acbf7c14a816e66ce2e68659
 Chain: -base64:vis(octal):-vis:hash(sha256):hex
 Output: 3730e8c0f6cdc6392c6066619d29dce21de8fbc9acbf7c14a816e66ce2e68659
 Chain: -base64:uuencode
-Flags: newline
 Output: M``$"`P0%!@<("0H+#`T.#Q`1$A,4%187&!D:&QP='A\@(2(C)"4F)R@I*BLL
  M+2XO,#$R,S0U-C<X.3H[/#T^/T!!0D-$149'2$E*2TQ-3D]045)35%565UA9
  M6EM<75Y?8&%B8V1E9F=H:6IK;&UN;W!Q<G-T=79W>'EZ>WQ]?G^`@8*#A(6&
@@ -28,5 +27,6 @@ Output: M``$"`P0%!@<("0H+#`T.#Q`1$A,4%187&!D:&QP='A\@(2(C)"4F)R@I*BLL
  MM+6VM[BYNKN\O;Z_P,'"P\3%QL?(R<K+S,W.S]#1TM/4U=;7V-G:V]S=WM_@
  AX>+CY.7FY^CIZNOL[>[O\/'R\_3U]O?X^?K[_/W^_P`R
  `
+ 
 Chain: -base64:uuencode:hash(sha256):hex
 Output: 16ce571f04c37f8a33fe33c6bb4517959021a5b10d4068b17a6893fac5751966

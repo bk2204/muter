@@ -52,11 +52,11 @@ foreach my $test (@files) {
     close($fh);
     subtest "Test $test" => sub {
         my $inopts = delete $entries{input};
-        my $indata = $inopts->{data} . ($inopts->{trailing} // '');
+        my $indata = $inopts->{data};
         foreach my $test (sort keys %entries) {
             my $opts = $entries{$test};
             my $func = $opts->{inverse} ? \&test_run_pattern : \&test_run_chain;
-            my $data = $opts->{data} . ($opts->{trailing} // '');
+            my $data = $opts->{data};
             $func->($opts->{chain}, $indata, $data, "Chain '$opts->{chain}'");
         }
     };
@@ -67,7 +67,6 @@ done_testing;
 sub set_flags {
     my ($entry, $flags) = @_;
     my %flags = map { $_ => 1 } split /\s+/, $flags;
-    $entry->{trailing} = "\n" if $flags{newline};
     $entry->{inverse}  = 1    if $flags{inverse};
     return;
 }

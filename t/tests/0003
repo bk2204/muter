@@ -10,7 +10,7 @@ Output: Tm93J3MgdGhlIHRpbWUgZm9yIGFsbCBmb2xrIHRvIGNvbWUgdG8gdGhlIGFpZCBvZiB0aGVp
 Chain: -quotedprintable:base64(mime)
 Output: Tm93J3MgdGhlIHRpbWUgZm9yIGFsbCBmb2xrIHRvIGNvbWUgdG8gdGhlIGFpZCBvZiB0aGVpciBj
  b3VudHJ5Lg==
-Flags: newline
+ 
 Chain: -quotedprintable:base64:quotedprintable
 Output: Tm93J3MgdGhlIHRpbWUgZm9yIGFsbCBmb2xrIHRvIGNvbWUgdG8gdGhlIGFpZCBvZiB0aGVpciB=
  jb3VudHJ5Lg=3D=3D

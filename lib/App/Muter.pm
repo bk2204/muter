@@ -59,6 +59,11 @@ sub script {
     return 0;
 }
 
+sub _uniq {
+    my %seen;
+    grep { !$seen{$_}++ } @_;
+}
+
 sub set_load_path {
     my $path    = shift;
     my $libpath = $path;
@@ -68,7 +73,7 @@ sub set_load_path {
         my $st = stat($_);
         ($st && !($st->mode & 2)) ? $st->uid : -1;
     } ($path, $libpath, $gitpath);
-    return unless List::Util::uniq(@uids) == 1 && $uids[0] != -1;
+    return unless _uniq(@uids) == 1 && $uids[0] != -1;
     push @INC, $libpath;
     return;
 }

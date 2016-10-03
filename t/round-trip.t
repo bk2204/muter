@@ -35,7 +35,9 @@ my @techniques = qw/
     ascii85
     base16
     base32
+    base32(manual)
     base32hex
+    base32hex(manual)
     base64
     base64(mime)
     hex

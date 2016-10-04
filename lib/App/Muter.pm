@@ -653,6 +653,18 @@ sub decode_chunk {
     return $result;
 }
 
+sub metadata {
+    my $self = shift;
+    my $meta = $self->SUPER::metadata;
+    return {
+        %$meta,
+        args => {
+            'manual' => 'Disable use of MIME::Base32',
+        }
+    };
+}
+
+
 App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::Base32Hex;

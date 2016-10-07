@@ -59,9 +59,9 @@ sub script {
     return 0;
 }
 
-sub _uniq {
+sub _uniq {    ## no critic(RequireArgUnpacking)
     my %seen;
-    grep { !$seen{$_}++ } @_;
+    return grep { !$seen{$_}++ } @_;
 }
 
 sub set_load_path {
@@ -663,7 +663,6 @@ sub metadata {
         }
     };
 }
-
 
 App::Muter::Registry->instance->register(__PACKAGE__);
 

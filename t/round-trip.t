@@ -11,6 +11,8 @@ use Test::More;
 
 use Digest::SHA;
 use IO::Scalar;
+use MIME::Base64;
+use MIME::QuotedPrint;
 use App::Muter;
 
 my @patterns = (
@@ -69,6 +71,28 @@ foreach my $tech (@techniques) {
     };
 }
 
+my %maps = (
+    'base64'          => \&MIME::Base64::decode_base64,
+    'base64(mime)'    => \&MIME::Base64::decode_base64,
+    'quotedprintable' => \&MIME::QuotedPrint::decode_qp,
+);
+
+foreach my $tech (sort keys %maps) {
+    subtest "Technique $tech (decoding)" => sub {
+        my $num = 0;
+        foreach my $input (@patterns) {
+            test_run_coder($tech, $input, $maps{$tech},
+                "fixed pattern " . $num++);
+        }
+        $num = 0;
+        foreach my $input (@random_patterns) {
+            is(length($input), $num, "byte pattern is of proper length");
+            test_run_coder($tech, $input, $maps{$tech},
+                "byte pattern " . $num++);
+        }
+    };
+}
+
 done_testing;
 
 sub test_run_pattern {
@@ -80,6 +104,19 @@ sub test_run_pattern {
         test_run_chain("$chain:-$1", $input, $input, "$desc (base)");
     }
     return;
+}
+
+sub test_run_coder {
+    my ($chain, $in, $f, $desc) = @_;
+
+    return subtest $desc => sub {
+        is($f->(run_chain($chain, $in, 1)),   $in, "$desc (1-byte chunks)");
+        is($f->(run_chain($chain, $in, 2)),   $in, "$desc (2-byte chunks)");
+        is($f->(run_chain($chain, $in, 3)),   $in, "$desc (3-byte chunks)");
+        is($f->(run_chain($chain, $in, 4)),   $in, "$desc (4-byte chunks)");
+        is($f->(run_chain($chain, $in, 16)),  $in, "$desc (16-byte chunks)");
+        is($f->(run_chain($chain, $in, 512)), $in, "$desc (512-byte chunks)");
+    };
 }
 
 sub test_run_chain {

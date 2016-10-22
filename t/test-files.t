@@ -32,7 +32,7 @@ foreach my $test (@files) {
         $entries{$state} //= {};
         for ($line) {
             when (/^Flags:\s+(.*)$/) {
-                set_flags($entries{$state}, $line);
+                set_flags($entries{$state}, $1);
             }
             when (/^Input:\s(.*)$/) {
                 $entries{$state}{data} = $1;

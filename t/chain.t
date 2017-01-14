@@ -118,6 +118,15 @@ test_run_pattern(
     '\a\b\t\n\v\f\r\s', 'vis pattern 16'
 );
 
+test_run_pattern(
+    'quotedprintable',  "A=B\n.\nDone",
+    'A=3DB=0A.=0ADone', 'quotedprintable pattern 1'
+);
+test_run_pattern(
+    'quotedprintable(smtp)', "A=B\n.\nDone",
+    'A=3DB=0A=2E=0ADone',    'quotedprintable pattern 2'
+);
+
 # Patterns from TCL testsuite.  Public domain.
 my @patterns = qw(
     AA====== AE====== AI====== AM======

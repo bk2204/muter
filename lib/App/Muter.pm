@@ -796,12 +796,14 @@ sub new {
     my $self =
         $class->SUPER::new($args, %opts, regexp => qr/\A(.*)(=[^\n]?)\z/);
     $self->{curlen} = 0;
+    $self->{smtp} = 1 if grep { $_ eq 'smtp' } @$args;
     return $self;
 }
 
 sub encode_chunk {
     my ($self, $data) = @_;
     $data =~ s/([^\x21-\x3c\x3e-\x7e])/sprintf '=%02X', ord($1)/ge;
+    $data =~ s/(^|=0A)\./$1=2E/g if $self->{smtp};
     my $result = '';
     my $maxlen = 75;
     while ($self->{curlen} + length($data) > $maxlen) {
@@ -824,6 +826,17 @@ sub decode_chunk {
     $data =~ s/=\n//g;
     $data =~ s/=([0-9A-F]{2})/chr(hex($1))/ge;
     return $data;
+}
+
+sub metadata {
+    my $self = shift;
+    my $meta = $self->SUPER::metadata;
+    return {
+        %$meta,
+        args => {
+            smtp => 'Encode "." at beginning of line',
+        }
+    };
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);

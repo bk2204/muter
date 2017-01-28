@@ -126,6 +126,12 @@ test_run_pattern(
     'quotedprintable(smtp)', "A=B\n.\nDone",
     'A=3DB=0A=2E=0ADone',    'quotedprintable pattern 2'
 );
+test_run_pattern(
+    'quotedprintable(smtp)',
+    "A=\nFrom \nDone",
+    'A=3D=0A=46rom =0ADone',
+    'quotedprintable pattern 3'
+);
 
 # Patterns from TCL testsuite.  Public domain.
 my @patterns = qw(

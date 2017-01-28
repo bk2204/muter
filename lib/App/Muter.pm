@@ -800,10 +800,33 @@ sub new {
     return $self;
 }
 
+sub encode {
+    my ($self, $data) = @_;
+    $data = $self->{chunk} . $data;
+    $self->{chunk} = '';
+    if (length($data) < 7) {
+        $self->{chunk} = $data;
+        return '';
+    }
+    return $self->encode_chunk($data);
+}
+
+sub encode_final {
+    my ($self, $data) = @_;
+    $data = $self->{chunk} . $data;
+    $self->{chunk} = '';
+    return $self->encode_chunk($data);
+}
+
 sub encode_chunk {
     my ($self, $data) = @_;
-    $data =~ s/([^\x21-\x3c\x3e-\x7e])/sprintf '=%02X', ord($1)/ge;
-    $data =~ s/(^|=0A)\./$1=2E/g if $self->{smtp};
+    if ($data =~ /\A(.*)(\n.{0,6})\z/) {
+        $self->{chunk} = $2;
+        $data = $1;
+    }
+    $data =~ s/([^\x20-\x3c\x3e-\x7e])/sprintf '=%02X', ord($1)/ge;
+    $data =~ s/(^|=0A)\./$1=2E/g        if $self->{smtp};
+    $data =~ s/(^|=0A)F(rom )/$1=46$2/g if $self->{smtp};
     my $result = '';
     my $maxlen = 75;
     while ($self->{curlen} + length($data) > $maxlen) {
@@ -834,7 +857,7 @@ sub metadata {
     return {
         %$meta,
         args => {
-            smtp => 'Encode "." at beginning of line',
+            smtp => 'Encode "." and "From " at beginning of line',
         }
     };
 }

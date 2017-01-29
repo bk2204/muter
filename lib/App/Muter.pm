@@ -808,6 +808,10 @@ sub encode {
         $self->{chunk} = $data;
         return '';
     }
+    if ($data =~ /\A(.*)(\n.{0,6})\z/) {
+        $self->{chunk} = $2;
+        $data = $1;
+    }
     return $self->encode_chunk($data);
 }
 
@@ -820,10 +824,6 @@ sub encode_final {
 
 sub encode_chunk {
     my ($self, $data) = @_;
-    if ($data =~ /\A(.*)(\n.{0,6})\z/) {
-        $self->{chunk} = $2;
-        $data = $1;
-    }
     $data =~ s/([^\x20-\x3c\x3e-\x7e])/sprintf '=%02X', ord($1)/ge;
     $data =~ s/(^|=0A)\./$1=2E/g        if $self->{smtp};
     $data =~ s/(^|=0A)F(rom )/$1=46$2/g if $self->{smtp};

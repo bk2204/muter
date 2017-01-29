@@ -132,6 +132,12 @@ test_run_pattern(
     'A=3D=0A=46rom =0ADone',
     'quotedprintable pattern 3'
 );
+test_run_pattern(
+    'quotedprintable',
+    "A=\n.\nFrom \nDone",
+    'A=3D=0A.=0AFrom =0ADone',
+    'quotedprintable pattern 4'
+);
 
 # Patterns from TCL testsuite.  Public domain.
 my @patterns = qw(

@@ -1150,8 +1150,3 @@ register_hash('sha3-256', sub { require Digest::SHA3; Digest::SHA3->new(256) });
 register_hash('sha3-384', sub { require Digest::SHA3; Digest::SHA3->new(384) });
 register_hash('sha3-512', sub { require Digest::SHA3; Digest::SHA3->new(512) });
 App::Muter::Registry->instance->register(__PACKAGE__);
-
-# Must be at the end.
-package App::Muter::Main;
-
-exit script(@ARGV) unless caller;

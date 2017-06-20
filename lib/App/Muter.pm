@@ -113,6 +113,7 @@ sub usage {
     my $fh = $ret ? \*STDERR : \*STDOUT;
     $fh->print(<<'EOM');
 muter -c CHAIN | --chain CHAIN [FILES...]
+muter [--verbose] --help
 
 Modify the bytes in the concatentation of FILES (or standard input) by using the
 specification in CHAIN.

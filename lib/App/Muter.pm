@@ -64,23 +64,7 @@ sub _uniq {    ## no critic(RequireArgUnpacking)
     return grep { !$seen{$_}++ } @_;
 }
 
-sub set_load_path {
-    my $path    = shift;
-    my $libpath = $path;
-    return unless $libpath =~ s{/App$}{};
-    my $gitpath = "$libpath/../.git";
-    my @uids    = map {
-        my $st = stat($_);
-        ($st && !($st->mode & 2)) ? $st->uid : -1;
-    } ($path, $libpath, $gitpath);
-    return unless _uniq(@uids) == 1 && $uids[0] != -1;
-    push @INC, $libpath;
-    return;
-}
-
 sub load_backends {
-    local @INC = @INC;
-    set_load_path($FindBin::RealBin);
     App::Muter::Registry->instance->load_backends();
     return;
 }

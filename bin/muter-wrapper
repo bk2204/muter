@@ -28,4 +28,4 @@
 dir="$(dirname "$(realpath "$0")")"
 base="$dir/../lib";
 
-perl "-I$base" "$dir/muter"
+perl "-I$base" "$dir/muter" "$@"

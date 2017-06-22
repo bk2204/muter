@@ -21,6 +21,79 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+=encoding UTF-8
+
+=head1 NAME
+
+muter - tool to convert between various formats
+
+=head1 SYNOPSIS
+
+B<muter> B<-c> I<chain> [I<file>...]
+
+B<muter> [B<--verbose>] B<--help>
+
+=head1 DESCRIPTION
+
+B<muter> is a tool to process data by encoding and decoding it in various
+formats.  The series of transforms being used is described by the chain.
+
+Like most Unix command line tools, B<muter> processes the files specified on the
+command line, or standard input if no files are specified.  It produces output
+to standard output.  Input and output are generally assumed to be a series of
+bytes; where character interpretation is required, UTF-8 is used.
+
+A chain is a series of transforms separated by colons.  A reverse transform
+(decoding) is specified by preceding the transform with a C<-> character.  If a
+transform takes parameters, they are separated by commas and follow the
+transform either surrounded by parentheses or preceded by a comma.
+
+Not all transforms have an reverse transforms.  For example, the I<hash>
+transform, which implements cryptographic hashes, is not practically invertible
+(we hope).  An exception will be thrown if you attmept to use an invalid
+transform.
+
+Generally, a reverse transform will decode any variant of the forward transform.
+To preserve this invariant, related but incompatible transforms such as base64
+and url64 are separate transforms.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-c> I<chain>, B<--chain>=I<chain>
+
+Specify the chain of transforms.  This option is mandatory.
+
+=item B<--help>
+
+List usage and all known transforms.
+
+=item B<--verbose>
+
+With B<--help>, provide a description for each transform parameter.
+
+=back
+
+=head1 EXAMPLES
+
+=over 4
+
+=item B<muter> B<-c> -base64:uri
+
+Decode the standard input as Base64 and output it, encoding it using URI
+percent-encoding.
+
+=item B<muter> B<-c> -hex:hash(sha256):base64 I<file>
+
+Read from I<file>, which contains a single hex-encoded string, hash the result
+with SHA-256, and encode the result as base64.  This chain could also be written
+as C-hex:hash,sha256:base64>, which may be easier to type.
+
+=back
+
+=cut
+
 use strict;
 use warnings;
 

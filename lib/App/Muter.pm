@@ -344,7 +344,7 @@ sub decode {
 
 package App::Muter::Backend::Chunked;
 
-use parent qw/-norequire App::Muter::Backend/;
+our @ISA = qw/App::Muter::Backend/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -392,7 +392,7 @@ sub _with_chunk {
 
 package App::Muter::Backend::ChunkedDecode;
 
-use parent qw/-norequire App::Muter::Backend/;
+our @ISA = qw/App::Muter::Backend/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -433,7 +433,8 @@ sub decode_final {
 package App::Muter::Backend::Base64;
 
 use MIME::Base64 ();
-use parent qw/-norequire App::Muter::Backend::Chunked/;
+
+our @ISA = qw/App::Muter::Backend::Chunked/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -482,7 +483,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 package App::Muter::Backend::URL64;
 
 use MIME::Base64 ();
-use parent qw/-norequire App::Muter::Backend::Base64/;
+our @ISA = qw/App::Muter::Backend::Base64/;
 
 sub encode_chunk {
     my (undef, $data) = @_;
@@ -503,7 +504,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::Hex;
 
-use parent qw/-norequire App::Muter::Backend::Chunked/;
+our @ISA = qw/App::Muter::Backend::Chunked/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -544,7 +545,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::Base16;
 
-use parent qw/-norequire App::Muter::Backend::Hex/;
+our @ISA = qw/App::Muter::Backend::Hex/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -563,7 +564,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::Base32;
 
-use parent qw/-norequire App::Muter::Backend::Chunked/;
+our @ISA = qw/App::Muter::Backend::Chunked/;
 
 sub new {
     my ($class, @args) = @_;
@@ -653,7 +654,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::Base32Hex;
 
-use parent qw/-norequire App::Muter::Backend::Base32/;
+our @ISA = qw/App::Muter::Backend::Base32/;
 
 sub new {
     my ($class, @args) = @_;
@@ -674,7 +675,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::URI;
 
-use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
+our @ISA =  qw/App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -717,7 +718,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::XML;
 
-use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
+our @ISA = qw/App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -774,7 +775,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::QuotedPrintable;
 
-use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
+our @ISA = qw/App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -851,7 +852,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::Vis;
 
-use parent qw/-norequire App::Muter::Backend::ChunkedDecode/;
+our @ISA = qw/App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -988,7 +989,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::Ascii85;
 
-use parent qw/-norequire App::Muter::Backend::Chunked/;
+our @ISA = qw/App::Muter::Backend::Chunked/;
 
 sub new {
     my ($class, @args) = @_;
@@ -1087,7 +1088,7 @@ package App::Muter::Backend::Hash;
 use Digest::MD5;
 use Digest::SHA;
 
-use parent qw/-norequire App::Muter::Backend/;
+our @ISA = qw/App::Muter::Backend/;
 
 my $hashes = {};
 

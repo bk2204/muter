@@ -3,7 +3,7 @@ package App::Muter::Backend::Identity;
 use strict;
 use warnings;
 
-use parent '-norequire', 'App::Muter::Backend';
+our @ISA = qw/App::Muter::Backend/;
 
 sub encode {    ## no critic(RequireArgUnpacking)
     return $_[1];

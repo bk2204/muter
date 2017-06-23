@@ -3,7 +3,7 @@ package App::Muter::Backend::Uuencode;
 use strict;
 use warnings;
 
-use parent '-norequire', 'App::Muter::Backend::Chunked';
+our @ISA =  qw/App::Muter::Backend::Chunked/;
 
 sub new {
     my ($class, $args, %opts) = @_;

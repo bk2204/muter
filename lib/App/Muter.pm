@@ -1,4 +1,6 @@
 #!/usr/bin/env perl
+# ABSTRACT: tool to convert between various formats and encodings
+#
 # muter - a data transformation tool
 #
 # Copyright © 2016 brian m. carlson

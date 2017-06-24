@@ -1,4 +1,5 @@
 package App::Muter::Backend::Uuencode;
+# ABSTRACT: a uuencode transform for App::Muter
 
 use strict;
 use warnings;

@@ -1,4 +1,5 @@
 package App::Muter::Backend::Identity;
+# ABSTRACT: an identity transform for App::Muter
 
 use strict;
 use warnings;

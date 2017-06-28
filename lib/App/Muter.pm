@@ -3,7 +3,7 @@
 #
 # muter - a data transformation tool
 #
-# Copyright © 2016 brian m. carlson
+# Copyright © 2016–2017 brian m. carlson
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal

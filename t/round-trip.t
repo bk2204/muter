@@ -48,6 +48,7 @@ my @techniques = qw/
     uri(lower)
     uri(form)
     url64
+    uuencode
     xml
     xml(hex)
     xml(html)

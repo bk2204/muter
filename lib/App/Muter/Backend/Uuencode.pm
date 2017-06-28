@@ -4,14 +4,14 @@ package App::Muter::Backend::Uuencode;
 use strict;
 use warnings;
 
-our @ISA =  qw/App::Muter::Backend::Chunked/;
+our @ISA = qw/App::Muter::Backend::Chunked/;
 
 sub new {
     my ($class, $args, %opts) = @_;
     my $self = $class->SUPER::new(
         $args, %opts,
         enchunksize => 45,
-        dechunksize => 61,
+        dechunksize => 62,
     );
     return $self;
 }

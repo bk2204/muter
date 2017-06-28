@@ -57,6 +57,8 @@ my @techniques = qw/
     vis(white)
     /;
 
+App::Muter::Registry->instance->load_backends();
+
 foreach my $tech (@techniques) {
     subtest "Technique $tech" => sub {
         my $num = 0;

@@ -29,6 +29,12 @@ my @patterns = (
     "\x86\xe8\x9c\xd2\x09\x12\x7f\x53\xf7\xb8\x92\x0c",
     # Triggered a bug in xml.
     "&abc",
+    "&abc;",
+    "\x00",
+    "\x00\x00",
+    "\x00\x00\x00",
+    "\x00\x00\x00\x00",
+    "\x00\x00\x00\x00\x00",
 );
 
 my @random_patterns = map { byte_pattern($_) } 0 .. 20;

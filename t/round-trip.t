@@ -1,4 +1,8 @@
 #!/usr/bin/env perl
+#
+# To improve test coverage, you can pass an argument in the TEST_SEED
+# environment variable to make the random tests run with a different (but
+# reproducible seed).
 
 use strict;
 use warnings;
@@ -14,6 +18,10 @@ use IO::Scalar;
 use MIME::Base64;
 use MIME::QuotedPrint;
 use App::Muter;
+
+my $seed = $ENV{'TEST_SEED'};
+
+diag "Running with test seed '$seed'" if defined $seed;
 
 my @patterns = (
     "\x00A7\x80",
@@ -37,7 +45,7 @@ my @patterns = (
     "\x00\x00\x00\x00\x00",
 );
 
-my @random_patterns = map { byte_pattern($_) } 0 .. 20;
+my @random_patterns = map { byte_pattern($seed, $_) } 0 .. 20;
 
 my @techniques = qw/
     ascii85
@@ -155,11 +163,14 @@ sub run_chain {
 # These are "random" patterns of a given length.  They're designed to be
 # reproducible, but handle a variety of byte patterns.
 sub byte_pattern {
-    my ($len) = @_;
+    my ($seed, $len) = @_;
     my $s     = '';
     my $count = 0;
+
+    $seed = defined $seed ? "$seed:" : '';
+
     while (length($s) < $len) {
-        $s .= Digest::SHA::sha512(pack("NN", $len, $count));
+        $s .= Digest::SHA::sha512($seed . pack("NN", $len, $count));
     }
     return substr($s, 0, $len);
 }

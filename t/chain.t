@@ -41,6 +41,7 @@ test_run_pattern('url64', 'bc>',     'YmM-',       'url64 pattern 5');
 test_run_pattern('uri', '',          '',                'uri empty data');
 test_run_pattern('uri', 'test text', 'test%20text',     'uri pattern 1');
 test_run_pattern('uri', 'test/?^t~', 'test%2F%3F%5Et~', 'uri pattern 2');
+test_run_pattern('uri', '+',         '%2B',             'uri pattern 3');
 test_run_pattern('uri(lower)', '', '', 'uri lower empty data');
 test_run_pattern('uri(lower)', 'test text', 'test%20text',
     'uri lower pattern 1');
@@ -50,6 +51,8 @@ test_run_pattern('uri(form)', '',          '',          'uri form empty data');
 test_run_pattern('uri(form)', 'test text', 'test+text', 'uri form pattern 1');
 test_run_pattern('uri(form)', 'test/?^t~', 'test%2F%3F%5Et~',
     'uri form pattern 2');
+test_run_pattern('uri(form)', '+', '%2B', 'uri form pattern 3');
+test_run_pattern('uri(form)', ' ', '+',   'uri form pattern 3');
 test_run_pattern('uri(lower,form)', 'test /?^t~', 'test+%2f%3f%5et~',
     'uri multi');
 

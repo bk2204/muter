@@ -571,7 +571,10 @@ our @ISA = qw/App::Muter::Backend::Chunked/;
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args, enchunksize => 5, dechunksize => 8);
-    $self->{fmap} = [split //, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'];
+    $self->{ftr} =
+        sub { my $val = shift; $val =~ tr/\x00-\x1f/A-Z2-7/; return $val };
+    $self->{rtr} =
+        sub { my $val = shift; $val =~ tr/A-Z2-7/\x00-\x1f/; return $val };
     $self->{func} = 'base32';
     $self->{manual} =
         grep { $_ eq 'manual' } @args || !eval { require MIME::Base32 };
@@ -580,9 +583,6 @@ sub new {
 
 sub _initialize {
     my ($self) = @_;
-    my $fmap = $self->{fmap};
-    $self->{rmap} = {'=' => 0};
-    @{$self->{rmap}}{@$fmap} = keys @$fmap;
     unless ($self->{manual}) {
         $self->{eref} = MIME::Base32->can("encode_$self->{func}");
         $self->{dref} = MIME::Base32->can("decode_$self->{func}");
@@ -593,14 +593,13 @@ sub _initialize {
 sub encode_chunk {
     my ($self, $data) = @_;
     return $self->{eref}->($data) if $self->{eref};
-    my @data   = map { ord } split //, $data;
+    my @data   = unpack('C*', $data);
     my $result = '';
-    my $map    = $self->{fmap};
     my $lenmap = [0, 2, 4, 5, 7, 8];
     while (my @chunk = splice(@data, 0, 5)) {
         my $len = @chunk;
         push @chunk, (0, 0, 0, 0);
-        my @converted = map { $self->{fmap}[$_ & 0x1f] } (
+        my @converted = map { $_ & 0x1f } (
             $chunk[0] >> 3,
             ($chunk[0] << 2) | ($chunk[1] >> 6),
             ($chunk[1] >> 1),
@@ -610,11 +609,11 @@ sub encode_chunk {
             ($chunk[3] << 3) | ($chunk[4] >> 5),
             $chunk[4]
         );
-        my $chunk = substr(join('', @converted), 0, $lenmap->[$len]);
+        my $chunk = substr(pack('C*', @converted), 0, $lenmap->[$len]);
         $chunk = substr($chunk . '======', 0, 8);
         $result .= $chunk;
     }
-    return $result;
+    return $self->{ftr}->($result);
 }
 
 sub decode_chunk {
@@ -624,7 +623,7 @@ sub decode_chunk {
     my $trailing = $data =~ /(=+)$/ ? length $1 : 0;
     my $truncate = $lenmap->[$trailing];
     my $result   = '';
-    my @data     = map { $self->{rmap}{$_} } split //, $data;
+    my @data     = unpack('C*', $self->{rtr}->($data));
     use bytes;
 
     while (my @chunk = splice(@data, 0, 8)) {
@@ -635,7 +634,7 @@ sub decode_chunk {
             ($chunk[4] << 7) | ($chunk[5] << 2) | ($chunk[6] >> 3),
             ($chunk[6] << 5) | $chunk[7],
         );
-        my $chunk = join('', map { chr($_ & 0xff) } @converted);
+        my $chunk = pack('C*', map { $_ & 0xff } @converted);
         $result .= substr($chunk, 0, (@data ? 5 : $truncate));
     }
     return $result;
@@ -661,15 +660,16 @@ our @ISA = qw/App::Muter::Backend::Base32/;
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    $self->{fmap} = [split //, '0123456789ABCDEFGHIJKLMNOPQRSTUV'];
+    $self->{ftr} =
+        sub { my $val = shift; $val =~ tr/\x00-\x1f/0-9A-V/; return $val };
+    $self->{rtr} =
+        sub { my $val = shift; $val =~ tr/0-9A-V/\x00-\x1f/; return $val };
     $self->{func} = 'base32hex';
     return $self->_initialize;
 }
 
 sub _initialize {
     my ($self) = @_;
-    $self->{rmap} = {'=' => 0};
-    @{$self->{rmap}}{values @{$self->{fmap}}} = keys @{$self->{fmap}};
     return $self;
 }
 

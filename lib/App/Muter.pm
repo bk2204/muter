@@ -668,11 +668,6 @@ sub new {
     return $self->_initialize;
 }
 
-sub _initialize {
-    my ($self) = @_;
-    return $self;
-}
-
 App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::URI;

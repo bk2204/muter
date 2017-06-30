@@ -677,7 +677,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::URI;
 
-our @ISA =  qw/App::Muter::Backend::ChunkedDecode/;
+our @ISA = qw/App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
@@ -732,6 +732,7 @@ sub new {
         hex     => [qw/#x22 #x26 #x27 #x3c #x3e/],
     };
     my $type = $args->[0] // 'default';
+    $type = 'default' unless exists $maps->{$type};
     @{$self->{fmap}}{qw/" & ' < >/} = map { "&$_;" } @{$maps->{$type}};
     @{$self->{rmap}}{@{$maps->{default}}} = qw/" & ' < >/;
     return $self;

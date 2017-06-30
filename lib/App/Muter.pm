@@ -577,7 +577,7 @@ sub new {
         sub { my $val = shift; $val =~ tr/A-Z2-7/\x00-\x1f/; return $val };
     $self->{func} = 'base32';
     $self->{manual} =
-        grep { $_ eq 'manual' } @args || !eval { require MIME::Base32 };
+        grep { $_ eq 'manual' } @args || !eval { require MIME::Base32; MIME::Base32->VERSION(1.0) };
     return $self->_initialize;
 }
 

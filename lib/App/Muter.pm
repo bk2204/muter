@@ -592,13 +592,16 @@ sub _initialize {
 
 sub encode_chunk {
     my ($self, $data) = @_;
+    return '' unless length($data);
     return $self->{eref}->($data) if $self->{eref};
-    my @data   = unpack('C*', $data);
-    my $result = '';
+    my $len = length($data);
+    my $rem = $len % 5;
     my $lenmap = [0, 2, 4, 5, 7, 8];
+    my $lm = $lenmap->[$rem];
+    my @data   = (unpack('C*', $data), ($rem ? ((0) x (5 - $rem)) : ()));
+    my $result = '';
+    my $truncate = int($len / 5) * 8 + $lm;
     while (my @chunk = splice(@data, 0, 5)) {
-        my $len = @chunk;
-        push @chunk, (0, 0, 0, 0);
         my @converted = map { $_ & 0x1f } (
             $chunk[0] >> 3,
             ($chunk[0] << 2) | ($chunk[1] >> 6),
@@ -609,15 +612,16 @@ sub encode_chunk {
             ($chunk[3] << 3) | ($chunk[4] >> 5),
             $chunk[4]
         );
-        my $chunk = substr(pack('C*', @converted), 0, $lenmap->[$len]);
-        $chunk = substr($chunk . '======', 0, 8);
-        $result .= $chunk;
+        $result .= pack('C*', @converted);
     }
+    $result = substr($result, 0, $truncate);
+    $result .= $lm ? ('=' x (8 - $lm)) : '';
     return $self->{ftr}->($result);
 }
 
 sub decode_chunk {
     my ($self, $data) = @_;
+    return '' unless length($data);
     return $self->{dref}->($data) if $self->{dref};
     my $lenmap = [5, 4, undef, 3, 2, undef, 1];
     my $trailing = $data =~ /(=+)$/ ? length $1 : 0;

@@ -1017,13 +1017,13 @@ sub encode_final {
 
 sub _encode_seq {
     my ($x, $flag) = @_;
-    return 'z' if !$x && !$flag;
+    return (89) if !$x && !$flag;
     my @res;
     for (0 .. 4) {
         push @res, $x % 85;
         $x = int($x / 85);
     }
-    return map { chr($_ + 33) } reverse @res;
+    return reverse @res;
 }
 
 sub encode_chunk {
@@ -1033,8 +1033,9 @@ sub encode_chunk {
     $data .= "\0" x $pad;
     my @chunks = unpack("N*", $data);
     my @last = $pad ? (pop @chunks) : ();
-    my $res = join('', map { _encode_seq($_) } @chunks);
-    $res .= join('', map { _encode_seq($_, 1) } @last);
+    my $res = pack('C*', map { _encode_seq($_) } @chunks);
+    $res .= pack('C*', map { _encode_seq($_, 1) } @last);
+    $res =~ tr/\x00-\x54\x59/!-uz/;
     $res = substr($res, 0, -$pad) if $pad;
     return $res;
 }

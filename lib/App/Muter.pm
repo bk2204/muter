@@ -577,7 +577,8 @@ sub new {
         sub { my $val = shift; $val =~ tr/A-Z2-7/\x00-\x1f/; return $val };
     $self->{func} = 'base32';
     $self->{manual} =
-        grep { $_ eq 'manual' } @args || !eval { require MIME::Base32; MIME::Base32->VERSION(1.0) };
+        grep { $_ eq 'manual' } @args ||
+        !eval { require MIME::Base32; MIME::Base32->VERSION(1.0) };
     return $self->_initialize;
 }
 
@@ -594,12 +595,12 @@ sub encode_chunk {
     my ($self, $data) = @_;
     return '' unless length($data);
     return $self->{eref}->($data) if $self->{eref};
-    my $len = length($data);
-    my $rem = $len % 5;
-    my $lenmap = [0, 2, 4, 5, 7, 8];
-    my $lm = $lenmap->[$rem];
-    my @data   = (unpack('C*', $data), ($rem ? ((0) x (5 - $rem)) : ()));
-    my $result = '';
+    my $len      = length($data);
+    my $rem      = $len % 5;
+    my $lenmap   = [0, 2, 4, 5, 7, 8];
+    my $lm       = $lenmap->[$rem];
+    my @data     = (unpack('C*', $data), ($rem ? ((0) x (5 - $rem)) : ()));
+    my $result   = '';
     my $truncate = int($len / 5) * 8 + $lm;
     while (my @chunk = splice(@data, 0, 5)) {
         my @converted = map { $_ & 0x1f } (

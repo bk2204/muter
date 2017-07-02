@@ -959,7 +959,7 @@ sub _decode {
     use bytes;
     return '' if !length $val;
     return chr($self->{rmap}{$val} // die "val '$_'") if $val =~ /^\\/;
-    return join('', map { chr($self->{rmap}{$_}) } split //, $val);
+    return pack('C*', map { $self->{rmap}{$_} } split //, $val);
 }
 
 sub decode_chunk {

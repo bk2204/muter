@@ -893,8 +893,8 @@ sub _setup_maps {
     );
     my %glob_chars = _octal_map($flags{glob} ? (0x23, 0x2a, 0x3f, 0x5b) : ());
     my $extras = {_id_map(0x09, 0x0a, 0x20)};
-    $self->{map} =
-        {%$standard, %$wanted_map, %glob_chars, _id_map(@chars)};
+    my $map = {%$standard, %$wanted_map, %glob_chars, _id_map(@chars)};
+    $self->{map} = [map { $map->{$_} } sort { $a <=> $b } keys %$map];
     $self->{rmap} = {
         reverse(%$standard), reverse(%$wanted_map),
         reverse(%$extras),   reverse(%$octal),
@@ -946,7 +946,7 @@ sub encode {
 
 sub encode_chunk {
     my ($self, $data) = @_;
-    my $result = join('', map { $self->{map}{$_} } unpack('C*', $data));
+    my $result = join('', map { $self->{map}[$_] } unpack('C*', $data));
     if ($self->{flags}{cstyle}) {
         # Do this twice to fix multiple consecutive NUL bytes.
         $result =~ s/\\000($|[^0-7])/\\0$1/g for 1 .. 2;

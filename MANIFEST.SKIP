@@ -1,4 +1,5 @@
 MANIFEST.SKIP
+LICENSE
 README
 bin/muter-wrapper
 dist.ini

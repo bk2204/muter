@@ -983,7 +983,7 @@ sub metadata {
             white  => 'Encode space, tab, and newline',
             cstyle => 'Encode using C-like escape sequences',
             octal  => 'Encode using octal escape sequences',
-            glob   => 'Encode character recognized by glob(3) and hash mark',
+            glob   => 'Encode characters recognized by glob(3) and hash mark',
         }
     };
 }

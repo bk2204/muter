@@ -252,6 +252,10 @@ sub load_backends {
 
 package App::Muter::Backend;
 
+=head1 NAME
+
+App::Muter::Backend - a backend for muter
+
 =method $class->new($args, %opts)
 
 Create a new backend.

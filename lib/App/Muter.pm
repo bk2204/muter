@@ -30,10 +30,11 @@ use strict;
 use warnings;
 use experimental 'switch';
 
-use FindBin      ();
-use Getopt::Long ();
-use IO::Handle   ();
-use IO::File     ();
+use App::Muter::Chain ();
+use FindBin           ();
+use Getopt::Long      ();
+use IO::Handle        ();
+use IO::File          ();
 
 use File::stat;
 
@@ -144,66 +145,6 @@ sub process {
     $result .= $chain->final('');
 
     return $result;
-}
-
-package App::Muter::Chain;
-
-use List::Util ();
-
-sub new {
-    my ($class, $chain) = @_;
-    $class = ref($class) || $class;
-    my $self = bless {}, $class;
-    $self->{chain} = [$self->_instantiate($self->_parse_chain($chain))];
-    return $self;
-}
-
-sub process {
-    my ($self, $data) = @_;
-
-    return List::Util::reduce { $b->process($a) } $data, @{$self->{chain}};
-}
-
-sub final {
-    my ($self, $data) = @_;
-
-    return List::Util::reduce { $b->final($a) } $data, @{$self->{chain}};
-}
-
-sub _chain_entry {
-    my ($item) = @_;
-    if ($item =~ /^(-?)(\w+)(?:\(([^)]+)\))?$/) {
-        return {
-            name   => $2,
-            method => ($1 ? 'decode' : 'encode'),
-            args   => ($3 ? [split /,/, $3] : []),
-        };
-    }
-    elsif ($item =~ /^(-?)(\w+),([^)]+)$/) {
-        return {
-            name   => $2,
-            method => ($1 ? 'decode' : 'encode'),
-            args   => ($3 ? [split /,/, $3] : []),
-        };
-    }
-    else {
-        die "Chain entry $item is invalid";
-    }
-}
-
-sub _parse_chain {
-    my (undef, $chain) = @_;
-    my @items = split /:/, $chain;
-    return map { _chain_entry($_) } @items;
-}
-
-sub _instantiate {
-    my (undef, @entries) = @_;
-    my $registry = App::Muter::Registry->instance;
-    return map {
-        my $class = $registry->info($_->{name})->{class};
-        $class->new($_->{args}, transform => $_->{method});
-    } @entries;
 }
 
 package App::Muter::Registry;

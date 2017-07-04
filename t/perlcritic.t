@@ -9,6 +9,10 @@ use File::Find;
 use Test::More;
 use Perl::Critic;
 
+unless (-d "$FindBin::Bin/../.git") {
+    plan skip_all => 'perlcritic tests broken by Dist::Zilla';
+}
+
 my $critic = Perl::Critic->new(
     -profile  => '',
     -severity => 4,

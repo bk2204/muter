@@ -1,3 +1,5 @@
 *.bak
 App-Muter-*.tar.gz
+App-Muter-*.tar.gz.asc
+App-Muter-*.tar.gz.sig
 App-Muter-*/

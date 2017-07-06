@@ -22,9 +22,24 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-package App::Muter::Main;
+package App::Muter;
 
 require 5.010001;
+
+use strict;
+use warnings;
+
+=head1 DESCRIPTION
+
+App::Muter provides the C<muter> command, which converts data between various
+formats.
+
+For more information, see L<muter(1)>.
+
+=cut
+
+## no critic(ProhibitMultiplePackages)
+package App::Muter::Main;
 
 use strict;
 use warnings;
@@ -38,15 +53,6 @@ use IO::Handle          ();
 use IO::File            ();
 
 use File::stat;
-
-=head1 DESCRIPTION
-
-App::Muter provides the C<muter> command, which converts data between various
-formats.
-
-For more information, see L<muter(1)>.
-
-=cut
 
 sub script {
     my (@args) = @_;
@@ -144,7 +150,6 @@ EOM
     return $ret;
 }
 
-## no critic(ProhibitMultiplePackages)
 package App::Muter::Interface;
 
 sub process {

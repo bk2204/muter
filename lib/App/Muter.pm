@@ -341,7 +341,7 @@ App::Muter::Registry->instance->register(__PACKAGE__);
 
 package App::Muter::Backend::URL64;
 
-use MIME::Base64 ();
+use MIME::Base64 3.11 ();
 our @ISA = qw/App::Muter::Backend::Base64/;
 
 sub encode_chunk {

@@ -77,6 +77,129 @@ With B<--help>, provide a description for each transform parameter.
 
 =back
 
+=head1 BACKENDS
+
+The following backends are included with muter; additional backends can be used
+by creating modules under the C<App::Muter::Backend> namespace in C<@INC>.
+
+=head2 ascii85
+
+Implements the L<Ascii85 encoding|https://en.wikipedia.org/wiki/Ascii85>.
+
+=head2 base16
+
+Equivalent to the C<hex> backend with the C<upper> argument.  Implements the
+L<RFC 4648|https://tools.ietf.org/html/rfc4648> Base16 encoding.
+
+=head2 base32
+
+Implements the L<RFC 4648|https://tools.ietf.org/html/rfc4648> Base32 encoding.
+
+Accepts one option, C<manual>, which forces the use of the built-in encoder
+instead of L<MIME::Base32>.  This built-in encoder is forced if L<MIME::Base32>
+is missing or too old.
+
+=head2 base32hex
+
+Implements the L<RFC 4648|https://tools.ietf.org/html/rfc4648> Base32 with
+Extended Hex Alphabet encoding, better known as C<base32hex>.
+
+Accept one option, C<manual>, which does the same thing as for C<base32>.
+
+=head2 base64
+
+Implements the L<RFC 4648|https://tools.ietf.org/html/rfc4648> Base64 encoding.
+
+=head2 hash
+
+Implements a cryptographic hash of the input data.  There is no corresponding
+reverse transform.
+
+The following hash algorithms are supported:
+
+=over 4
+
+=item md5
+
+=item sha1
+
+=item sha224
+
+=item sha256
+
+=item sha3-224
+
+=item sha3-256
+
+=item sha3-384
+
+=item sha3-512
+
+=item sha384
+
+=item sha512
+
+=back
+
+=head2 hex
+
+Implements hex encoding.  Takes two options, C<lower> and C<upper>, that control
+which type of letters are used.
+
+=head2 identity
+
+Implements the identity transform.  Passes through the input unmodified.
+
+=head2 quotedprintable
+
+Implements quoted-printable MIME encoding.  With the option C<smtp>, encodes "."
+and "From " if they appear at the beginning of a line (including beginning of
+input).
+
+=head2 uri
+
+Implements URI percent encoding.
+
+Takes three possible options.  C<lower> and C<upper> control the type of hex
+character emitted, and C<form> makes space be encoded as C<+> instead of C<%20>
+(as for use in I<application/x-www-form-urlencoded>.
+
+=head2 url64
+
+Implements the L<RFC 4648|https://tools.ietf.org/html/rfc4648> Base64 Encdoing
+with URL and Filename Safe Alphabet.
+
+=head2 uuencode
+
+Implements UUencoding.  Note that the "begin" and "end" markers are not emitted.
+
+=head2 vis
+
+Implements the L<vis(3)> function found on the BSDs.  The options supported
+correspond directly to the constants that function takes.
+
+=head2 xml
+
+Implements encoding of XML special characters.  Note that the reverse transform
+decodes arbitrary decimal and hexadecimal entities into UTF-8.
+
+Takes one of the following three arguments:
+
+=over 4
+
+=item default
+
+Use XML entity names.
+
+=item hex
+
+Use hexadecimal entity names for all entities.
+
+=item html
+
+Use XML entitiy names, except for the apostrophe, which uses a hexadecimal
+entity.
+
 =head1 EXAMPLES
 
 =over 4

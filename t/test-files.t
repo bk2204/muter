@@ -57,7 +57,10 @@ foreach my $test (@files) {
             my $opts = $entries{$test};
             my $func = $opts->{inverse} ? \&test_run_pattern : \&test_run_chain;
             my $data = $opts->{data};
-            $func->($opts->{chain}, $indata, $data, "Chain '$opts->{chain}'");
+            $func->(
+                $opts->{chain}, $opts->{reverse}, $indata, $data,
+                "Chain '$opts->{chain}'"
+            );
         }
     };
 }
@@ -67,41 +70,44 @@ done_testing;
 sub set_flags {
     my ($entry, $flags) = @_;
     my %flags = map { $_ => 1 } split /\s+/, $flags;
-    $entry->{inverse}  = 1    if $flags{inverse};
+    $entry->{inverse} = 1 if $flags{inverse};
+    $entry->{reverse} = 1 if $flags{reverse};
     return;
 }
 
 sub test_run_pattern {
-    my ($chain, $input, $output, $desc) = @_;
+    my ($chain, $reverse, $input, $output, $desc) = @_;
 
     subtest $desc => sub {
-        test_run_chain($chain,    $input,  $output, "$desc (encoding)");
-        test_run_chain("-$chain", $output, $input,  "$desc (decoding)");
+        test_run_chain($chain, $reverse, $input, $output, "$desc (encoding)");
+        test_run_chain("-$chain", $reverse, $output, $input,
+            "$desc (decoding)");
     };
     return;
 }
 
 sub test_run_chain {
-    my ($chain, $input, $output, $desc) = @_;
+    my ($chain, $reverse, $input, $output, $desc) = @_;
 
     subtest $desc => sub {
-        is(run_chain($chain, $input, 1),   $output, "$desc (1-byte chunks)");
-        is(run_chain($chain, $input, 2),   $output, "$desc (2-byte chunks)");
-        is(run_chain($chain, $input, 3),   $output, "$desc (3-byte chunks)");
-        is(run_chain($chain, $input, 4),   $output, "$desc (4-byte chunks)");
-        is(run_chain($chain, $input, 16),  $output, "$desc (16-byte chunks)");
-        is(run_chain($chain, $input, 512), $output, "$desc (512-byte chunks)");
+        my @args = ($chain, $reverse, $input);
+        is(run_chain(@args, 1),   $output, "$desc (1-byte chunks)");
+        is(run_chain(@args, 2),   $output, "$desc (2-byte chunks)");
+        is(run_chain(@args, 3),   $output, "$desc (3-byte chunks)");
+        is(run_chain(@args, 4),   $output, "$desc (4-byte chunks)");
+        is(run_chain(@args, 16),  $output, "$desc (16-byte chunks)");
+        is(run_chain(@args, 512), $output, "$desc (512-byte chunks)");
     };
     return;
 }
 
 sub run_chain {
-    my ($chain, $input, $blocksize) = @_;
+    my ($chain, $reverse, $input, $blocksize) = @_;
     my $output = '';
     my $ifh    = IO::Scalar->new(\$input);
     my $ofh    = IO::Scalar->new(\$output);
 
-    App::Muter::Main::run_chain($chain, [$ifh], $ofh, $blocksize);
+    App::Muter::Main::run_chain($chain, $reverse, [$ifh], $ofh, $blocksize);
 
     return $output;
 }

@@ -14,3 +14,7 @@ Output: Tm93J3MgdGhlIHRpbWUgZm9yIGFsbCBmb2xrIHRvIGNvbWUgdG8gdGhlIGFpZCBvZiB0aGVp
 Chain: -quotedprintable:base64:quotedprintable
 Output: Tm93J3MgdGhlIHRpbWUgZm9yIGFsbCBmb2xrIHRvIGNvbWUgdG8gdGhlIGFpZCBvZiB0aGVpciB=
  jb3VudHJ5Lg=3D=3D
+Chain: -quotedprintable:-base64:quotedprintable
+Output: Tm93J3MgdGhlIHRpbWUgZm9yIGFsbCBmb2xrIHRvIGNvbWUgdG8gdGhlIGFpZCBvZiB0aGVpciB=
+ jb3VudHJ5Lg=3D=3D
+Flags: reverse

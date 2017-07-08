@@ -20,18 +20,20 @@ use List::Util ();
 This is the main programmatic (Perl) interface to muter.  It takes an arbitrary
 chain and processes data incrementally, in whatever size chunks it's given.
 
-=method $class->new($chain)
+=method $class->new($chain, [$reverse])
 
 Create a new chain object using the specified chain, which is identical to the
-argument to muter's B<-c> option.
+argument to muter's B<-c> option.  If C<$reverse> is passed, reverse the chain,
+as with muter's <-r> option.
 
 =cut
 
 sub new {
-    my ($class, $chain) = @_;
+    my ($class, $chain, $reverse) = @_;
     $class = ref($class) || $class;
     my $self = bless {}, $class;
-    $self->{chain} = [$self->_instantiate($self->_parse_chain($chain))];
+    $self->{chain} =
+        [$self->_instantiate($self->_parse_chain($chain, $reverse))];
     return $self;
 }
 
@@ -62,18 +64,18 @@ sub final {
 }
 
 sub _chain_entry {
-    my ($item) = @_;
+    my ($item, $reverse) = @_;
     if ($item =~ /^(-?)(\w+)(?:\(([^)]+)\))?$/) {
         return {
             name   => $2,
-            method => ($1 ? 'decode' : 'encode'),
+            method => (($1 xor $reverse) ? 'decode' : 'encode'),
             args   => ($3 ? [split /,/, $3] : []),
         };
     }
     elsif ($item =~ /^(-?)(\w+),([^)]+)$/) {
         return {
             name   => $2,
-            method => ($1 ? 'decode' : 'encode'),
+            method => (($1 xor $reverse) ? 'decode' : 'encode'),
             args   => ($3 ? [split /,/, $3] : []),
         };
     }
@@ -83,9 +85,10 @@ sub _chain_entry {
 }
 
 sub _parse_chain {
-    my (undef, $chain) = @_;
+    my (undef, $chain, $reverse) = @_;
     my @items = split /:/, $chain;
-    return map { _chain_entry($_) } @items;
+    my @chain = map { _chain_entry($_, $reverse) } @items;
+    return $reverse ? reverse @chain : @chain;
 }
 
 sub _instantiate {

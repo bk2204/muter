@@ -157,7 +157,7 @@ sub run_chain {
     my $ifh    = IO::Scalar->new(\$input);
     my $ofh    = IO::Scalar->new(\$output);
 
-    App::Muter::Main::run_chain($chain, [$ifh], $ofh, $blocksize);
+    App::Muter::Main::run_chain($chain, 0, [$ifh], $ofh, $blocksize);
 
     return $output;
 }

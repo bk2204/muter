@@ -31,7 +31,7 @@ muter - tool to convert between various formats
 
 =head1 SYNOPSIS
 
-B<muter> B<-c> I<chain> [I<file>...]
+B<muter> [B<-r>] B<-c> I<chain> [I<file>...]
 
 B<muter> [B<--verbose>] B<--help>
 
@@ -66,6 +66,15 @@ and url64 are separate transforms.
 =item B<-c> I<chain>, B<--chain>=I<chain>
 
 Specify the chain of transforms.  This option is mandatory.
+
+=item B<-r>, B<--reverse>
+
+Reverse the chain of transforms and convert each forward transform to a reverse
+transform, and vice versa.  Assuming all transforms can be inverted, running an
+instance of B<muter> without this flag followed by an instance with this flag
+and with the same chain returns the original data.
+
+It is not valid to specify this flag with transforms that have no inverse.
 
 =item B<--help>
 
@@ -208,6 +217,10 @@ entity.
 
 Decode the standard input as Base64 and output it, encoding it using URI
 percent-encoding.
+
+=item B<muter> B<-r> B<-c> -uri:base64
+
+Exactly the same as the above.
 
 =item B<muter> B<-c> -hex:hash(sha256):base64 I<file>
 

@@ -31,6 +31,26 @@ my @examples = (
             }
         ]
     }, {
+        chain   => 'hex',
+        reverse => 1,
+        parsed  => [
+            {
+                name   => 'hex',
+                method => 'decode',
+                args   => [],
+            }
+        ]
+    }, {
+        chain   => '-hex',
+        reverse => 1,
+        parsed  => [
+            {
+                name   => 'hex',
+                method => 'encode',
+                args   => [],
+            }
+        ]
+    }, {
         chain  => '-hex:base64',
         parsed => [
             {
@@ -81,13 +101,31 @@ my @examples = (
                 args   => [qw/glob space tab/],
             }
         ]
+    }, {
+        chain   => '-hex(upper):xml(html):vis(glob,space,tab)',
+        reverse => 1,
+        parsed  => [
+            {
+                name   => 'vis',
+                method => 'decode',
+                args   => [qw/glob space tab/],
+            }, {
+                name   => 'xml',
+                method => 'decode',
+                args   => ['html'],
+            }, {
+                name   => 'hex',
+                method => 'encode',
+                args   => ['upper'],
+            }
+        ]
     },
 );
 
 foreach my $test (@examples) {
     is_deeply(
         $test->{parsed},
-        [App::Muter::Chain->_parse_chain($test->{chain})],
+        [App::Muter::Chain->_parse_chain($test->{chain}, $test->{reverse})],
         "$test->{chain} parses properly"
     );
 }

@@ -60,11 +60,13 @@ sub script {
     my $chain = '';
     my $help;
     my $verbose;
+    my $reverse;
     Getopt::Long::GetOptionsFromArray(
         \@args,
-        'chain|c=s' => \$chain,
-        'verbose|v' => \$verbose,
-        'help'      => \$help
+        'chain|c=s'  => \$chain,
+        'verbose|v'  => \$verbose,
+        'reverse|r!' => \$reverse,
+        'help'       => \$help
         ) or
         return usage(1);
 
@@ -73,7 +75,7 @@ sub script {
     return usage(0, $verbose) if $help;
     return usage(1) unless $chain;
 
-    run_chain($chain, load_handles(\@args), \*STDOUT);
+    run_chain($chain, $reverse, load_handles(\@args), \*STDOUT);
 
     return 0;
 }
@@ -96,9 +98,9 @@ sub load_handles {
 }
 
 sub run_chain {
-    my ($chain, $handles, $stdout, $blocksize) = @_;
+    my ($chain, $reverse, $handles, $stdout, $blocksize) = @_;
 
-    $chain = App::Muter::Chain->new($chain);
+    $chain = App::Muter::Chain->new($chain, $reverse);
     $blocksize ||= 512;
 
     foreach my $io (@$handles) {
@@ -115,7 +117,7 @@ sub usage {
     my ($ret, $verbose) = @_;
     my $fh = $ret ? \*STDERR : \*STDOUT;
     $fh->print(<<'EOM');
-muter -c CHAIN | --chain CHAIN [FILES...]
+muter [-r | --reverse] -c CHAIN | --chain CHAIN [FILES...]
 muter [--verbose] --help
 
 Modify the bytes in the concatentation of FILES (or standard input) by using the
@@ -128,6 +130,8 @@ parentheses, a single comma may be used.
 
 For example, '-hex:hash(sha256):base64' (or '-hex:hash,sha256:base64') decodes a
 hex-encoded string, hashes it with SHA-256, and converts the result to base64.
+
+If --reverse is specified, reverse the order of transforms in order and in sense.
 
 The following transforms are available:
 EOM

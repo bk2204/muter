@@ -1,5 +1,8 @@
 = Changelog
 
+v0.2.1::
+* Add core-only compatibility with 5.14.0, minus SHA-3 and tests.
+
 v0.2.0::
 * The "Ignore Them Still" release.
 * Add an App::Muter package so PAUSE will index the distribution.

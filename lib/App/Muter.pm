@@ -28,6 +28,13 @@ require 5.010001;
 
 use strict;
 use warnings;
+use feature ':5.10';
+
+my $experimental;
+BEGIN {
+    $experimental = 1 if exists $warnings::Offsets{'experimental::smartmatch'};
+}
+no if $experimental, warnings => 'experimental::smartmatch';
 
 =head1 DESCRIPTION
 
@@ -40,10 +47,6 @@ For more information, see L<muter(1)>.
 
 ## no critic(ProhibitMultiplePackages)
 package App::Muter::Main;
-
-use strict;
-use warnings;
-use experimental 'switch';
 
 use App::Muter::Backend ();
 use App::Muter::Chain   ();

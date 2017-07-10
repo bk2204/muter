@@ -16,6 +16,13 @@ it, but `url64` would just encode using the URL-safe version of Base64.
 A chain of `hash(sha256):hex` would hash the input data and then hex-encode the
 SHA-256 hash.
 
+Muter is designed to run on Perl 5.10.1 or newer.  It runs out of the box with
+core Perl on 5.14 and newer with only slightly reduced functionality (sans
+tests) and even on older versions has only minimal additional dependencies that
+you probably already have.
+
+It is available on https://metacpan.org/pod/App::Muter[CPAN].
+
 == Name
 
 Muter comes from the Spanish verb _mudar_ and the French verb _muter_, meaning

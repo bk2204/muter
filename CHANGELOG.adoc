@@ -2,6 +2,7 @@
 
 v0.2.1::
 * Add core-only compatibility with 5.14.0, minus SHA-3 and tests.
+* Remove use of experimental to aid compatibility with CentOS.
 
 v0.2.0::
 * The "Ignore Them Still" release.

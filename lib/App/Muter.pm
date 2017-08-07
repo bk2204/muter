@@ -41,7 +41,7 @@ no if $experimental, warnings => 'experimental::smartmatch';
 App::Muter provides the C<muter> command, which converts data between various
 formats.
 
-For more information, see L<muter(1)>.
+For more information, see L<muter>.
 
 =cut
 

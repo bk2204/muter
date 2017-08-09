@@ -59,6 +59,11 @@ Generally, a reverse transform will decode any variant of the forward transform.
 To preserve this invariant, related but incompatible transforms such as base64
 and url64 are separate transforms.
 
+In general, B<muter> expects the input to its decoders to be well-formed.
+Passing broken or corrupt data will not generally produce useful results.  For
+example, it isn't a good idea to try to decode URI-encoded data containing
+unencoded newlines.  In other words, garbage in, garbage out.
+
 =head1 OPTIONS
 
 =over 4

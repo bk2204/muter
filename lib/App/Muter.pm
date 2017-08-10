@@ -550,7 +550,7 @@ our @ISA = qw/App::Muter::Backend::ChunkedDecode/;
 
 sub new {
     my ($class, $args, %opts) = @_;
-    my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(%.?)$/);
+    my $self = $class->SUPER::new($args, %opts, regexp => qr/^(.*)(%.?)$/s);
     my $lower = grep { $_ eq 'lower' } @$args;
     $self->{chunk}  = '';
     $self->{format} = '%%%02' . ($lower ? 'x' : 'X');

@@ -28,6 +28,7 @@ sub encode_final {
 
 sub decode_chunk {
     my ($self, $data) = @_;
+    return '' unless length $data;
     return unpack('u', $data);
 }
 

@@ -176,7 +176,7 @@ sub byte_pattern {
     $seed = defined $seed ? "$seed:" : '';
 
     while (length($s) < $len) {
-        $s .= Digest::SHA::sha512($seed . pack("NN", $len, $count));
+        $s .= Digest::SHA::sha512($seed . pack("NN", $len, $count++));
     }
     return substr($s, 0, $len);
 }

@@ -52,7 +52,7 @@ transform either surrounded by parentheses or preceded by a comma.
 
 Not all transforms have an reverse transforms.  For example, the I<hash>
 transform, which implements cryptographic hashes, is not practically invertible
-(we hope).  An exception will be thrown if you attmept to use an invalid
+(we hope).  An exception will be thrown if you attempt to use an invalid
 transform.
 
 Generally, a reverse transform will decode any variant of the forward transform.

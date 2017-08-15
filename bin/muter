@@ -214,6 +214,8 @@ Use hexadecimal entity names for all entities.
 Use XML entitiy names, except for the apostrophe, which uses a hexadecimal
 entity.
 
+=back
+
 =head1 EXAMPLES
 
 =over 4
@@ -231,7 +233,7 @@ Exactly the same as the above.
 
 Read from I<file>, which contains a single hex-encoded string, hash the result
 with SHA-256, and encode the result as base64.  This chain could also be written
-as C-hex:hash,sha256:base64>, which may be easier to type.
+as C<-hex:hash,sha256:base64>, which may be easier to type.
 
 =back
 

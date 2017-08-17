@@ -192,6 +192,51 @@ Implements UUencoding.  Note that the "begin" and "end" markers are not emitted.
 Implements the L<vis(3)> function found on the BSDs.  The options supported
 correspond directly to the constants that function takes.
 
+The default encoding, if neither C<cstyle> nor C<octal> is specified, is to
+encode control characters in the form C<\^C>, control characters with the eighth
+bit set in the form C<\M^C>, other characters with the eighth bit in the form
+C<\M-C>, and space and meta-space as octal escapes.
+
+The flags C<httpstyle> and C<mimestyle> are not implemented.  Instead, use the
+C<uri> and C<quotedprintable> encoders.
+
+=over 4
+
+=item cstyle
+
+Use C-style backslash escapes for common control characters.  Space is encoded
+as C<\s>.  NUL is encoded as C<\0> if the next character is not an octal digit
+and C<\000> if it is.
+
+=item glob
+
+Encode the characters C<*>, C<?>, C<[> and C<#>, which are recognized by
+L<glob(3)>.
+
+=item nl
+
+Encode newline.
+
+=item octal
+
+Encode characters as three-digit octal escapes.
+
+=item sp
+
+=item space
+
+Encode space (U+0020).
+
+=item tab
+
+Encode tab.
+
+=item white
+
+Encode whitespace.  Equivalent to C<space,tab,nl>.
+
+=back
+
 =head2 xml
 
 Implements encoding of XML special characters.  Note that the reverse transform

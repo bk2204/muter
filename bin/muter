@@ -48,7 +48,8 @@ bytes; where character interpretation is required, UTF-8 is used.
 A chain is a series of transforms separated by colons.  A reverse transform
 (decoding) is specified by preceding the transform with a C<-> character.  If a
 transform takes parameters, they are separated by commas and follow the
-transform either surrounded by parentheses or preceded by a comma.
+transform either surrounded by parentheses or preceded by a comma.  Unknown
+parameters are ignored.
 
 Not all transforms have an reverse transforms.  For example, the I<hash>
 transform, which implements cryptographic hashes, is not practically invertible

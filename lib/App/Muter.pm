@@ -204,7 +204,7 @@ sub backends {
 
 sub load_backends {
     my ($self) = @_;
-    my @modules = map { /^([A-Za-z0-9]+)\.pm$/ ? ($1) : () } map {
+    my @modules = map { /\A([A-Za-z0-9]+)\.pm\z/ ? ($1) : () } map {
         my $dh;
         opendir($dh, $_) ? readdir($dh) : ()
     } map { File::Spec->catfile($_, qw/App Muter Backend/) } @INC;

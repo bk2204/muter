@@ -566,7 +566,6 @@ sub metadata {
         args => {
             'upper' => 'Use uppercase letters',
             'lower' => 'Use lowercase letters',
-            'form'  => 'Encode space as +',
         }
     };
 }
@@ -583,6 +582,25 @@ sub decode_chunk {
     $data =~ tr/+/ /;
     $data =~ s/%([0-9a-fA-F]{2})/chr(hex($1))/ge;
     return $data;
+}
+
+App::Muter::Registry->instance->register(__PACKAGE__);
+
+package App::Muter::Backend::Form;
+
+our @ISA = qw/App::Muter::Backend::URI/;
+
+sub encode_chunk {
+    my ($self, $data) = @_;
+    $data = $self->SUPER::encode_chunk($data);
+    $data =~ s/%20/+/g;
+    return $data;
+}
+
+sub decode_chunk {
+    my ($self, $data) = @_;
+    $data =~ tr/+/ /;
+    return $self->SUPER::decode_chunk($data);
 }
 
 App::Muter::Registry->instance->register(__PACKAGE__);

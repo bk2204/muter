@@ -1,5 +1,8 @@
 = Changelog
 
+v0.2.3::
+* Change `uri(form)` to `form` to avoid decoding `+` in the `uri` decoder.
+
 v0.2.2::
 * The "Feel the Change" release.
 * Improve MetaCPAN indexing of muter docs.

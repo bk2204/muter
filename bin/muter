@@ -119,7 +119,7 @@ is missing or too old.
 Implements the L<RFC 4648|https://tools.ietf.org/html/rfc4648> Base32 with
 Extended Hex Alphabet encoding, better known as C<base32hex>.
 
-Accept one option, C<manual>, which does the same thing as for C<base32>.
+Accepts one option, C<manual>, which does the same thing as for C<base32>.
 
 =head2 base64
 

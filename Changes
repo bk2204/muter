@@ -1,5 +1,10 @@
-v0.2.3  Not Released
-* Change `uri(form)` to `form` to avoid decoding `+` in the `uri` decoder.
+v0.3.0  2017-10-26
+* The "Somebody Catch My Breath" release.
+* Fix typo.
+* Improve validation in module names.
+* Convert changelog to CPAN-friendly format and ship it.
+* Change `uri(form)` to `form` to avoid decoding `+` in the `uri` decoder.  This
+  is an incompatible change.
 
 v0.2.2  2017-08-22
 * The "Feel the Change" release.

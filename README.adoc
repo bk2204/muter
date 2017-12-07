@@ -23,6 +23,13 @@ you probably already have.
 
 It is available on https://metacpan.org/pod/App::Muter[CPAN].
 
+You can unpack the archive and run `perl Makefile.PL && make && sudo make
+install` (the normal Perl module procedure) to install.
+
+If you would like to run the code directly from the repository and it's not in a
+safe directory (as in, not `/tmp`), you can symlink the `bin/muter-wrapper`
+script into your path as `muter`.
+
 == Examples
 
 [source,shell-session]

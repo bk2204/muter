@@ -43,3 +43,5 @@ $ curl https://user:$(printf 'very-complex/pass' | muter -c uri)@example.org
 
 Muter comes from the Spanish verb _mudar_ and the French verb _muter_, meaning
 _to mutate_, since what it does is, well, mutate data.
+
+The name is pronounced /ˈmjuːtər/ (MUTE-er).

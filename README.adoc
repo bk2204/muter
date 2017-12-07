@@ -23,6 +23,22 @@ you probably already have.
 
 It is available on https://metacpan.org/pod/App::Muter[CPAN].
 
+== Examples
+
+[source,shell-session]
+----
+# URI-decode some data, then HTML-encode it
+$ muter -c -uri:xml,html my-data >foo.html
+
+# Generate a subresource integrity hash
+$ printf 'sha256-'; \
+  curl -s https://code.jquery.com/jquery-3.2.1.js | muter -c hash,sha256:base64
+sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE=
+
+# Encode a password for use with curl
+$ curl https://user:$(printf 'very-complex/pass' | muter -c uri)@example.org
+----
+
 == Name
 
 Muter comes from the Spanish verb _mudar_ and the French verb _muter_, meaning

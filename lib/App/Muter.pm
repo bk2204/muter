@@ -30,12 +30,6 @@ use strict;
 use warnings;
 use feature ':5.10';
 
-my $experimental;
-BEGIN {
-    $experimental = 1 if exists $warnings::Offsets{'experimental::smartmatch'};
-}
-no if $experimental, warnings => 'experimental::smartmatch';
-
 =head1 DESCRIPTION
 
 App::Muter provides the C<muter> command, which converts data between various
@@ -807,14 +801,18 @@ sub _encode {
     my ($byte) = @_;
     use bytes;
     my $ascii = $byte & 0x7f;
-    for ($byte) {
-        when ([0x00 .. 0x1f, 0x7f]) { return '\^' . chr($ascii ^ 0x40) }
-        when ([0x80 .. 0x9f, 0xff]) { return '\M^' . chr($ascii ^ 0x40) }
-        when ([0xa1 .. 0xfe]) { return '\M-' . chr($ascii) }
-        when (0x20)           { return '\040' }
-        when (0xa0)           { return '\240' }
-        default { die sprintf 'Found byte value %#02x', $byte; }
+    if (grep { $_ eq $byte } (0x00 .. 0x1f, 0x7f)) {
+        return '\^' . chr($ascii ^ 0x40);
     }
+    elsif (grep { $_ eq $byte } ((0x80 .. 0x9f, 0xff))) {
+        return '\M^' . chr($ascii ^ 0x40);
+    }
+    elsif (grep { $_ eq $byte } (0xa1 .. 0xfe)) {
+        return '\M-' . chr($ascii);
+    }
+    elsif ($byte == 0x20) { return '\040' }
+    elsif ($byte == 0xa0) { return '\240' }
+    else                  { die sprintf 'Found byte value %#02x', $byte; }
     return;
 }
 

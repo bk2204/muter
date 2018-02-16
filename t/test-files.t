@@ -4,13 +4,6 @@ use strict;
 use warnings;
 use feature ':5.10';
 
-my $experimental;
-
-BEGIN {
-    $experimental = 1 if exists $warnings::Offsets{'experimental::smartmatch'};
-}
-no if $experimental, warnings => 'experimental::smartmatch';
-
 use FindBin;
 
 use lib "$FindBin::Bin/../lib";
@@ -40,20 +33,20 @@ foreach my $test (@files) {
     while (my $line = <$fh>) {
         $entries{$state} //= {};
         for ($line) {
-            when (/^Flags:\s+(.*)$/) {
+            if (/^Flags:\s+(.*)$/) {
                 set_flags($entries{$state}, $1);
             }
-            when (/^Input:\s(.*)$/) {
+            elsif (/^Input:\s(.*)$/) {
                 $entries{$state}{data} = $1;
             }
-            when (/^Output:\s(.*)$/) {
+            elsif (/^Output:\s(.*)$/) {
                 $entries{$state}{data} = $1;
             }
-            when (/^Chain:\s(.*)$/) {
+            elsif (/^Chain:\s(.*)$/) {
                 $state = $count++;
                 $entries{$state}{chain} = $1;
             }
-            when (/^\s(.*)/) {
+            elsif (/^\s(.*)/) {
                 $entries{$state}{data} .= "\n$1";
             }
         }

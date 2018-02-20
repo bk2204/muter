@@ -1,3 +1,6 @@
+v0.3.1
+* Remove use of smartmatch.
+
 v0.3.0  2017-10-26
 * The "Somebody Catch My Breath" release.
 * Fix typo.

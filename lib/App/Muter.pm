@@ -488,13 +488,15 @@ sub decode_chunk {
     return '' unless length($data);
     return $self->{dref}->($data) if $self->{dref};
     my $lenmap = [5, 4, undef, 3, 2, undef, 1];
-    my $trailing = $data =~ /(=+)$/ ? length $1 : 0;
+    my $trailing = $data =~ /(=+)$/ ? length $1 : (8 - (length($data) % 8)) % 8;
     my $truncate = $lenmap->[$trailing];
     my $result   = '';
     my @data     = unpack('C*', $self->{rtr}->($data));
     use bytes;
 
     while (my @chunk = splice(@data, 0, 8)) {
+        # This shouldn't happen, but handle it gracefully if it does.
+        push @chunk, ((0) x 8) if scalar(@chunk) & 7;
         my @converted = (
             ($chunk[0] << 3) | ($chunk[1] >> 2),
             ($chunk[1] << 6) | ($chunk[2] << 1) | ($chunk[3] >> 4),

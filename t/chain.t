@@ -301,6 +301,14 @@ test_run_chain(
     'simple chain with no parentheses'
 );
 
+# We have to do something sane with these situations.  Generally, if there is
+# missing padding, we ignore it.  Otherwise, we need to at least not cause
+# uninitialized value warnings.
+subtest 'Invalid data' => sub {
+    test_run_chain('-base32', 'IFAUCQKBIFAUC', 'AAAAAAAA',
+        'missing padding for base32');
+};
+
 Test::NoWarnings::had_no_warnings() if $INC{'Test/NoWarnings.pm'};
 
 done_testing;

@@ -1,0 +1,7 @@
+[package]
+name = "muter"
+version = "0.1.0"
+authors = ["brian m. carlson <sandals@crustytoothpaste.net>"]
+
+[dependencies]
+clap = "2.32.0"

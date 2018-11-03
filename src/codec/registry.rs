@@ -12,6 +12,7 @@ impl CodecRegistry {
                       -> Result<Box<io::BufRead>, Error> {
         match name {
             "hex" => codec::codecs::hex::TransformFactory::factory(r, s),
+            "identity" => codec::codecs::identity::TransformFactory::factory(r, s),
             "uri" => codec::codecs::uri::TransformFactory::factory(r, s),
             _ => Err(Error::UnknownCodec(String::from(name))),
         }

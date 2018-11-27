@@ -6,7 +6,12 @@ use codec::CodecSettings;
 pub struct CodecRegistry {}
 
 impl CodecRegistry {
-    pub fn create<'a>(name: &'a str,
+    pub fn new() -> Self {
+        CodecRegistry {}
+    }
+
+    pub fn create<'a>(&self,
+                      name: &'a str,
                       r: Box<io::BufRead>,
                       s: CodecSettings)
                       -> Result<Box<io::BufRead>, Error> {

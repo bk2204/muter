@@ -67,7 +67,7 @@ impl<'a> Chain<'a> {
             ?
             .iter()
             .fold(start, |cur, xfrm| {
-                Ok(CodecRegistry::create(xfrm.name, cur?, self.codec_settings(xfrm))?)
+                Ok(CodecRegistry::new().create(xfrm.name, cur?, self.codec_settings(xfrm))?)
             })
     }
 

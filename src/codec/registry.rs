@@ -1,13 +1,26 @@
 use std::io;
+use std::collections::HashMap;
 use codec;
 use codec::Error;
 use codec::CodecSettings;
 
-pub struct CodecRegistry {}
+type TransformFactoryFn = fn(Box<io::BufRead>, CodecSettings) -> Result<Box<io::BufRead>, Error>;
+
+pub struct CodecRegistry {
+    map: HashMap<&'static str, TransformFactoryFn>,
+}
 
 impl CodecRegistry {
     pub fn new() -> Self {
-        CodecRegistry {}
+        let mut map: HashMap<&'static str, TransformFactoryFn> = HashMap::new();
+
+        map.insert("base16", codec::codecs::base16::TransformFactory::factory);
+        map.insert("hex", codec::codecs::hex::TransformFactory::factory);
+        map.insert("identity",
+                   codec::codecs::identity::TransformFactory::factory);
+        map.insert("uri", codec::codecs::uri::TransformFactory::factory);
+
+        CodecRegistry { map: map }
     }
 
     pub fn create<'a>(&self,
@@ -15,12 +28,9 @@ impl CodecRegistry {
                       r: Box<io::BufRead>,
                       s: CodecSettings)
                       -> Result<Box<io::BufRead>, Error> {
-        match name {
-            "base16" => codec::codecs::base16::TransformFactory::factory(r, s),
-            "hex" => codec::codecs::hex::TransformFactory::factory(r, s),
-            "identity" => codec::codecs::identity::TransformFactory::factory(r, s),
-            "uri" => codec::codecs::uri::TransformFactory::factory(r, s),
-            _ => Err(Error::UnknownCodec(String::from(name))),
+        match self.map.get(name) {
+            Some(f) => f(r, s),
+            None => Err(Error::UnknownCodec(String::from(name))),
         }
     }
 }

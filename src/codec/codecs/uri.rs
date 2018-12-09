@@ -107,20 +107,25 @@ impl Codec for Decoder {
 #[cfg(test)]
 mod tests {
     use chain::Chain;
+    use codec::registry::CodecRegistry;
+
+    fn reg() -> CodecRegistry {
+        CodecRegistry::new()
+    }
 
     fn check(inp: &[u8], lower: &[u8], upper: &[u8]) {
         for i in vec![4, 5, 6, 7, 8, 512] {
-            let c = Chain::new("uri", i, true);
+            let c = Chain::new(reg(), "uri", i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), upper);
-            let c = Chain::new("uri,lower", i, true);
+            let c = Chain::new(reg(), "uri,lower", i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), lower);
-            let c = Chain::new("uri,upper", i, true);
+            let c = Chain::new(reg(), "uri,upper", i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), upper);
-            let c = Chain::new("-uri", i, true);
+            let c = Chain::new(reg(), "-uri", i, true);
             assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
-            let c = Chain::new("-uri", i, true);
+            let c = Chain::new(reg(), "-uri", i, true);
             assert_eq!(c.transform(lower.to_vec()).unwrap(), inp);
-            let c = Chain::new("-uri", i, false);
+            let c = Chain::new(reg(), "-uri", i, false);
             assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
         }
     }

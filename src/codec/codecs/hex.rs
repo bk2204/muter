@@ -106,19 +106,24 @@ impl Codec for Decoder {
 #[cfg(test)]
 mod tests {
     use chain::Chain;
+    use codec::registry::CodecRegistry;
+
+    fn reg() -> CodecRegistry {
+        CodecRegistry::new()
+    }
 
     fn check(inp: &[u8], lower: &[u8], upper: &[u8]) {
-        let c = Chain::new("hex", 512, true);
+        let c = Chain::new(reg(), "hex", 512, true);
         assert_eq!(c.transform(inp.to_vec()).unwrap(), lower);
-        let c = Chain::new("hex,lower", 512, true);
+        let c = Chain::new(reg(), "hex,lower", 512, true);
         assert_eq!(c.transform(inp.to_vec()).unwrap(), lower);
-        let c = Chain::new("hex,upper", 512, true);
+        let c = Chain::new(reg(), "hex,upper", 512, true);
         assert_eq!(c.transform(inp.to_vec()).unwrap(), upper);
-        let c = Chain::new("-hex", 512, true);
+        let c = Chain::new(reg(), "-hex", 512, true);
         assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
-        let c = Chain::new("-hex", 512, true);
+        let c = Chain::new(reg(), "-hex", 512, true);
         assert_eq!(c.transform(lower.to_vec()).unwrap(), inp);
-        let c = Chain::new("-hex", 512, false);
+        let c = Chain::new(reg(), "-hex", 512, false);
         assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
     }
 

@@ -22,16 +22,21 @@ impl TransformFactory {
 #[cfg(test)]
 mod tests {
     use chain::Chain;
+    use codec::registry::CodecRegistry;
+
+    fn reg() -> CodecRegistry {
+        CodecRegistry::new()
+    }
 
     fn check(inp: &[u8]) {
         for i in vec![4, 5, 6, 7, 8, 512] {
-            let c = Chain::new("identity", i, true);
+            let c = Chain::new(reg(), "identity", i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), inp);
-            let c = Chain::new("identity", i, false);
+            let c = Chain::new(reg(), "identity", i, false);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), inp);
-            let c = Chain::new("-identity", i, true);
+            let c = Chain::new(reg(), "-identity", i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), inp);
-            let c = Chain::new("-identity", i, false);
+            let c = Chain::new(reg(), "-identity", i, false);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), inp);
         }
     }

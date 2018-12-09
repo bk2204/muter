@@ -50,14 +50,16 @@ pub struct Chain<'a> {
     chain: &'a str,
     bufsize: usize,
     strict: bool,
+    codecs: CodecRegistry,
 }
 
 impl<'a> Chain<'a> {
-    pub fn new(chain: &'a str, bufsize: usize, strict: bool) -> Self {
+    pub fn new(codecs: CodecRegistry, chain: &'a str, bufsize: usize, strict: bool) -> Self {
         Chain {
             chain: chain,
             bufsize: bufsize,
             strict: strict,
+            codecs: codecs,
         }
     }
 
@@ -67,7 +69,8 @@ impl<'a> Chain<'a> {
             ?
             .iter()
             .fold(start, |cur, xfrm| {
-                Ok(CodecRegistry::new().create(xfrm.name, cur?, self.codec_settings(xfrm))?)
+                Ok(self.codecs
+                       .create(xfrm.name, cur?, self.codec_settings(xfrm))?)
             })
     }
 

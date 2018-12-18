@@ -12,6 +12,8 @@ use std::collections::BTreeSet;
 pub enum Error {
     IO(io::Error),
     InvalidSequence(String, Vec<u8>),
+    TruncatedData,
+    ExtraData,
     ForwardOnly(String),
     UnknownCodec(String),
     IncompatibleParameters(String, String),
@@ -24,6 +26,8 @@ impl fmt::Display for Error {
             Error::InvalidSequence(ref name, ref seq) => {
                 write!(f, "invalid sequence for codec '{}': {:02x?}", name, seq)
             }
+            Error::TruncatedData => write!(f, "truncated data"),
+            Error::ExtraData => write!(f, "extra data"),
             Error::ForwardOnly(ref name) => write!(f, "no reverse transform for {}", name),
             Error::UnknownCodec(ref name) => write!(f, "no such codec: {}", name),
             Error::IncompatibleParameters(ref name1, ref name2) => {

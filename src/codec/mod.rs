@@ -135,11 +135,19 @@ impl<R: BufRead, C: Codec> CodecReader<R, C> {
 impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
     fn read(&mut self, dst: &mut [u8]) -> io::Result<usize> {
         let obj = &mut self.r;
+        let mut last_read: Option<usize> = None;
         loop {
             let (ret, eof);
             {
                 let input = obj.fill_buf()?;
-                eof = input.is_empty();
+                eof = input.is_empty() ||
+                      match (last_read, input.len()) {
+                          (Some(x), y) if x == y => true,
+                          _ => false,
+                      };
+
+                last_read = Some(input.len());
+
                 let flush = if eof {
                     FlushState::Finish
                 } else {
@@ -164,6 +172,9 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 // be interpreted as EOF.
                 Ok(Status::Ok(_, 0)) |
                 Ok(Status::BufError(_, 0)) if !eof && dst.len() > 0 => continue,
+                Ok(Status::BufError(0, _)) if eof => {
+                    return Err(io::Error::from(Error::TruncatedData))
+                }
                 Ok(Status::Ok(_, read)) |
                 Ok(Status::BufError(_, read)) |
                 Ok(Status::StreamEnd(_, read)) => return Ok(read),

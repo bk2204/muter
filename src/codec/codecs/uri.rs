@@ -88,7 +88,7 @@ impl Codec for Decoder {
                             }
                             dst[j] = v as u8;
                         }
-                        _ => return Ok(Status::BufError(i - 1, j)),
+                        _ => return Ok(Status::BufError(i, j)),
                     }
                 }
                 _ => {
@@ -107,6 +107,7 @@ impl Codec for Decoder {
 #[cfg(test)]
 mod tests {
     use chain::Chain;
+    use codec::Error;
     use codec::registry::CodecRegistry;
 
     fn reg() -> CodecRegistry {
@@ -130,6 +131,26 @@ mod tests {
         }
     }
 
+    macro_rules! check_failure {
+        ($inp:expr, $x:pat) => {
+            for i in vec![4, 5, 6, 7, 8, 512] {
+                for b in vec![true, false] {
+                    let c = Chain::new(reg(), "-uri", i, b);
+                    match c.transform($inp.to_vec()) {
+                        Ok(_) => panic!("got success for invalid sequence"),
+                        Err(e) => {
+                            match e.get_ref().unwrap().downcast_ref::<Error>() {
+                                Some($x) => (),
+                                Some(e) => panic!("got wrong error: {:?}", e),
+                                None => panic!("No internal error?"),
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     #[test]
     fn encodes_bytes() {
         check(b"abc", b"abc", b"abc");
@@ -139,5 +160,13 @@ mod tests {
               b"%01%23Eg%89%ab%cd%ef",
               b"%01%23Eg%89%AB%CD%EF");
         check(b"\xfe\xdc\xba", b"%fe%dc%ba", b"%FE%DC%BA");
+    }
+
+    #[test]
+    fn rejects_invalid() {
+        check_failure!(b"abc%0xff", Error::InvalidSequence(_, _));
+        check_failure!(b"abc%", Error::TruncatedData);
+        check_failure!(b"abc%v", Error::TruncatedData);
+        check_failure!(b"abc%vv", Error::InvalidSequence(_, _));
     }
 }

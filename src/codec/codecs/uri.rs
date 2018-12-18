@@ -88,7 +88,7 @@ impl Codec for Decoder {
                             }
                             dst[j] = v as u8;
                         }
-                        _ => return Ok(Status::Ok(i - 1, j)),
+                        _ => return Ok(Status::BufError(i - 1, j)),
                     }
                 }
                 _ => {

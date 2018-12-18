@@ -66,8 +66,15 @@ pub enum Direction {
 }
 
 pub enum Status {
+    // We have successfully consumed the given number of valid input bytes and transformed them
+    // into valid output bytes. Additional processing may be possible with additional buffer space,
+    // however.
     Ok(usize, usize),
+    // As above, but the remaining input bytes did not form a complete sequence; we must receive
+    // more bytes. If there are none, the sequence has been truncated.
     BufError(usize, usize),
+    // As for Ok, but we have detected the end of the input stream and no further bytes should be
+    // expected. If there are more bytes, the data is corrupt.
     StreamEnd(usize, usize),
 }
 

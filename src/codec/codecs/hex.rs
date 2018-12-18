@@ -80,10 +80,6 @@ impl Codec for Decoder {
                 .collect()
         };
 
-        if vec.len() == 0 {
-            return Ok(Status::BufError(0, 0));
-        }
-
         let bytes = vec.len() / 2;
         let mut n = 0;
         for (i, j) in (0..bytes).map(|x| (x * 2, x)) {

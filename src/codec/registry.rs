@@ -15,6 +15,7 @@ impl CodecRegistry {
         let mut map: HashMap<&'static str, TransformFactoryFn> = HashMap::new();
 
         map.insert("base16", codec::codecs::base16::TransformFactory::factory);
+        map.insert("base32", codec::codecs::base32::TransformFactory::factory);
         map.insert("hex", codec::codecs::hex::TransformFactory::factory);
         map.insert("identity",
                    codec::codecs::identity::TransformFactory::factory);

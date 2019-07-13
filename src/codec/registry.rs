@@ -1,8 +1,8 @@
-use std::io;
-use std::collections::HashMap;
 use codec;
-use codec::Error;
 use codec::CodecSettings;
+use codec::Error;
+use std::collections::HashMap;
+use std::io;
 
 type TransformFactoryFn = fn(Box<io::BufRead>, CodecSettings) -> Result<Box<io::BufRead>, Error>;
 
@@ -17,8 +17,10 @@ impl CodecRegistry {
         map.insert("base16", codec::codecs::base16::TransformFactory::factory);
         map.insert("base32", codec::codecs::base32::TransformFactory::factory);
         map.insert("hex", codec::codecs::hex::TransformFactory::factory);
-        map.insert("identity",
-                   codec::codecs::identity::TransformFactory::factory);
+        map.insert(
+            "identity",
+            codec::codecs::identity::TransformFactory::factory,
+        );
         map.insert("uri", codec::codecs::uri::TransformFactory::factory);
 
         CodecRegistry { map: map }
@@ -28,11 +30,12 @@ impl CodecRegistry {
         self.map.insert(k, f);
     }
 
-    pub fn create<'a>(&self,
-                      name: &'a str,
-                      r: Box<io::BufRead>,
-                      s: CodecSettings)
-                      -> Result<Box<io::BufRead>, Error> {
+    pub fn create<'a>(
+        &self,
+        name: &'a str,
+        r: Box<io::BufRead>,
+        s: CodecSettings,
+    ) -> Result<Box<io::BufRead>, Error> {
         match self.map.get(name) {
             Some(f) => f(r, s),
             None => Err(Error::UnknownCodec(String::from(name))),
@@ -42,13 +45,13 @@ impl CodecRegistry {
 
 #[cfg(test)]
 mod tests {
-    use std::io;
-    use std::io::Read;
-    use std::collections::BTreeSet;
-    use codec::Error;
+    use codec::registry::CodecRegistry;
     use codec::CodecSettings;
     use codec::Direction;
-    use codec::registry::CodecRegistry;
+    use codec::Error;
+    use std::collections::BTreeSet;
+    use std::io;
+    use std::io::Read;
 
     fn factory(_r: Box<io::BufRead>, _s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         return Ok(Box::new(io::Cursor::new(vec![0x61, 0x62, 0x63])));

@@ -1,12 +1,12 @@
 pub mod codecs;
 pub mod registry;
 
-use std::fmt;
+use std::collections::BTreeSet;
 use std::convert;
 use std::error;
+use std::fmt;
 use std::io;
 use std::io::prelude::*;
-use std::collections::BTreeSet;
 
 #[derive(Debug)]
 pub enum Error {
@@ -30,12 +30,11 @@ impl fmt::Display for Error {
             Error::ExtraData => write!(f, "extra data"),
             Error::ForwardOnly(ref name) => write!(f, "no reverse transform for {}", name),
             Error::UnknownCodec(ref name) => write!(f, "no such codec: {}", name),
-            Error::IncompatibleParameters(ref name1, ref name2) => {
-                write!(f,
-                       "invalid parameter combination: '{}' and '{}",
-                       name1,
-                       name2)
-            }
+            Error::IncompatibleParameters(ref name1, ref name2) => write!(
+                f,
+                "invalid parameter combination: '{}' and '{}",
+                name1, name2
+            ),
         }
     }
 }
@@ -101,7 +100,8 @@ pub struct StatelessEncoder<F> {
 }
 
 impl<F> StatelessEncoder<F>
-    where F: Fn(&[u8], &mut [u8]) -> (usize, usize)
+where
+    F: Fn(&[u8], &mut [u8]) -> (usize, usize),
 {
     pub fn new(f: F) -> Self {
         StatelessEncoder { f: f }
@@ -109,7 +109,8 @@ impl<F> StatelessEncoder<F>
 }
 
 impl<F> Codec for StatelessEncoder<F>
-    where F: Fn(&[u8], &mut [u8]) -> (usize, usize)
+where
+    F: Fn(&[u8], &mut [u8]) -> (usize, usize),
 {
     fn transform(&mut self, inp: &[u8], out: &mut [u8], f: FlushState) -> Result<Status, Error> {
         let consumed = (self.f)(inp, out);
@@ -142,11 +143,11 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
             let (ret, eof);
             {
                 let input = obj.fill_buf()?;
-                eof = input.is_empty() ||
-                      match (last_read, input.len()) {
-                          (Some(x), y) if x == y => true,
-                          _ => false,
-                      };
+                eof = input.is_empty()
+                    || match (last_read, input.len()) {
+                        (Some(x), y) if x == y => true,
+                        _ => false,
+                    };
 
                 last_read = Some(input.len());
 
@@ -155,15 +156,13 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 } else {
                     FlushState::None
                 };
-                ret = {
-                    self.codec.transform(input, dst, flush)
-                };
+                ret = { self.codec.transform(input, dst, flush) };
             }
 
             match ret {
-                Ok(Status::Ok(consumed, _)) |
-                Ok(Status::BufError(consumed, _)) |
-                Ok(Status::StreamEnd(consumed, _)) => obj.consume(consumed),
+                Ok(Status::Ok(consumed, _))
+                | Ok(Status::BufError(consumed, _))
+                | Ok(Status::StreamEnd(consumed, _)) => obj.consume(consumed),
                 _ => (),
             }
 
@@ -172,14 +171,15 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 // then we need to keep asking for more data because if we
                 // return that 0 bytes of data have been read then it will
                 // be interpreted as EOF.
-                Ok(Status::Ok(_, 0)) |
-                Ok(Status::BufError(_, 0)) if !eof && dst.len() > 0 => continue,
+                Ok(Status::Ok(_, 0)) | Ok(Status::BufError(_, 0)) if !eof && dst.len() > 0 => {
+                    continue
+                }
                 Ok(Status::BufError(0, _)) if eof => {
                     return Err(io::Error::from(Error::TruncatedData))
                 }
-                Ok(Status::Ok(_, read)) |
-                Ok(Status::BufError(_, read)) |
-                Ok(Status::StreamEnd(_, read)) => return Ok(read),
+                Ok(Status::Ok(_, read))
+                | Ok(Status::BufError(_, read))
+                | Ok(Status::StreamEnd(_, read)) => return Ok(read),
 
                 Err(e) => return Err(io::Error::from(e)),
             }
@@ -193,7 +193,9 @@ pub struct Transform<C: Codec> {
 
 impl<C: Codec> Transform<C> {
     pub fn new(r: Box<io::BufRead>, c: C) -> Self {
-        Transform { b: io::BufReader::new(CodecReader::new(r, c)) }
+        Transform {
+            b: io::BufReader::new(CodecReader::new(r, c)),
+        }
     }
 }
 

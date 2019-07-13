@@ -1,8 +1,8 @@
-use std::io;
 use codec::CodecSettings;
 use codec::Error;
-use codec::Transform;
 use codec::StatelessEncoder;
+use codec::Transform;
+use std::io;
 
 pub struct TransformFactory {}
 

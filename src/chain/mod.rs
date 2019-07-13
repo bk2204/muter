@@ -4,9 +4,9 @@ use std::error;
 use std::fmt;
 use std::io;
 
-use codec::Direction;
-use codec::CodecSettings;
 use codec::registry::CodecRegistry;
+use codec::CodecSettings;
+use codec::Direction;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
@@ -65,13 +65,11 @@ impl<'a> Chain<'a> {
 
     pub fn build(&self, src: Box<io::BufRead>) -> io::Result<Box<io::BufRead>> {
         let start: io::Result<_> = Ok(src);
-        Self::parse(self.chain)
-            ?
-            .iter()
-            .fold(start, |cur, xfrm| {
-                Ok(self.codecs
-                       .create(xfrm.name, cur?, self.codec_settings(xfrm))?)
-            })
+        Self::parse(self.chain)?.iter().fold(start, |cur, xfrm| {
+            Ok(self
+                .codecs
+                .create(xfrm.name, cur?, self.codec_settings(xfrm))?)
+        })
     }
 
     pub fn transform<'b>(&self, b: Vec<u8>) -> io::Result<Vec<u8>> {
@@ -127,18 +125,17 @@ impl<'a> Chain<'a> {
         }
 
         let set = match args {
-            Some(s) => {
-                s.split(",")
-                    .map(|x| String::from(x))
-                    .collect::<BTreeSet<String>>()
-            }
+            Some(s) => s
+                .split(",")
+                .map(|x| String::from(x))
+                .collect::<BTreeSet<String>>(),
             None => BTreeSet::new(),
         };
         Ok(ChainTransform {
-               name: name,
-               args: set,
-               dir: dir,
-           })
+            name: name,
+            args: set,
+            dir: dir,
+        })
     }
 }
 
@@ -148,8 +145,8 @@ mod tests {
     use std::iter::FromIterator;
 
     use chain::Chain;
-    use chain::Error;
     use chain::ChainTransform;
+    use chain::Error;
     use codec::Direction;
 
     fn xfrm<'a>(s: &'a str, v: Vec<&'a str>, forward: bool) -> ChainTransform<'a> {
@@ -165,58 +162,96 @@ mod tests {
 
     #[test]
     fn parses_simple_names() {
-        assert_eq!(Chain::parse("hex").unwrap(),
-                   vec![xfrm("hex", vec![], true)]);
-        assert_eq!(Chain::parse("base64").unwrap(),
-                   vec![xfrm("base64", vec![], true)]);
-        assert_eq!(Chain::parse("-hex").unwrap(),
-                   vec![xfrm("hex", vec![], false)]);
-        assert_eq!(Chain::parse("-base64").unwrap(),
-                   vec![xfrm("base64", vec![], false)]);
+        assert_eq!(
+            Chain::parse("hex").unwrap(),
+            vec![xfrm("hex", vec![], true)]
+        );
+        assert_eq!(
+            Chain::parse("base64").unwrap(),
+            vec![xfrm("base64", vec![], true)]
+        );
+        assert_eq!(
+            Chain::parse("-hex").unwrap(),
+            vec![xfrm("hex", vec![], false)]
+        );
+        assert_eq!(
+            Chain::parse("-base64").unwrap(),
+            vec![xfrm("base64", vec![], false)]
+        );
     }
 
     #[test]
     fn parses_parenthesized_names() {
-        assert_eq!(Chain::parse("hash(sha256)").unwrap(),
-                   vec![xfrm("hash", vec!["sha256"], true)]);
-        assert_eq!(Chain::parse("vis(cstyle,white)").unwrap(),
-                   vec![xfrm("vis", vec!["cstyle", "white"], true)]);
-        assert_eq!(Chain::parse("-vis(cstyle,white)").unwrap(),
-                   vec![xfrm("vis", vec!["cstyle", "white"], false)]);
+        assert_eq!(
+            Chain::parse("hash(sha256)").unwrap(),
+            vec![xfrm("hash", vec!["sha256"], true)]
+        );
+        assert_eq!(
+            Chain::parse("vis(cstyle,white)").unwrap(),
+            vec![xfrm("vis", vec!["cstyle", "white"], true)]
+        );
+        assert_eq!(
+            Chain::parse("-vis(cstyle,white)").unwrap(),
+            vec![xfrm("vis", vec!["cstyle", "white"], false)]
+        );
     }
 
     #[test]
     fn parses_comma_split_names() {
-        assert_eq!(Chain::parse("hash,sha256").unwrap(),
-                   vec![xfrm("hash", vec!["sha256"], true)]);
-        assert_eq!(Chain::parse("vis,cstyle,white").unwrap(),
-                   vec![xfrm("vis", vec!["cstyle", "white"], true)]);
-        assert_eq!(Chain::parse("-vis,cstyle,white").unwrap(),
-                   vec![xfrm("vis", vec!["cstyle", "white"], false)]);
+        assert_eq!(
+            Chain::parse("hash,sha256").unwrap(),
+            vec![xfrm("hash", vec!["sha256"], true)]
+        );
+        assert_eq!(
+            Chain::parse("vis,cstyle,white").unwrap(),
+            vec![xfrm("vis", vec!["cstyle", "white"], true)]
+        );
+        assert_eq!(
+            Chain::parse("-vis,cstyle,white").unwrap(),
+            vec![xfrm("vis", vec!["cstyle", "white"], false)]
+        );
     }
 
     #[test]
     fn parses_complex_chains() {
-        assert_eq!(Chain::parse("-base64:hash,sha256").unwrap(),
-                   vec![xfrm("base64", vec![], false), xfrm("hash", vec!["sha256"], true)]);
-        assert_eq!(Chain::parse("-vis,cstyle,white:xml(html):uri,lower").unwrap(),
-                   vec![xfrm("vis", vec!["cstyle", "white"], false),
-                        xfrm("xml", vec!["html"], true),
-                        xfrm("uri", vec!["lower"], true)]);
+        assert_eq!(
+            Chain::parse("-base64:hash,sha256").unwrap(),
+            vec![
+                xfrm("base64", vec![], false),
+                xfrm("hash", vec!["sha256"], true)
+            ]
+        );
+        assert_eq!(
+            Chain::parse("-vis,cstyle,white:xml(html):uri,lower").unwrap(),
+            vec![
+                xfrm("vis", vec!["cstyle", "white"], false),
+                xfrm("xml", vec!["html"], true),
+                xfrm("uri", vec!["lower"], true)
+            ]
+        );
     }
-
 
     #[test]
     fn rejects_invalid_data() {
-        assert_eq!(Chain::parse("").unwrap_err(),
-                   Error::InvalidName(String::from("")));
-        assert_eq!(Chain::parse("-").unwrap_err(),
-                   Error::InvalidName(String::from("")));
-        assert_eq!(Chain::parse("name(").unwrap_err(),
-                   Error::MismatchedParentheses(String::from("name(")));
-        assert_eq!(Chain::parse("-name(").unwrap_err(),
-                   Error::MismatchedParentheses(String::from("name(")));
-        assert_eq!(Chain::parse("hex,").unwrap_err(),
-                   Error::InvalidArgument(String::from(",")));
+        assert_eq!(
+            Chain::parse("").unwrap_err(),
+            Error::InvalidName(String::from(""))
+        );
+        assert_eq!(
+            Chain::parse("-").unwrap_err(),
+            Error::InvalidName(String::from(""))
+        );
+        assert_eq!(
+            Chain::parse("name(").unwrap_err(),
+            Error::MismatchedParentheses(String::from("name("))
+        );
+        assert_eq!(
+            Chain::parse("-name(").unwrap_err(),
+            Error::MismatchedParentheses(String::from("name("))
+        );
+        assert_eq!(
+            Chain::parse("hex,").unwrap_err(),
+            Error::InvalidArgument(String::from(","))
+        );
     }
 }

@@ -1,14 +1,14 @@
-use std::io;
 use codec::Codec;
 use codec::CodecSettings;
 use codec::Direction;
 use codec::Error;
 use codec::FlushState;
+use codec::StatelessEncoder;
 use codec::Status;
 use codec::Transform;
-use codec::StatelessEncoder;
+use std::io;
 
-use codec::codecs::hex::{LOWER, UPPER, REV};
+use codec::codecs::hex::{LOWER, REV, UPPER};
 
 pub struct TransformFactory {}
 
@@ -84,7 +84,10 @@ impl Codec for Decoder {
                         (Some((_, a)), Some((_, b))) => {
                             let v: i16 = ((REV[*a as usize] as i16) << 4) | REV[*b as usize] as i16;
                             if v < 0 {
-                                return Err(Error::InvalidSequence("uri".to_string(), vec![*a, *b]));
+                                return Err(Error::InvalidSequence(
+                                    "uri".to_string(),
+                                    vec![*a, *b],
+                                ));
                             }
                             dst[j] = v as u8;
                         }
@@ -107,8 +110,8 @@ impl Codec for Decoder {
 #[cfg(test)]
 mod tests {
     use chain::Chain;
-    use codec::Error;
     use codec::registry::CodecRegistry;
+    use codec::Error;
 
     fn reg() -> CodecRegistry {
         CodecRegistry::new()
@@ -138,17 +141,15 @@ mod tests {
                     let c = Chain::new(reg(), "-uri", i, b);
                     match c.transform($inp.to_vec()) {
                         Ok(_) => panic!("got success for invalid sequence"),
-                        Err(e) => {
-                            match e.get_ref().unwrap().downcast_ref::<Error>() {
-                                Some($x) => (),
-                                Some(e) => panic!("got wrong error: {:?}", e),
-                                None => panic!("No internal error?"),
-                            }
-                        }
+                        Err(e) => match e.get_ref().unwrap().downcast_ref::<Error>() {
+                            Some($x) => (),
+                            Some(e) => panic!("got wrong error: {:?}", e),
+                            None => panic!("No internal error?"),
+                        },
                     }
                 }
             }
-        }
+        };
     }
 
     #[test]
@@ -156,9 +157,11 @@ mod tests {
         check(b"abc", b"abc", b"abc");
         check(b"\x00\xff", b"%00%ff", b"%00%FF");
         check(b"\xc2\xa9", b"%c2%a9", b"%C2%A9");
-        check(b"\x01\x23\x45\x67\x89\xab\xcd\xef",
-              b"%01%23Eg%89%ab%cd%ef",
-              b"%01%23Eg%89%AB%CD%EF");
+        check(
+            b"\x01\x23\x45\x67\x89\xab\xcd\xef",
+            b"%01%23Eg%89%ab%cd%ef",
+            b"%01%23Eg%89%AB%CD%EF",
+        );
         check(b"\xfe\xdc\xba", b"%fe%dc%ba", b"%FE%DC%BA");
     }
 

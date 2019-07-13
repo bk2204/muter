@@ -1,7 +1,7 @@
-use std::io;
-use std::vec;
 use codec::CodecSettings;
 use codec::Error;
+use std::io;
+use std::vec;
 
 pub struct TransformFactory {}
 

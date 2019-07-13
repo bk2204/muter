@@ -65,6 +65,7 @@ pub enum Direction {
     Reverse,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Status {
     // We have successfully consumed the given number of valid input bytes and transformed them
     // into valid output bytes. Additional processing may be possible with additional buffer space,
@@ -78,6 +79,7 @@ pub enum Status {
     StreamEnd(usize, usize),
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum FlushState {
     Finish,
     None,

@@ -93,7 +93,7 @@ impl<'a> Chain<'a> {
     }
 
     fn parse(chain: &str) -> Result<Vec<ChainTransform>, Error> {
-        chain.split(":").map(|s| Self::parse_unit(s)).collect()
+        chain.split(':').map(|s| Self::parse_unit(s)).collect()
     }
 
     fn parse_unit(unit: &str) -> Result<ChainTransform, Error> {
@@ -107,13 +107,13 @@ impl<'a> Chain<'a> {
             (unit, Direction::Forward)
         };
 
-        let (name, args): (&str, Option<&str>) = if let Some(off) = s.find("(") {
+        let (name, args): (&str, Option<&str>) = if let Some(off) = s.find('(') {
             if &s[s.len() - 1..] != ")" {
                 return Err(Error::MismatchedParentheses(String::from(s)));
             }
             (&s[0..off], Some(&s[off + 1..s.len() - 1]))
         } else {
-            match s.find(",") {
+            match s.find(',') {
                 Some(off) if off != s.len() - 1 => (&s[0..off], Some(&s[off + 1..])),
                 Some(off) => return Err(Error::InvalidArgument(String::from(&s[off..]))),
                 None => (s, None),
@@ -126,7 +126,7 @@ impl<'a> Chain<'a> {
 
         let set = match args {
             Some(s) => s
-                .split(",")
+                .split(',')
                 .map(|x| String::from(x))
                 .collect::<BTreeSet<String>>(),
             None => BTreeSet::new(),

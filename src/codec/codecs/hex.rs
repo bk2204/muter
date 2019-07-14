@@ -62,7 +62,7 @@ pub struct Decoder {
 
 impl Decoder {
     fn new(strict: bool) -> Self {
-        Decoder { strict: strict }
+        Decoder { strict }
     }
 }
 

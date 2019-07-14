@@ -56,10 +56,10 @@ pub struct Chain<'a> {
 impl<'a> Chain<'a> {
     pub fn new(codecs: CodecRegistry, chain: &'a str, bufsize: usize, strict: bool) -> Self {
         Chain {
-            chain: chain,
-            bufsize: bufsize,
-            strict: strict,
-            codecs: codecs,
+            chain,
+            bufsize,
+            strict,
+            codecs,
         }
     }
 
@@ -132,9 +132,9 @@ impl<'a> Chain<'a> {
             None => BTreeSet::new(),
         };
         Ok(ChainTransform {
-            name: name,
+            name,
             args: set,
-            dir: dir,
+            dir,
         })
     }
 }

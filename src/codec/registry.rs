@@ -24,7 +24,7 @@ impl CodecRegistry {
         );
         map.insert("uri", codec::codecs::uri::TransformFactory::factory);
 
-        CodecRegistry { map: map }
+        CodecRegistry { map }
     }
 
     pub fn insert(&mut self, k: &'static str, f: TransformFactoryFn) {

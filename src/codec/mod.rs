@@ -107,7 +107,7 @@ where
     F: Fn(&[u8], &mut [u8]) -> (usize, usize),
 {
     pub fn new(f: F) -> Self {
-        StatelessEncoder { f: f }
+        StatelessEncoder { f }
     }
 }
 
@@ -133,7 +133,7 @@ pub struct CodecReader<R: BufRead, C: Codec> {
 
 impl<R: BufRead, C: Codec> CodecReader<R, C> {
     fn new(r: R, c: C) -> Self {
-        CodecReader { r: r, codec: c }
+        CodecReader { r, codec: c }
     }
 }
 
@@ -231,8 +231,8 @@ where
     pub fn new(f: F, isize: usize, osize: usize) -> Self {
         PaddedEncoder {
             enc: StatelessEncoder::new(f),
-            isize: isize,
-            osize: osize,
+            isize,
+            osize,
         }
     }
 
@@ -296,9 +296,9 @@ pub struct PaddedDecoder<T> {
 impl<T: Codec> PaddedDecoder<T> {
     pub fn new(codec: T, isize: usize, osize: usize) -> Self {
         PaddedDecoder {
-            codec: codec,
-            isize: isize,
-            osize: osize,
+            codec,
+            isize,
+            osize,
         }
     }
 

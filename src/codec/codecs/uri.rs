@@ -111,6 +111,7 @@ impl Codec for Decoder {
 mod tests {
     use chain::Chain;
     use codec::registry::CodecRegistry;
+    use codec::tests;
     use codec::Error;
 
     fn reg() -> CodecRegistry {
@@ -171,5 +172,12 @@ mod tests {
         check_failure!(b"abc%", Error::TruncatedData);
         check_failure!(b"abc%v", Error::TruncatedData);
         check_failure!(b"abc%vv", Error::InvalidSequence(_, _));
+    }
+
+    #[test]
+    fn round_trip() {
+        tests::round_trip("uri");
+        tests::round_trip("uri,upper");
+        tests::round_trip("uri,lower");
     }
 }

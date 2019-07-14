@@ -217,3 +217,178 @@ impl<C: Codec> io::Read for Transform<C> {
         self.b.read(buf)
     }
 }
+
+pub struct PaddedEncoder<F> {
+    enc: StatelessEncoder<F>,
+    isize: usize,
+    osize: usize,
+}
+
+impl<F> PaddedEncoder<F>
+where
+    F: Fn(&[u8], &mut [u8]) -> (usize, usize),
+{
+    pub fn new(f: F, isize: usize, osize: usize) -> Self {
+        PaddedEncoder {
+            enc: StatelessEncoder::new(f),
+            isize: isize,
+            osize: osize,
+        }
+    }
+
+    fn pad_bytes_needed(&self, b: usize) -> usize {
+        if b == 0 {
+            return 0;
+        }
+        let bits_per_unit = self.isize * 8;
+        let out_bits_per_char = bits_per_unit / self.osize;
+        return (bits_per_unit - b * 8) / out_bits_per_char;
+    }
+
+    fn offsets(r: Result<Status, Error>) -> Result<(usize, usize), Error> {
+        match r {
+            Ok(Status::Ok(a, b)) => Ok((a, b)),
+            Ok(Status::BufError(a, b)) => Ok((a, b)),
+            Ok(Status::StreamEnd(a, b)) => Ok((a, b)),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl<F> Codec for PaddedEncoder<F>
+where
+    F: Fn(&[u8], &mut [u8]) -> (usize, usize),
+{
+    fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
+        let needed = (src.len() + self.isize - 1) / self.isize * self.osize;
+        match f {
+            FlushState::Finish if src.len() > 0 && dst.len() >= needed => {
+                let (a, b) = Self::offsets(self.enc.transform(&src[..src.len() - 1], dst, f))?;
+                let padbytes = self.pad_bytes_needed(src.len() - a);
+                if padbytes == 0 {
+                    return Ok(Status::Ok(a, b));
+                }
+
+                let mut inp: Vec<u8> = Vec::new();
+                for i in 0..self.isize {
+                    let off = a + i;
+                    inp.push(if off >= src.len() { 0 } else { src[off] })
+                }
+                self.enc.transform(inp.as_slice(), dst, f)?;
+
+                let off = self.osize - padbytes;
+                for i in &mut dst[b + off..b + self.osize] {
+                    *i = '=' as u8;
+                }
+                Ok(Status::Ok(src.len(), b + self.osize))
+            }
+            _ => self.enc.transform(src, dst, f),
+        }
+    }
+}
+
+pub struct PaddedDecoder<T> {
+    codec: T,
+    isize: usize,
+    osize: usize,
+}
+
+impl<T: Codec> PaddedDecoder<T> {
+    pub fn new(codec: T, isize: usize, osize: usize) -> Self {
+        PaddedDecoder {
+            codec: codec,
+            isize: isize,
+            osize: osize,
+        }
+    }
+
+    fn pad_bytes_needed(&self, b: usize) -> usize {
+        if b == 0 {
+            return 0;
+        }
+        let bits_per_unit = self.isize * 8;
+        let out_bits_per_char = bits_per_unit / self.osize;
+        return (bits_per_unit - b * 8) / out_bits_per_char;
+    }
+
+    fn offsets(r: Status) -> Result<(usize, usize), Error> {
+        match r {
+            Status::Ok(a, b) => Ok((a, b)),
+            Status::BufError(a, b) => Ok((a, b)),
+            Status::StreamEnd(a, b) => Ok((a, b)),
+        }
+    }
+}
+
+impl<T: Codec> Codec for PaddedDecoder<T> {
+    fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
+        let r = self.codec.transform(src, dst, f)?;
+        let (a, b) = Self::offsets(r)?;
+        let padoffset = src.iter().position(|&x| x == b'=');
+        let padbytes = match padoffset {
+            Some(v) => self.pad_bytes_needed(src.len() - v),
+            None => return Ok(r),
+        };
+
+        Ok(Status::StreamEnd(a, b - (self.osize - padbytes)))
+    }
+}
+
+pub struct ChunkedDecoder {
+    strict: bool,
+    inpsize: usize,
+    outsize: usize,
+    name: &'static str,
+    table: &'static [i8; 256],
+}
+
+impl ChunkedDecoder {
+    pub fn new(
+        strict: bool,
+        name: &'static str,
+        inpsize: usize,
+        outsize: usize,
+        table: &'static [i8; 256],
+    ) -> Self {
+        ChunkedDecoder {
+            strict,
+            inpsize,
+            outsize,
+            name,
+            table,
+        }
+    }
+}
+
+impl Codec for ChunkedDecoder {
+    fn transform(&mut self, inp: &[u8], outp: &mut [u8], f: FlushState) -> Result<Status, Error> {
+        let (is, os, bits) = (self.inpsize, self.outsize, self.outsize * 8 / self.inpsize);
+        let n = std::cmp::min(inp.len() / is, outp.len() / os);
+        for (i, j) in (0..n).map(|x| (x * is, x * os)) {
+            let iter = inp[i..i + is].iter().enumerate();
+            let x: i64 = if self.strict {
+                iter.map(|(k, &v)| (self.table[(v as usize)] as i64) << ((is - 1 - k) * bits))
+                    .sum()
+            } else {
+                iter.filter(|(_, &x)| self.table[x as usize] != -1)
+                    .map(|(k, &v)| (self.table[(v as usize)] as i64) << ((is - 1 - k) * bits))
+                    .sum()
+            };
+
+            if x < 0 {
+                return Err(Error::InvalidSequence(
+                    self.name.to_string(),
+                    inp[i..i + is].to_vec(),
+                ));
+            }
+            for k in 0..os {
+                outp[j + k] = ((x as u64) >> ((os - 1 - k) * 8) & 0xff) as u8;
+            }
+        }
+
+        match f {
+            FlushState::Finish if n == inp.len() => Ok(Status::StreamEnd(n + 1, n * os)),
+            _ => Ok(Status::Ok(n * is, n * os)),
+        }
+    }
+}

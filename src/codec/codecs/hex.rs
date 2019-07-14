@@ -106,6 +106,7 @@ impl Codec for Decoder {
 mod tests {
     use chain::Chain;
     use codec::registry::CodecRegistry;
+    use codec::tests;
 
     fn reg() -> CodecRegistry {
         CodecRegistry::new()
@@ -137,5 +138,12 @@ mod tests {
             b"0123456789ABCDEF",
         );
         check(b"\xfe\xdc\xba", b"fedcba", b"FEDCBA");
+    }
+
+    #[test]
+    fn default_tests() {
+        tests::round_trip("hex");
+        tests::round_trip("hex,upper");
+        tests::round_trip("hex,lower");
     }
 }

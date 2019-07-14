@@ -5,3 +5,7 @@ authors = ["brian m. carlson <sandals@crustytoothpaste.net>"]
 
 [dependencies]
 clap = "2.32.0"
+
+[dev-dependencies]
+rand_core = "0.5"
+rand_chacha = "0.2"

@@ -241,6 +241,7 @@ mod tests {
     use chain::Chain;
     use codec::codecs::base32::PaddedEncoder;
     use codec::registry::CodecRegistry;
+    use codec::tests;
 
     #[test]
     fn pads_correctly() {
@@ -285,5 +286,10 @@ mod tests {
         check(b"foob", b"MZXW6YQ=");
         check(b"fooba", b"MZXW6YTB");
         check(b"foobar", b"MZXW6YTBOI======");
+    }
+
+    #[test]
+    fn default_tests() {
+        tests::round_trip("base32");
     }
 }

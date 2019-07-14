@@ -1,4 +1,8 @@
 extern crate clap;
+#[cfg(test)]
+extern crate rand_chacha;
+#[cfg(test)]
+extern crate rand_core;
 pub mod chain;
 pub mod codec;
 

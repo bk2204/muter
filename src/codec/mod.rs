@@ -1,6 +1,9 @@
 pub mod codecs;
 pub mod registry;
 
+#[cfg(test)]
+pub mod tests;
+
 use std::collections::BTreeSet;
 use std::convert;
 use std::error;

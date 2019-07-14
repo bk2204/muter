@@ -16,6 +16,7 @@ impl CodecRegistry {
 
         map.insert("base16", codec::codecs::base16::TransformFactory::factory);
         map.insert("base32", codec::codecs::base32::TransformFactory::factory);
+        map.insert("base64", codec::codecs::base64::TransformFactory::factory);
         map.insert("hex", codec::codecs::hex::TransformFactory::factory);
         map.insert(
             "identity",

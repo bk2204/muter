@@ -6,6 +6,7 @@ use std::io;
 
 type TransformFactoryFn = fn(Box<io::BufRead>, CodecSettings) -> Result<Box<io::BufRead>, Error>;
 
+#[derive(Default)]
 pub struct CodecRegistry {
     map: HashMap<&'static str, TransformFactoryFn>,
 }

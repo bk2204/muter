@@ -242,7 +242,7 @@ where
         }
         let bits_per_unit = self.isize * 8;
         let out_bits_per_char = bits_per_unit / self.osize;
-        return (bits_per_unit - b * 8) / out_bits_per_char;
+        (bits_per_unit - b * 8) / out_bits_per_char
     }
 
     fn offsets(r: Result<Status, Error>) -> Result<(usize, usize), Error> {
@@ -308,7 +308,7 @@ impl<T: Codec> PaddedDecoder<T> {
         }
         let bits_per_unit = self.isize * 8;
         let out_bits_per_char = bits_per_unit / self.osize;
-        return (bits_per_unit - b * 8) / out_bits_per_char;
+        (bits_per_unit - b * 8) / out_bits_per_char
     }
 
     fn offsets(r: Status) -> Result<(usize, usize), Error> {

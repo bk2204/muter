@@ -103,7 +103,7 @@ impl Codec for Decoder {
             }
             j += 1;
         }
-        return Ok(Status::Ok(src.len(), j));
+        Ok(Status::Ok(src.len(), j))
     }
 }
 

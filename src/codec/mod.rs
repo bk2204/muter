@@ -360,30 +360,35 @@ impl ChunkedDecoder {
     }
 }
 
+impl ChunkedDecoder {
+    fn process_chunk(&self, inp: &[u8], outp: &mut [u8]) -> Result<Status, Error> {
+        let (is, os, bits) = (self.inpsize, self.outsize, self.outsize * 8 / self.inpsize);
+        let iter = inp.iter().enumerate();
+        let x: i64 = if self.strict {
+            iter.map(|(k, &v)| (self.table[(v as usize)] as i64) << ((is - 1 - k) * bits))
+                .sum()
+        } else {
+            iter.filter(|(_, &x)| self.table[x as usize] != -1)
+                .map(|(k, &v)| (self.table[(v as usize)] as i64) << ((is - 1 - k) * bits))
+                .sum()
+        };
+
+        if x < 0 {
+            return Err(Error::InvalidSequence(self.name.to_string(), inp.to_vec()));
+        }
+        for k in 0..os {
+            outp[k] = ((x as u64) >> ((os - 1 - k) * 8) & 0xff) as u8;
+        }
+        Ok(Status::Ok(inp.len(), os))
+    }
+}
+
 impl Codec for ChunkedDecoder {
     fn transform(&mut self, inp: &[u8], outp: &mut [u8], f: FlushState) -> Result<Status, Error> {
-        let (is, os, bits) = (self.inpsize, self.outsize, self.outsize * 8 / self.inpsize);
+        let (is, os) = (self.inpsize, self.outsize);
         let n = std::cmp::min(inp.len() / is, outp.len() / os);
         for (i, j) in (0..n).map(|x| (x * is, x * os)) {
-            let iter = inp[i..i + is].iter().enumerate();
-            let x: i64 = if self.strict {
-                iter.map(|(k, &v)| (self.table[(v as usize)] as i64) << ((is - 1 - k) * bits))
-                    .sum()
-            } else {
-                iter.filter(|(_, &x)| self.table[x as usize] != -1)
-                    .map(|(k, &v)| (self.table[(v as usize)] as i64) << ((is - 1 - k) * bits))
-                    .sum()
-            };
-
-            if x < 0 {
-                return Err(Error::InvalidSequence(
-                    self.name.to_string(),
-                    inp[i..i + is].to_vec(),
-                ));
-            }
-            for k in 0..os {
-                outp[j + k] = ((x as u64) >> ((os - 1 - k) * 8) & 0xff) as u8;
-            }
+            self.process_chunk(&inp[i..i + is], &mut outp[j..j + os])?;
         }
 
         match f {

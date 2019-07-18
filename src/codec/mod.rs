@@ -222,17 +222,19 @@ pub struct PaddedEncoder<F> {
     enc: StatelessEncoder<F>,
     isize: usize,
     osize: usize,
+    pad: Option<u8>,
 }
 
 impl<F> PaddedEncoder<F>
 where
     F: Fn(&[u8], &mut [u8]) -> (usize, usize),
 {
-    pub fn new(f: F, isize: usize, osize: usize) -> Self {
+    pub fn new(f: F, isize: usize, osize: usize, pad: Option<u8>) -> Self {
         PaddedEncoder {
             enc: StatelessEncoder::new(f),
             isize,
             osize,
+            pad,
         }
     }
 
@@ -277,10 +279,15 @@ where
                 self.enc.transform(inp.as_slice(), dst, f)?;
 
                 let off = self.osize - padbytes;
-                for i in &mut dst[b + off..b + self.osize] {
-                    *i = '=' as u8;
+                match self.pad {
+                    Some(byte) => {
+                        for i in &mut dst[b + off..b + self.osize] {
+                            *i = byte;
+                        }
+                        Ok(Status::Ok(src.len(), b + self.osize))
+                    }
+                    None => Ok(Status::Ok(src.len(), b + off)),
                 }
-                Ok(Status::Ok(src.len(), b + self.osize))
             }
             _ => self.enc.transform(src, dst, f),
         }
@@ -291,14 +298,16 @@ pub struct PaddedDecoder<T> {
     codec: T,
     isize: usize,
     osize: usize,
+    pad: Option<u8>,
 }
 
 impl<T: Codec> PaddedDecoder<T> {
-    pub fn new(codec: T, isize: usize, osize: usize) -> Self {
+    pub fn new(codec: T, isize: usize, osize: usize, pad: Option<u8>) -> Self {
         PaddedDecoder {
             codec,
             isize,
             osize,
+            pad,
         }
     }
 
@@ -328,7 +337,12 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
     fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
         let r = self.codec.transform(src, dst, f)?;
         let (a, b) = Self::offsets(r)?;
-        let padoffset = src.iter().position(|&x| x == b'=');
+        // This code relies on us only processing full chunks with the transform function.
+        let padoffset = match (self.pad, f) {
+            (Some(byte), _) => src.iter().position(|&x| x == byte),
+            (None, FlushState::Finish) if a == src.len() => Some(src.len()),
+            (None, _) => None,
+        };
         let trimbytes = match padoffset {
             Some(v) => self.bytes_to_trim(v),
             None => return Ok(r),
@@ -397,6 +411,10 @@ impl Codec for ChunkedDecoder {
 
         match f {
             FlushState::Finish if n == inp.len() => Ok(Status::StreamEnd(n + 1, n * os)),
+            FlushState::Finish if inp.len() < is && outp.len() >= os => {
+                self.process_chunk(inp, &mut outp[0..os])?;
+                Ok(Status::StreamEnd(inp.len(), os))
+            }
             _ => Ok(Status::Ok(n * is, n * os)),
         }
     }

@@ -93,7 +93,7 @@ fn pads_encoding_correctly() {
     ];
 
     for (isize, osize, inbytes, padbytes) in cases {
-        let p = PaddedEncoder::new(|_, _| (0, 0), isize, osize);
+        let p = PaddedEncoder::new(|_, _| (0, 0), isize, osize, Some(b'='));
         assert_eq!(p.pad_bytes_needed(inbytes), padbytes);
     }
 }
@@ -113,7 +113,7 @@ fn pads_decoding_correctly() {
     ];
 
     for (isize, osize, inbytes, padbytes) in cases {
-        let p = PaddedDecoder::new(TestCodec::new(), osize, isize);
+        let p = PaddedDecoder::new(TestCodec::new(), osize, isize, Some(b'='));
         assert_eq!(p.bytes_to_trim(inbytes), padbytes);
     }
 }

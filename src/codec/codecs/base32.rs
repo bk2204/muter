@@ -68,13 +68,22 @@ impl TransformFactory {
     pub fn factory(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
-                let enc =
-                    PaddedEncoder::new(move |inp, out| forward_transform(inp, out, &BASE32), 5, 8);
+                let enc = PaddedEncoder::new(
+                    move |inp, out| forward_transform(inp, out, &BASE32),
+                    5,
+                    8,
+                    Some(b'='),
+                );
                 Ok(Box::new(Transform::new(r, enc)))
             }
             Direction::Reverse => Ok(Box::new(Transform::new(
                 r,
-                PaddedDecoder::new(ChunkedDecoder::new(s.strict, "base32", 8, 5, &REV), 8, 5),
+                PaddedDecoder::new(
+                    ChunkedDecoder::new(s.strict, "base32", 8, 5, &REV),
+                    8,
+                    5,
+                    Some(b'='),
+                ),
             ))),
         }
     }

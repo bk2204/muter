@@ -17,7 +17,10 @@ impl CodecRegistry {
 
         map.insert("base16", codec::codecs::base16::TransformFactory::factory);
         map.insert("base32", codec::codecs::base32::TransformFactory::factory);
-        map.insert("base64", codec::codecs::base64::TransformFactory::factory);
+        map.insert(
+            "base64",
+            codec::codecs::base64::TransformFactory::factory_base64,
+        );
         map.insert("form", codec::codecs::uri::TransformFactory::factory_form);
         map.insert("hex", codec::codecs::hex::TransformFactory::factory);
         map.insert(
@@ -25,6 +28,10 @@ impl CodecRegistry {
             codec::codecs::identity::TransformFactory::factory,
         );
         map.insert("uri", codec::codecs::uri::TransformFactory::factory_uri);
+        map.insert(
+            "url64",
+            codec::codecs::base64::TransformFactory::factory_url64,
+        );
 
         CodecRegistry { map }
     }

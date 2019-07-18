@@ -16,11 +16,32 @@ pub const BASE64: [u8; 64] = [
     b'w', b'x', b'y', b'z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'+', b'/',
 ];
 
+pub const URL64: [u8; 64] = [
+    b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P',
+    b'Q', b'R', b'S', b'T', b'U', b'V', b'W', b'X', b'Y', b'Z', b'a', b'b', b'c', b'd', b'e', b'f',
+    b'g', b'h', b'i', b'j', b'k', b'l', b'm', b'n', b'o', b'p', b'q', b'r', b's', b't', b'u', b'v',
+    b'w', b'x', b'y', b'z', b'0', b'1', b'2', b'3', b'4', b'5', b'6', b'7', b'8', b'9', b'-', b'_',
+];
+
 pub const REV: [i8; 256] = [
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
     52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, 0, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
     9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, -1, 26,
+    27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+    51, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+];
+
+pub const URLREV: [i8; 256] = [
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1,
+    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, 0, -1, -1, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
+    9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, 63, -1, 26,
     27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
     51, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -49,7 +70,10 @@ fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 64]) -> (usize, usi
 }
 
 impl TransformFactory {
-    pub fn factory(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+    pub fn factory_base64(
+        r: Box<io::BufRead>,
+        s: CodecSettings,
+    ) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
                 let enc = PaddedEncoder::new(
@@ -71,6 +95,29 @@ impl TransformFactory {
             ))),
         }
     }
+
+    pub fn factory_url64(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+        match s.dir {
+            Direction::Forward => {
+                let enc = PaddedEncoder::new(
+                    move |inp, out| forward_transform(inp, out, &URL64),
+                    3,
+                    4,
+                    None,
+                );
+                Ok(Box::new(Transform::new(r, enc)))
+            }
+            Direction::Reverse => Ok(Box::new(Transform::new(
+                r,
+                PaddedDecoder::new(
+                    ChunkedDecoder::new(s.strict, "url64", 4, 3, &URLREV),
+                    4,
+                    3,
+                    None,
+                ),
+            ))),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -83,35 +130,57 @@ mod tests {
         CodecRegistry::new()
     }
 
-    fn check(inp: &[u8], outp: &[u8]) {
+    fn check(name: &str, inp: &[u8], outp: &[u8]) {
+        let rev = format!("-{}", name);
         for i in vec![5, 6, 7, 8, 512] {
-            let c = Chain::new(reg(), "base64", i, true);
+            let c = Chain::new(reg(), name, i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
-            let c = Chain::new(reg(), "-base64", i, true);
+            let c = Chain::new(reg(), &rev, i, true);
             assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
-            let c = Chain::new(reg(), "-base64", i, false);
+            let c = Chain::new(reg(), &rev, i, false);
             assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
         }
     }
 
     #[test]
-    fn encodes_bytes() {
-        check(b"", b"");
-        check(b"f", b"Zg==");
-        check(b"fo", b"Zm8=");
-        check(b"foo", b"Zm9v");
-        check(b"foob", b"Zm9vYg==");
-        check(b"fooba", b"Zm9vYmE=");
-        check(b"foobar", b"Zm9vYmFy");
+    fn encodes_bytes_base64() {
+        check("base64", b"", b"");
+        check("base64", b"f", b"Zg==");
+        check("base64", b"fo", b"Zm8=");
+        check("base64", b"foo", b"Zm9v");
+        check("base64", b"foob", b"Zm9vYg==");
+        check("base64", b"fooba", b"Zm9vYmE=");
+        check("base64", b"foobar", b"Zm9vYmFy");
     }
 
     #[test]
-    fn default_tests() {
+    fn encodes_bytes_url64() {
+        check("url64", b"", b"");
+        check("url64", b"f", b"Zg");
+        check("url64", b"fo", b"Zm8");
+        check("url64", b"foo", b"Zm9v");
+        check("url64", b"foob", b"Zm9vYg");
+        check("url64", b"fooba", b"Zm9vYmE");
+        check("url64", b"foobar", b"Zm9vYmFy");
+    }
+
+    #[test]
+    fn default_tests_base64() {
         tests::round_trip("base64");
     }
 
     #[test]
-    fn known_values() {
-        check(tests::BYTE_SEQ, b"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w==");
+    fn default_tests_url64() {
+        tests::round_trip("url64");
+    }
+
+    #[test]
+    fn known_values_base64() {
+        check("base64", tests::BYTE_SEQ, b"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w==");
+    }
+
+    #[test]
+    fn known_values_url64() {
+        check("url64", tests::BYTE_SEQ, b"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0-P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn-AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq-wsbKztLW2t7i5uru8vb6_wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t_g4eLj5OXm5-jp6uvs7e7v8PHy8_T19vf4-fr7_P3-_w");
     }
 }

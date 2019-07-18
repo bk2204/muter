@@ -302,13 +302,17 @@ impl<T: Codec> PaddedDecoder<T> {
         }
     }
 
-    fn pad_bytes_needed(&self, b: usize) -> usize {
+    /// Returns the number of bytes to trim off a complete unit, given a number of input bytes
+    /// excluding pad bytes.
+    fn bytes_to_trim(&self, x: usize) -> usize {
+        let b = x % self.isize;
         if b == 0 {
             return 0;
         }
-        let bits_per_unit = self.isize * 8;
-        let out_bits_per_char = bits_per_unit / self.osize;
-        (bits_per_unit - b * 8) / out_bits_per_char
+        let b = self.isize - b;
+        let bits_per_unit = self.osize * 8;
+        let in_bits_per_char = bits_per_unit / self.isize;
+        self.osize - (bits_per_unit - b * in_bits_per_char) / 8
     }
 
     fn offsets(r: Status) -> Result<(usize, usize), Error> {
@@ -325,12 +329,12 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
         let r = self.codec.transform(src, dst, f)?;
         let (a, b) = Self::offsets(r)?;
         let padoffset = src.iter().position(|&x| x == b'=');
-        let padbytes = match padoffset {
-            Some(v) => self.pad_bytes_needed(src.len() - v),
+        let trimbytes = match padoffset {
+            Some(v) => self.bytes_to_trim(v),
             None => return Ok(r),
         };
 
-        Ok(Status::StreamEnd(a, b - (self.osize - padbytes)))
+        Ok(Status::StreamEnd(a, b - trimbytes))
     }
 }
 

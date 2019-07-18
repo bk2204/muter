@@ -83,28 +83,8 @@ impl TransformFactory {
 #[cfg(test)]
 mod tests {
     use chain::Chain;
-    use codec::codecs::base32::PaddedEncoder;
     use codec::registry::CodecRegistry;
     use codec::tests;
-
-    #[test]
-    fn pads_correctly() {
-        let cases = vec![
-            (5, 8, 0, 0),
-            (5, 8, 1, 6),
-            (5, 8, 2, 4),
-            (5, 8, 3, 3),
-            (5, 8, 4, 1),
-            (3, 4, 0, 0),
-            (3, 4, 1, 2),
-            (3, 4, 2, 1),
-        ];
-
-        for (isize, osize, inbytes, padbytes) in cases {
-            let p = PaddedEncoder::new(|_, _| (0, 0), isize, osize);
-            assert_eq!(p.pad_bytes_needed(inbytes), padbytes);
-        }
-    }
 
     fn reg() -> CodecRegistry {
         CodecRegistry::new()

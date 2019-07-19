@@ -1,13 +1,17 @@
 all:
 	cargo build --release
 
-fmt:
-	find -name '*.rs' | xargs rustfmt
-
 clean:
 	$(RM) -r target
 	find -name '*.bk' | xargs $(RM)
 
-test:
-	! find -name '*.rs' | xargs rustfmt --write-mode diff | grep '.'
+test: fmt
 	cargo test
+
+fmt:
+	if rustfmt --help | grep -qse --check; \
+	then \
+			rustfmt --check $$(find . -name '*.rs'); \
+	else \
+			rustfmt --write-mode diff $$(find . -name '*.rs'); \
+	fi

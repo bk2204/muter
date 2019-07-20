@@ -12,13 +12,18 @@ use std::process;
 
 use clap::{App, Arg, ArgMatches};
 
+const BUFFER_SIZE: usize = codec::DEFAULT_BUFFER_SIZE;
+
 fn source() -> io::Result<Box<io::BufRead>> {
-    Ok(Box::new(io::BufReader::with_capacity(512, io::stdin())))
+    Ok(Box::new(io::BufReader::with_capacity(
+        BUFFER_SIZE,
+        io::stdin(),
+    )))
 }
 
 fn create_chain(m: ArgMatches) -> io::Result<Box<io::BufRead>> {
     let chain = m.value_of("chain").unwrap();
-    let c = chain::Chain::new(CodecRegistry::new(), chain, 512, true);
+    let c = chain::Chain::new(CodecRegistry::new(), chain, BUFFER_SIZE, true);
     c.build(source()?)
 }
 

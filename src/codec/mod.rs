@@ -96,6 +96,7 @@ pub struct CodecSettings {
 
 pub trait Codec {
     fn transform(&mut self, &[u8], &mut [u8], FlushState) -> Result<Status, Error>;
+    fn chunk_size(&self) -> usize;
 }
 
 pub struct StatelessEncoder<F> {
@@ -123,6 +124,10 @@ where
             }
             _ => Ok(Status::Ok(consumed.0, consumed.1)),
         }
+    }
+
+    fn chunk_size(&self) -> usize {
+        1
     }
 }
 
@@ -302,6 +307,10 @@ where
             _ => self.enc.transform(src, dst, f),
         }
     }
+
+    fn chunk_size(&self) -> usize {
+        self.isize
+    }
 }
 
 pub struct PaddedDecoder<T> {
@@ -370,6 +379,10 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
 
         Ok(Status::Ok(a, b - trimbytes))
     }
+
+    fn chunk_size(&self) -> usize {
+        self.isize
+    }
 }
 
 pub struct ChunkedDecoder {
@@ -437,6 +450,10 @@ impl Codec for ChunkedDecoder {
             }
             _ => Ok(Status::Ok(n * is, n * os)),
         }
+    }
+
+    fn chunk_size(&self) -> usize {
+        self.inpsize
     }
 }
 

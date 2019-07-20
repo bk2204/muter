@@ -110,6 +110,10 @@ impl Codec for Decoder {
             _ => Ok(Status::Ok(n + 1, bytes)),
         }
     }
+
+    fn chunk_size(&self) -> usize {
+        2
+    }
 }
 
 #[cfg(test)]

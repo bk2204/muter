@@ -76,6 +76,10 @@ impl Codec for TestCodec {
     fn transform(&mut self, inp: &[u8], outp: &mut [u8], _f: FlushState) -> Result<Status, Error> {
         Ok(Status::StreamEnd(inp.len(), outp.len()))
     }
+
+    fn chunk_size(&self) -> usize {
+        1
+    }
 }
 
 // Tests.

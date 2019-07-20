@@ -396,6 +396,10 @@ impl Codec for Decoder {
         }
         Ok(Status::Ok(src.len(), j))
     }
+
+    fn chunk_size(&self) -> usize {
+        3
+    }
 }
 
 #[cfg(test)]

@@ -68,6 +68,16 @@ impl Decoder {
 
 impl Codec for Decoder {
     fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
+        match f {
+            FlushState::None if src.len() < 2 => {
+                return Ok(Status::BufError(0, 0));
+            }
+            FlushState::Finish if src.len() == 0 => {
+                return Ok(Status::StreamEnd(0, 0));
+            }
+            _ => (),
+        }
+
         let vec: Vec<(usize, u8)> = if self.strict {
             src.iter()
                 .cloned()
@@ -113,18 +123,20 @@ mod tests {
     }
 
     fn check(inp: &[u8], lower: &[u8], upper: &[u8]) {
-        let c = Chain::new(reg(), "hex", 512, true);
-        assert_eq!(c.transform(inp.to_vec()).unwrap(), lower);
-        let c = Chain::new(reg(), "hex,lower", 512, true);
-        assert_eq!(c.transform(inp.to_vec()).unwrap(), lower);
-        let c = Chain::new(reg(), "hex,upper", 512, true);
-        assert_eq!(c.transform(inp.to_vec()).unwrap(), upper);
-        let c = Chain::new(reg(), "-hex", 512, true);
-        assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
-        let c = Chain::new(reg(), "-hex", 512, true);
-        assert_eq!(c.transform(lower.to_vec()).unwrap(), inp);
-        let c = Chain::new(reg(), "-hex", 512, false);
-        assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
+        for i in vec![5, 6, 7, 8, 512] {
+            let c = Chain::new(reg(), "hex", i, true);
+            assert_eq!(c.transform(inp.to_vec()).unwrap(), lower);
+            let c = Chain::new(reg(), "hex,lower", i, true);
+            assert_eq!(c.transform(inp.to_vec()).unwrap(), lower);
+            let c = Chain::new(reg(), "hex,upper", i, true);
+            assert_eq!(c.transform(inp.to_vec()).unwrap(), upper);
+            let c = Chain::new(reg(), "-hex", i, true);
+            assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
+            let c = Chain::new(reg(), "-hex", i, true);
+            assert_eq!(c.transform(lower.to_vec()).unwrap(), inp);
+            let c = Chain::new(reg(), "-hex", i, false);
+            assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
+        }
     }
 
     #[test]

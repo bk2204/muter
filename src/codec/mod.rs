@@ -129,11 +129,16 @@ where
 pub struct CodecReader<R: BufRead, C: Codec> {
     r: R,
     codec: C,
+    buf: Buffer,
 }
 
 impl<R: BufRead, C: Codec> CodecReader<R, C> {
     fn new(r: R, c: C) -> Self {
-        CodecReader { r, codec: c }
+        CodecReader {
+            r,
+            codec: c,
+            buf: Buffer::new(),
+        }
     }
 }
 
@@ -144,8 +149,9 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
         let mut last_read: Option<usize> = None;
         loop {
             let (ret, eof);
-            {
-                let input = obj.fill_buf()?;
+            let (buflen, mut slice) = {
+                let buf = obj.fill_buf()?;
+                let input = self.buf.slice_for(buf);
                 eof = input.is_empty()
                     || match (last_read, input.len()) {
                         (Some(x), y) if x == y => true,
@@ -159,13 +165,17 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 } else {
                     FlushState::None
                 };
-                ret = { self.codec.transform(input, dst, flush) };
-            }
+                ret = { self.codec.transform(input.as_ref(), dst, flush) };
+                (buf.len(), input)
+            };
 
             match ret {
                 Ok(Status::Ok(consumed, _))
                 | Ok(Status::BufError(consumed, _))
-                | Ok(Status::StreamEnd(consumed, _)) => obj.consume(consumed),
+                | Ok(Status::StreamEnd(consumed, _)) => {
+                    slice.consume(consumed);
+                    obj.consume(buflen);
+                }
                 _ => (),
             }
 
@@ -426,6 +436,131 @@ impl Codec for ChunkedDecoder {
                 Ok(Status::StreamEnd(inp.len(), os))
             }
             _ => Ok(Status::Ok(n * is, n * os)),
+        }
+    }
+}
+
+/// A buffer storing extra bytes in between invocations of a transform.
+struct Buffer {
+    buf: Vec<u8>,
+}
+impl Buffer {
+    /// Create a new buffer.
+    pub fn new() -> Self {
+        Buffer { buf: Vec::new() }
+    }
+
+    /// Provide a slice consisting of the data from this buffer and `input.
+    ///
+    /// The slice returned avoids copies if possible.
+    pub fn slice_for<'a>(&'a mut self, input: &'a [u8]) -> BufferSlice<'a> {
+        if self.buf.len() == 0 {
+            BufferSlice::new(&mut self.buf, Some(input), 0)
+        } else {
+            self.extend(input.iter().cloned());
+            BufferSlice::new(&mut self.buf, None, input.len())
+        }
+    }
+
+    /// Return a slice with this buffer's contents.
+    pub fn as_slice(&self) -> &[u8] {
+        self.buf.as_slice()
+    }
+
+    pub fn len(&self) -> usize {
+        self.buf.len()
+    }
+}
+
+impl Extend<u8> for Buffer {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = u8>,
+    {
+        self.buf.extend(iter);
+    }
+}
+
+impl IntoIterator for Buffer {
+    type Item = u8;
+    type IntoIter = <Vec<u8> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.buf.into_iter()
+    }
+}
+
+struct BufferSlice<'a> {
+    buf: &'a mut Vec<u8>,
+    s: Option<&'a [u8]>,
+    consumed: bool,
+    size: usize,
+}
+
+impl<'a> BufferSlice<'a> {
+    fn new(buf: &'a mut Vec<u8>, s: Option<&'a [u8]>, size: usize) -> Self {
+        BufferSlice {
+            buf,
+            s,
+            consumed: false,
+            size,
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.as_ref().len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Mark the given number of bytes as used and include the remainder into the buffer.
+    ///
+    /// Returns the number of bytes consumed from the slice `input`. If the number of bytes passed
+    /// is smaller than the buffer size, returns zero.
+    pub fn consume(&mut self, bytes: usize) -> usize {
+        if self.consumed {
+            panic!("BufferSlice already consumed");
+        }
+
+        self.consumed = true;
+
+        let buflen = self.buf.len() - self.size;
+        match (self.s, bytes < buflen) {
+            (Some(s), true) => {
+                self.buf.drain(0..bytes);
+                self.buf.extend(s.as_ref());
+                0
+            }
+            (None, true) => {
+                self.buf.drain(0..bytes);
+                0
+            }
+            (Some(s), false) => {
+                let consumed = bytes - buflen;
+                self.buf.clear();
+                self.buf.extend(s.as_ref()[consumed..].iter());
+                consumed
+            }
+            (None, false) => {
+                let fullbuflen = self.buf.len();
+                self.buf.drain(0..bytes);
+                bytes - (fullbuflen - self.size)
+            }
+        }
+    }
+}
+
+impl<'a> AsRef<[u8]> for BufferSlice<'a> {
+    fn as_ref(&self) -> &[u8] {
+        if self.consumed {
+            panic!("BufferSlice already consumed");
+        }
+
+        match self.s {
+            Some(s) => s,
+            None => self.buf.as_slice(),
         }
     }
 }

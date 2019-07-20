@@ -76,7 +76,12 @@ impl<'a> Chain<'a> {
         let mut buf = Vec::new();
         {
             let mut out = io::Cursor::new(&mut buf);
-            let inp = Box::new(io::Cursor::new(b));
+            // Cursor provides a BufRead implementation, but we use a BufReader so we can set the
+            // buffer size explicitly for test purposes.
+            let inp = Box::new(io::BufReader::with_capacity(
+                self.bufsize,
+                io::Cursor::new(b),
+            ));
             let mut res = self.build(inp)?;
             io::copy(&mut res, &mut out)?;
         }

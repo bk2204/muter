@@ -420,7 +420,7 @@ impl Codec for ChunkedDecoder {
         }
 
         match f {
-            FlushState::Finish if n == inp.len() => Ok(Status::StreamEnd(n + 1, n * os)),
+            FlushState::Finish if n == inp.len() => Ok(Status::StreamEnd(n, n * os)),
             FlushState::Finish if inp.len() < is && outp.len() >= os => {
                 self.process_chunk(inp, &mut outp[0..os])?;
                 Ok(Status::StreamEnd(inp.len(), os))

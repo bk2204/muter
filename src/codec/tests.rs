@@ -1,7 +1,7 @@
 /// A variety of useful test case generators.
 use chain::Chain;
 use codec::registry::CodecRegistry;
-use codec::{Buffer, Codec, Error, FlushState, PaddedDecoder, PaddedEncoder, Status};
+use codec::{Codec, Error, FlushState, PaddedDecoder, PaddedEncoder, Status};
 use rand_chacha::ChaCha20Rng;
 use rand_core::{RngCore, SeedableRng};
 use std::time::SystemTime;
@@ -119,45 +119,5 @@ fn pads_decoding_correctly() {
     for (isize, osize, inbytes, padbytes) in cases {
         let p = PaddedDecoder::new(TestCodec::new(), osize, isize, Some(b'='));
         assert_eq!(p.bytes_to_trim(inbytes), padbytes);
-    }
-}
-
-#[test]
-fn buffer_consumes_properly() {
-    #[rustfmt::skip]
-    let cases : Vec<(usize, usize, &[u8])> = vec![
-        (3, 0, b"defg"),
-        (4, 0, b"efg"),
-        (5, 1, b"fg"),
-        (7, 3, b""),
-    ];
-
-    for (bytes, consumed, expected) in cases {
-        let mut buf = Buffer::new();
-        let input: &[u8] = b"abcd";
-        buf.extend(input.iter().cloned());
-
-        let additional = b"efg";
-        let mut slice = buf.slice_for(additional);
-        assert_eq!(slice.consume(bytes), consumed);
-        assert_eq!(buf.as_slice(), expected);
-    }
-}
-
-#[test]
-fn buffer_consumes_properly_empty() {
-    #[rustfmt::skip]
-    let cases : Vec<(usize, usize, &[u8])> = vec![
-        (3, 3, b"d"),
-        (4, 4, b""),
-    ];
-
-    for (bytes, consumed, expected) in cases {
-        let mut buf = Buffer::new();
-        let input: &[u8] = b"abcd";
-
-        let mut slice = buf.slice_for(input);
-        assert_eq!(slice.consume(bytes), consumed);
-        assert_eq!(buf.as_slice(), expected);
     }
 }

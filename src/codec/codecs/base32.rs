@@ -1,12 +1,15 @@
 use codec::ChunkedDecoder;
 use codec::CodecSettings;
+use codec::CodecTransform;
 use codec::Direction;
 use codec::Error;
 use codec::PaddedDecoder;
 use codec::PaddedEncoder;
 use codec::Transform;
+use std::collections::BTreeMap;
 use std::io;
 
+#[derive(Default)]
 pub struct TransformFactory {}
 
 pub const BASE32: [u8; 32] = [
@@ -65,7 +68,13 @@ fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 32]) -> (usize, usi
 }
 
 impl TransformFactory {
-    pub fn factory(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+    pub fn new() -> Self {
+        TransformFactory {}
+    }
+}
+
+impl CodecTransform for TransformFactory {
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
                 let enc = PaddedEncoder::new(
@@ -86,6 +95,18 @@ impl TransformFactory {
                 ),
             ))),
         }
+    }
+
+    fn options(&self) -> BTreeMap<String, &'static str> {
+        BTreeMap::new()
+    }
+
+    fn can_reverse(&self) -> bool {
+        true
+    }
+
+    fn name(&self) -> &'static str {
+        "base32"
     }
 }
 

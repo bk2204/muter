@@ -1,42 +1,53 @@
 use codec;
 use codec::CodecSettings;
+use codec::CodecTransform;
 use codec::Error;
 use std::collections::HashMap;
 use std::io;
 
-type TransformFactoryFn = fn(Box<io::BufRead>, CodecSettings) -> Result<Box<io::BufRead>, Error>;
-
 #[derive(Default)]
 pub struct CodecRegistry {
-    map: HashMap<&'static str, TransformFactoryFn>,
+    map: HashMap<&'static str, Box<CodecTransform>>,
 }
 
 impl CodecRegistry {
     pub fn new() -> Self {
-        let mut map: HashMap<&'static str, TransformFactoryFn> = HashMap::new();
+        let mut map: HashMap<&'static str, Box<CodecTransform>> = HashMap::new();
 
-        map.insert("base16", codec::codecs::base16::TransformFactory::factory);
-        map.insert("base32", codec::codecs::base32::TransformFactory::factory);
+        map.insert(
+            "base16",
+            Box::new(codec::codecs::base16::TransformFactory::new()),
+        );
+        map.insert(
+            "base32",
+            Box::new(codec::codecs::base32::TransformFactory::new()),
+        );
         map.insert(
             "base64",
-            codec::codecs::base64::TransformFactory::factory_base64,
+            Box::new(codec::codecs::base64::Base64TransformFactory::new()),
         );
-        map.insert("form", codec::codecs::uri::TransformFactory::factory_form);
-        map.insert("hex", codec::codecs::hex::TransformFactory::factory);
+        map.insert(
+            "form",
+            Box::new(codec::codecs::uri::FormTransformFactory::new()),
+        );
+        map.insert("hex", Box::new(codec::codecs::hex::TransformFactory::new()));
         map.insert(
             "identity",
-            codec::codecs::identity::TransformFactory::factory,
+            Box::new(codec::codecs::identity::TransformFactory::new()),
         );
-        map.insert("uri", codec::codecs::uri::TransformFactory::factory_uri);
+        map.insert(
+            "uri",
+            Box::new(codec::codecs::uri::URITransformFactory::new()),
+        );
         map.insert(
             "url64",
-            codec::codecs::base64::TransformFactory::factory_url64,
+            Box::new(codec::codecs::base64::URL64TransformFactory::new()),
         );
 
         CodecRegistry { map }
     }
 
-    pub fn insert(&mut self, k: &'static str, f: TransformFactoryFn) {
+    pub fn insert(&mut self, k: &'static str, f: Box<CodecTransform>) {
         self.map.insert(k, f);
     }
 
@@ -47,7 +58,7 @@ impl CodecRegistry {
         s: CodecSettings,
     ) -> Result<Box<io::BufRead>, Error> {
         match self.map.get(name) {
-            Some(f) => f(r, s),
+            Some(t) => t.factory(r, s),
             None => Err(Error::UnknownCodec(String::from(name))),
         }
     }
@@ -57,14 +68,35 @@ impl CodecRegistry {
 mod tests {
     use codec::registry::CodecRegistry;
     use codec::CodecSettings;
+    use codec::CodecTransform;
     use codec::Direction;
     use codec::Error;
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
     use std::io;
     use std::io::Read;
 
-    fn factory(_r: Box<io::BufRead>, _s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        return Ok(Box::new(io::Cursor::new(vec![0x61, 0x62, 0x63])));
+    struct TestCodecFactory {}
+
+    impl CodecTransform for TestCodecFactory {
+        fn factory(
+            &self,
+            _r: Box<io::BufRead>,
+            _s: CodecSettings,
+        ) -> Result<Box<io::BufRead>, Error> {
+            return Ok(Box::new(io::Cursor::new(vec![0x61, 0x62, 0x63])));
+        }
+
+        fn options(&self) -> BTreeMap<String, &'static str> {
+            BTreeMap::new()
+        }
+
+        fn can_reverse(&self) -> bool {
+            true
+        }
+
+        fn name(&self) -> &'static str {
+            "random"
+        }
     }
 
     fn codec_settings() -> CodecSettings {
@@ -87,7 +119,7 @@ mod tests {
             Err(e) => panic!("unexpected error: {:?}", e),
         }
 
-        cr.insert("random", factory);
+        cr.insert("random", Box::new(TestCodecFactory {}));
 
         let r = Box::new(io::Cursor::new(Vec::new()));
         match cr.create("random", r, codec_settings()) {

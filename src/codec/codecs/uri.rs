@@ -1,11 +1,13 @@
 use codec::Codec;
 use codec::CodecSettings;
+use codec::CodecTransform;
 use codec::Direction;
 use codec::Error;
 use codec::FlushState;
 use codec::StatelessEncoder;
 use codec::Status;
 use codec::Transform;
+use std::collections::BTreeMap;
 use std::io;
 
 use codec::codecs::hex::{LOWER, REV, UPPER};
@@ -278,8 +280,6 @@ const TABLE: [Characters; 256] = [
     Characters::Encoded,
 ];
 
-pub struct TransformFactory {}
-
 fn forward_transform(
     inp: &[u8],
     outp: &mut [u8],
@@ -308,16 +308,38 @@ fn forward_transform(
     (i, j)
 }
 
-impl TransformFactory {
-    pub fn factory_uri(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        Self::factory(r, s, false)
+#[derive(Default)]
+pub struct URITransformFactory {}
+
+impl URITransformFactory {
+    pub fn new() -> Self {
+        URITransformFactory {}
+    }
+}
+
+impl CodecTransform for URITransformFactory {
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+        Self::generic_factory(r, s, false)
     }
 
-    pub fn factory_form(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        Self::factory(r, s, true)
+    fn options(&self) -> BTreeMap<String, &'static str> {
+        let mut map = BTreeMap::new();
+        map.insert("lower".to_string(), "use lowercase letters");
+        map.insert("upper".to_string(), "use uppercase letters");
+        map
     }
 
-    fn factory(
+    fn can_reverse(&self) -> bool {
+        true
+    }
+
+    fn name(&self) -> &'static str {
+        "uri"
+    }
+}
+
+impl URITransformFactory {
+    fn generic_factory(
         r: Box<io::BufRead>,
         s: CodecSettings,
         form: bool,
@@ -334,6 +356,36 @@ impl TransformFactory {
             }
             Direction::Reverse => Ok(Box::new(Transform::new(r, Decoder::new(s.strict, form)))),
         }
+    }
+}
+
+#[derive(Default)]
+pub struct FormTransformFactory {}
+
+impl FormTransformFactory {
+    pub fn new() -> Self {
+        FormTransformFactory {}
+    }
+}
+
+impl CodecTransform for FormTransformFactory {
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+        URITransformFactory::generic_factory(r, s, true)
+    }
+
+    fn options(&self) -> BTreeMap<String, &'static str> {
+        let mut map = BTreeMap::new();
+        map.insert("lower".to_string(), "use lowercase letters");
+        map.insert("upper".to_string(), "use uppercase letters");
+        map
+    }
+
+    fn can_reverse(&self) -> bool {
+        true
+    }
+
+    fn name(&self) -> &'static str {
+        "form"
     }
 }
 

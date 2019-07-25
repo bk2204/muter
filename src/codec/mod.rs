@@ -4,7 +4,7 @@ pub mod registry;
 #[cfg(test)]
 pub mod tests;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::convert;
 use std::error;
 use std::fmt;
@@ -22,6 +22,7 @@ pub enum Error {
     ExtraData,
     ForwardOnly(String),
     UnknownCodec(String),
+    UnknownArgument(String),
     IncompatibleParameters(String, String),
 }
 
@@ -35,6 +36,7 @@ impl fmt::Display for Error {
             Error::TruncatedData => write!(f, "truncated data"),
             Error::ExtraData => write!(f, "extra data"),
             Error::ForwardOnly(ref name) => write!(f, "no reverse transform for {}", name),
+            Error::UnknownArgument(ref name) => write!(f, "no such argument: {}", name),
             Error::UnknownCodec(ref name) => write!(f, "no such codec: {}", name),
             Error::IncompatibleParameters(ref name1, ref name2) => write!(
                 f,
@@ -88,6 +90,13 @@ pub enum Status {
 pub enum FlushState {
     Finish,
     None,
+}
+
+pub trait CodecTransform {
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error>;
+    fn options(&self) -> BTreeMap<String, &'static str>;
+    fn can_reverse(&self) -> bool;
+    fn name(&self) -> &'static str;
 }
 
 pub struct CodecSettings {

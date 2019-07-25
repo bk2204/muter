@@ -1,13 +1,16 @@
 use codec::Codec;
 use codec::CodecSettings;
+use codec::CodecTransform;
 use codec::Direction;
 use codec::Error;
 use codec::FlushState;
 use codec::StatelessEncoder;
 use codec::Status;
 use codec::Transform;
+use std::collections::BTreeMap;
 use std::io;
 
+#[derive(Default)]
 pub struct TransformFactory {}
 
 pub const LOWER: [u8; 16] = [
@@ -41,7 +44,13 @@ fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 16]) -> (usize, usi
 }
 
 impl TransformFactory {
-    pub fn factory(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+    pub fn new() -> Self {
+        TransformFactory {}
+    }
+}
+
+impl CodecTransform for TransformFactory {
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
                 let arr = match s.args.contains("upper") {
@@ -53,6 +62,21 @@ impl TransformFactory {
             }
             Direction::Reverse => Ok(Box::new(Transform::new(r, Decoder::new(s.strict)))),
         }
+    }
+
+    fn options(&self) -> BTreeMap<String, &'static str> {
+        let mut map = BTreeMap::new();
+        map.insert("lower".to_string(), "use lowercase letters");
+        map.insert("upper".to_string(), "use uppercase letters");
+        map
+    }
+
+    fn can_reverse(&self) -> bool {
+        true
+    }
+
+    fn name(&self) -> &'static str {
+        "hex"
     }
 }
 

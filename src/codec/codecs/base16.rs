@@ -1,19 +1,42 @@
 use codec::CodecSettings;
+use codec::CodecTransform;
 use codec::Error;
+use std::collections::BTreeMap;
 use std::io;
 use std::vec;
 
 pub struct TransformFactory {}
 
 impl TransformFactory {
-    pub fn factory(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+    pub fn new() -> Self {
+        TransformFactory {}
+    }
+}
+
+impl CodecTransform for TransformFactory {
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         let settings = CodecSettings {
             bufsize: s.bufsize,
             strict: s.strict,
             args: vec!["upper"].iter().map(|&x| String::from(x)).collect(),
             dir: s.dir,
         };
-        ::codec::codecs::hex::TransformFactory::factory(r, settings)
+        ::codec::codecs::hex::TransformFactory::new().factory(r, settings)
+    }
+
+    fn options(&self) -> BTreeMap<String, &'static str> {
+        let mut map = BTreeMap::new();
+        map.insert("lower".to_string(), "use lowercase letters");
+        map.insert("upper".to_string(), "use uppercase letters");
+        map
+    }
+
+    fn can_reverse(&self) -> bool {
+        true
+    }
+
+    fn name(&self) -> &'static str {
+        "base16"
     }
 }
 

@@ -1,13 +1,13 @@
 use codec::ChunkedDecoder;
 use codec::CodecSettings;
+use codec::CodecTransform;
 use codec::Direction;
 use codec::Error;
 use codec::PaddedDecoder;
 use codec::PaddedEncoder;
 use codec::Transform;
+use std::collections::BTreeMap;
 use std::io;
-
-pub struct TransformFactory {}
 
 pub const BASE64: [u8; 64] = [
     b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P',
@@ -69,11 +69,17 @@ fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 64]) -> (usize, usi
     (n * is, n * os)
 }
 
-impl TransformFactory {
-    pub fn factory_base64(
-        r: Box<io::BufRead>,
-        s: CodecSettings,
-    ) -> Result<Box<io::BufRead>, Error> {
+#[derive(Default)]
+pub struct Base64TransformFactory {}
+
+impl Base64TransformFactory {
+    pub fn new() -> Self {
+        Base64TransformFactory {}
+    }
+}
+
+impl CodecTransform for Base64TransformFactory {
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
                 let enc = PaddedEncoder::new(
@@ -96,7 +102,30 @@ impl TransformFactory {
         }
     }
 
-    pub fn factory_url64(r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+    fn options(&self) -> BTreeMap<String, &'static str> {
+        BTreeMap::new()
+    }
+
+    fn can_reverse(&self) -> bool {
+        true
+    }
+
+    fn name(&self) -> &'static str {
+        "base64"
+    }
+}
+
+#[derive(Default)]
+pub struct URL64TransformFactory {}
+
+impl URL64TransformFactory {
+    pub fn new() -> Self {
+        URL64TransformFactory {}
+    }
+}
+
+impl CodecTransform for URL64TransformFactory {
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
                 let enc = PaddedEncoder::new(
@@ -117,6 +146,18 @@ impl TransformFactory {
                 ),
             ))),
         }
+    }
+
+    fn options(&self) -> BTreeMap<String, &'static str> {
+        BTreeMap::new()
+    }
+
+    fn can_reverse(&self) -> bool {
+        true
+    }
+
+    fn name(&self) -> &'static str {
+        "url64"
     }
 }
 

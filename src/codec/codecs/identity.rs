@@ -1,9 +1,12 @@
 use codec::CodecSettings;
+use codec::CodecTransform;
 use codec::Error;
 use codec::StatelessEncoder;
 use codec::Transform;
+use std::collections::BTreeMap;
 use std::io;
 
+#[derive(Default)]
 pub struct TransformFactory {}
 
 fn transform(inp: &[u8], outp: &mut [u8]) -> (usize, usize) {
@@ -13,9 +16,27 @@ fn transform(inp: &[u8], outp: &mut [u8]) -> (usize, usize) {
 }
 
 impl TransformFactory {
-    pub fn factory(r: Box<io::BufRead>, _s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+    pub fn new() -> Self {
+        TransformFactory {}
+    }
+}
+
+impl CodecTransform for TransformFactory {
+    fn factory(&self, r: Box<io::BufRead>, _s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         let enc = StatelessEncoder::new(move |inp, out| transform(inp, out));
         Ok(Box::new(Transform::new(r, enc)))
+    }
+
+    fn options(&self) -> BTreeMap<String, &'static str> {
+        BTreeMap::new()
+    }
+
+    fn can_reverse(&self) -> bool {
+        true
+    }
+
+    fn name(&self) -> &'static str {
+        "base32"
     }
 }
 

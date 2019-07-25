@@ -48,19 +48,16 @@ fn round_trip_with_fill(name: &'static str, sz: usize) {
 }
 
 fn round_trip_bytes(name: &'static str, inp: &[u8]) {
+    let reg = CodecRegistry::new();
     let reverse = format!("-{}", name);
     for i in vec![5, 6, 7, 8, 512] {
-        let c = Chain::new(reg(), name, i, true);
+        let c = Chain::new(&reg, name, i, true);
         let outp = c.transform(inp.to_vec()).unwrap();
-        let c = Chain::new(reg(), &reverse, i, true);
+        let c = Chain::new(&reg, &reverse, i, true);
         assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
-        let c = Chain::new(reg(), &reverse, i, false);
+        let c = Chain::new(&reg, &reverse, i, false);
         assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
     }
-}
-
-fn reg() -> CodecRegistry {
-    CodecRegistry::new()
 }
 
 // Test objects.

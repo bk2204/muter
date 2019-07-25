@@ -50,11 +50,11 @@ pub struct Chain<'a> {
     chain: &'a str,
     bufsize: usize,
     strict: bool,
-    codecs: CodecRegistry,
+    codecs: &'a CodecRegistry,
 }
 
 impl<'a> Chain<'a> {
-    pub fn new(codecs: CodecRegistry, chain: &'a str, bufsize: usize, strict: bool) -> Self {
+    pub fn new(codecs: &'a CodecRegistry, chain: &'a str, bufsize: usize, strict: bool) -> Self {
         Chain {
             chain,
             bufsize,

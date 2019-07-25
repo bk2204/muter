@@ -167,18 +167,15 @@ mod tests {
     use codec::registry::CodecRegistry;
     use codec::tests;
 
-    fn reg() -> CodecRegistry {
-        CodecRegistry::new()
-    }
-
     fn check(name: &str, inp: &[u8], outp: &[u8]) {
+        let reg = CodecRegistry::new();
         let rev = format!("-{}", name);
         for i in vec![5, 6, 7, 8, 512] {
-            let c = Chain::new(reg(), name, i, true);
+            let c = Chain::new(&reg, name, i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
-            let c = Chain::new(reg(), &rev, i, true);
+            let c = Chain::new(&reg, &rev, i, true);
             assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
-            let c = Chain::new(reg(), &rev, i, false);
+            let c = Chain::new(&reg, &rev, i, false);
             assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
         }
     }

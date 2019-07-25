@@ -23,7 +23,8 @@ fn source() -> io::Result<Box<io::BufRead>> {
 
 fn create_chain(m: ArgMatches) -> io::Result<Box<io::BufRead>> {
     let chain = m.value_of("chain").unwrap();
-    let c = chain::Chain::new(CodecRegistry::new(), chain, BUFFER_SIZE, true);
+    let reg = CodecRegistry::new();
+    let c = chain::Chain::new(&reg, chain, BUFFER_SIZE, true);
     c.build(source()?)
 }
 

@@ -461,10 +461,6 @@ mod tests {
     use codec::tests;
     use codec::Error;
 
-    fn reg() -> CodecRegistry {
-        CodecRegistry::new()
-    }
-
     fn check_uri(inp: &[u8], lower: &[u8], upper: &[u8]) {
         check("uri", inp, lower, upper);
     }
@@ -479,30 +475,32 @@ mod tests {
     }
 
     fn check(name: &str, inp: &[u8], lower: &[u8], upper: &[u8]) {
+        let reg = CodecRegistry::new();
         let lname = format!("{},lower", name);
         let uname = format!("{},upper", name);
         let reverse = format!("-{}", name);
         for i in vec![4, 5, 6, 7, 8, 512] {
-            let c = Chain::new(reg(), name, i, true);
+            let c = Chain::new(&reg, name, i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), upper);
-            let c = Chain::new(reg(), &lname, i, true);
+            let c = Chain::new(&reg, &lname, i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), lower);
-            let c = Chain::new(reg(), &uname, i, true);
+            let c = Chain::new(&reg, &uname, i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), upper);
-            let c = Chain::new(reg(), &reverse, i, true);
+            let c = Chain::new(&reg, &reverse, i, true);
             assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
-            let c = Chain::new(reg(), &reverse, i, true);
+            let c = Chain::new(&reg, &reverse, i, true);
             assert_eq!(c.transform(lower.to_vec()).unwrap(), inp);
-            let c = Chain::new(reg(), &reverse, i, false);
+            let c = Chain::new(&reg, &reverse, i, false);
             assert_eq!(c.transform(upper.to_vec()).unwrap(), inp);
         }
     }
 
     macro_rules! check_failure {
         ($rev:expr, $inp:expr, $x:pat) => {
+            let reg = CodecRegistry::new();
             for i in vec![4, 5, 6, 7, 8, 512] {
                 for b in vec![true, false] {
-                    let c = Chain::new(reg(), $rev, i, b);
+                    let c = Chain::new(&reg, $rev, i, b);
                     match c.transform($inp.to_vec()) {
                         Ok(_) => panic!("got success for invalid sequence"),
                         Err(e) => match e.get_ref().unwrap().downcast_ref::<Error>() {

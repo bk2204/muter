@@ -6,7 +6,6 @@ use codec::CodecTransform;
 use codec::Error;
 use std::collections::BTreeMap;
 use std::io;
-use std::vec;
 
 pub struct TransformFactory {}
 

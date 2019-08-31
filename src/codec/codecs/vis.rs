@@ -383,33 +383,36 @@ impl Encoder {
         let tab = args.contains("tab") || args.contains("white");
         let nl = args.contains("nl") || args.contains("white");
 
-        (0u8..=255)
-            .map(|i| match TABLE[i as usize] {
-                Character::Glob if glob => Self::encode(i, true),
-                Character::Bell if cstyle => b"\\a".to_vec(),
-                Character::Backspace if cstyle => b"\\b".to_vec(),
-                Character::FormFeed if cstyle => b"\\f".to_vec(),
-                Character::Newline if nl && cstyle => b"\\n".to_vec(),
-                Character::Newline if nl => Self::encode(i, octal),
-                Character::Space if space && cstyle => b"\\s".to_vec(),
-                Character::Space if space => Self::encode(i, octal),
-                Character::Tab if tab && cstyle => b"\\t".to_vec(),
-                Character::Tab if tab => Self::encode(i, octal),
-                Character::CarriageReturn if cstyle => b"\\r".to_vec(),
-                Character::VerticalTab if cstyle => b"\\v".to_vec(),
-                Character::Nul if cstyle => b"\\0".to_vec(),
-                Character::Backslash => b"\\\\".to_vec(),
-                Character::Bell
-                | Character::Backspace
-                | Character::FormFeed
-                | Character::CarriageReturn
-                | Character::VerticalTab
-                | Character::Nul
-                | Character::MetaSpace
-                | Character::Control
-                | Character::Meta
-                | Character::ControlMeta => Self::encode(i, octal),
-                _ => vec![i],
+        (0..256)
+            .map(|x| {
+                let i = x as u8;
+                match TABLE[i as usize] {
+                    Character::Glob if glob => Self::encode(i, true),
+                    Character::Bell if cstyle => b"\\a".to_vec(),
+                    Character::Backspace if cstyle => b"\\b".to_vec(),
+                    Character::FormFeed if cstyle => b"\\f".to_vec(),
+                    Character::Newline if nl && cstyle => b"\\n".to_vec(),
+                    Character::Newline if nl => Self::encode(i, octal),
+                    Character::Space if space && cstyle => b"\\s".to_vec(),
+                    Character::Space if space => Self::encode(i, octal),
+                    Character::Tab if tab && cstyle => b"\\t".to_vec(),
+                    Character::Tab if tab => Self::encode(i, octal),
+                    Character::CarriageReturn if cstyle => b"\\r".to_vec(),
+                    Character::VerticalTab if cstyle => b"\\v".to_vec(),
+                    Character::Nul if cstyle => b"\\0".to_vec(),
+                    Character::Backslash => b"\\\\".to_vec(),
+                    Character::Bell
+                    | Character::Backspace
+                    | Character::FormFeed
+                    | Character::CarriageReturn
+                    | Character::VerticalTab
+                    | Character::Nul
+                    | Character::MetaSpace
+                    | Character::Control
+                    | Character::Meta
+                    | Character::ControlMeta => Self::encode(i, octal),
+                    _ => vec![i],
+                }
             })
             .collect()
     }

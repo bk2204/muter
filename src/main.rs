@@ -1,3 +1,6 @@
+#![allow(unknown_lints)]
+#![allow(bare_trait_objects)]
+
 extern crate clap;
 #[cfg(test)]
 extern crate rand_chacha;

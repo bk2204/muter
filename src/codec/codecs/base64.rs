@@ -1,3 +1,6 @@
+#![allow(unknown_lints)]
+#![allow(bare_trait_objects)]
+
 use codec::ChunkedDecoder;
 use codec::CodecSettings;
 use codec::CodecTransform;

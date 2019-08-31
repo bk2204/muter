@@ -1,3 +1,6 @@
+#![allow(unknown_lints)]
+#![allow(bare_trait_objects)]
+
 use codec::CodecSettings;
 use codec::CodecTransform;
 use codec::Error;

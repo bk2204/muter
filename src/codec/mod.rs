@@ -32,7 +32,7 @@ impl fmt::Display for Error {
         match *self {
             Error::IO(ref seq) => write!(f, "I/O error: {:?}", seq),
             Error::InvalidSequence(ref name, ref seq) => {
-                write!(f, "invalid sequence for codec '{}': {:02x?}", name, seq)
+                write!(f, "invalid sequence for codec '{}': {:?}", name, seq)
             }
             Error::TruncatedData => write!(f, "truncated data"),
             Error::ExtraData => write!(f, "extra data"),

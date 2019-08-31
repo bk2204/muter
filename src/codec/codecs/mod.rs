@@ -4,3 +4,4 @@ pub mod base64;
 pub mod hex;
 pub mod identity;
 pub mod uri;
+pub mod vis;

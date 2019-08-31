@@ -6,6 +6,7 @@ use codec::CodecTransform;
 use codec::Error;
 use codec::StatelessEncoder;
 use codec::Transform;
+use std::cmp;
 use std::collections::BTreeMap;
 use std::io;
 
@@ -13,7 +14,7 @@ use std::io;
 pub struct TransformFactory {}
 
 fn transform(inp: &[u8], outp: &mut [u8]) -> (usize, usize) {
-    let n = std::cmp::min(inp.len(), outp.len());
+    let n = cmp::min(inp.len(), outp.len());
     outp[..n].clone_from_slice(&inp[..n]);
     (n, n)
 }

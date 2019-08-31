@@ -10,6 +10,7 @@ use codec::FlushState;
 use codec::StatelessEncoder;
 use codec::Status;
 use codec::Transform;
+use std::cmp;
 use std::collections::BTreeMap;
 use std::io;
 
@@ -38,7 +39,7 @@ pub const REV: [i8; 256] = [
 ];
 
 fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 16]) -> (usize, usize) {
-    let n = std::cmp::min(inp.len(), outp.len() / 2);
+    let n = cmp::min(inp.len(), outp.len() / 2);
     for (i, j) in (0..n).map(|x| (x, x * 2)) {
         outp[j + 0] = arr[(inp[i] >> 4) as usize];
         outp[j + 1] = arr[(inp[i] & 0xf) as usize];

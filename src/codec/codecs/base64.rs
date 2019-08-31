@@ -9,6 +9,7 @@ use codec::Error;
 use codec::PaddedDecoder;
 use codec::PaddedEncoder;
 use codec::Transform;
+use std::cmp;
 use std::collections::BTreeMap;
 use std::io;
 
@@ -58,7 +59,7 @@ fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 64]) -> (usize, usi
     let (is, os) = (3, 4);
     let bits = is * 8 / os;
     let mask = (1u64 << bits) - 1;
-    let n = std::cmp::min(inp.len() / is, outp.len() / os);
+    let n = cmp::min(inp.len() / is, outp.len() / os);
     for (i, j) in (0..n).map(|x| (x * is, x * os)) {
         let x: u64 = inp[i..i + is]
             .iter()

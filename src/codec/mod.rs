@@ -4,6 +4,7 @@ pub mod registry;
 #[cfg(test)]
 pub mod tests;
 
+use std::cmp;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert;
 use std::error;
@@ -465,7 +466,7 @@ impl ChunkedDecoder {
 impl Codec for ChunkedDecoder {
     fn transform(&mut self, inp: &[u8], outp: &mut [u8], f: FlushState) -> Result<Status, Error> {
         let (is, os) = (self.inpsize, self.outsize);
-        let n = std::cmp::min(inp.len() / is, outp.len() / os);
+        let n = cmp::min(inp.len() / is, outp.len() / os);
         for (i, j) in (0..n).map(|x| (x * is, x * os)) {
             self.process_chunk(&inp[i..i + is], &mut outp[j..j + os])?;
         }

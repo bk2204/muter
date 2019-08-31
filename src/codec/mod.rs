@@ -55,6 +55,11 @@ impl error::Error for Error {
             _ => None,
         }
     }
+
+    // From libstd.
+    fn description(&self) -> &str {
+        "description() is deprecated; use Display"
+    }
 }
 
 impl convert::From<Error> for io::Error {

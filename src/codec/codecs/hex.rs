@@ -116,7 +116,7 @@ impl Codec for Decoder {
             src.iter()
                 .cloned()
                 .enumerate()
-                .filter(|(_, x)| REV[*x as usize] != -1)
+                .filter(|&(_, x)| REV[x as usize] != -1)
                 .take(dst.len() * 2)
                 .collect()
         };

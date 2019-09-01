@@ -420,7 +420,7 @@ impl Codec for Decoder {
                 return Ok(Status::Ok(i, j));
             }
 
-            match x {
+            match *x {
                 b'-' | b'.' | b'0'...b'9' | b'A'...b'Z' | b'_' | b'a'...b'z' | b'~' => dst[j] = *x,
                 b'%' => {
                     let y = iter.next();
@@ -507,7 +507,7 @@ mod tests {
                     match c.transform($inp.to_vec()) {
                         Ok(_) => panic!("got success for invalid sequence"),
                         Err(e) => match e.get_ref().unwrap().downcast_ref::<Error>() {
-                            Some($x) => (),
+                            Some(&$x) => (),
                             Some(e) => panic!("got wrong error: {:?}", e),
                             None => panic!("No internal error?"),
                         },

@@ -470,7 +470,7 @@ impl Decoder {
         let x = iter.next();
         match x {
             // \^C
-            Some((_, b'^')) => match iter.next() {
+            Some((_, &b'^')) => match iter.next() {
                 Some((i, y)) => {
                     dst[0] = y ^ 0x40;
                     Ok(Status::Ok(i + 1, 1))
@@ -478,12 +478,12 @@ impl Decoder {
                 None => Ok(moredata),
             },
             // \M-C and \M^C
-            Some((i, b'M')) => {
+            Some((i, &b'M')) => {
                 let y = iter.next();
                 let z = iter.next();
                 match (y, z) {
-                    (Some((_, b'-')), Some((_, c))) => dst[0] = c | 0x80,
-                    (Some((_, b'^')), Some((_, c))) => dst[0] = c ^ 0xc0,
+                    (Some((_, &b'-')), Some((_, c))) => dst[0] = c | 0x80,
+                    (Some((_, &b'^')), Some((_, c))) => dst[0] = c ^ 0xc0,
                     (Some((_, &c1)), _) => {
                         return Err(Error::InvalidSequence(
                             "vis".to_string(),
@@ -494,7 +494,7 @@ impl Decoder {
                 };
                 Ok(Status::Ok(i + 3, 1))
             }
-            Some((i, b'0')) => {
+            Some((i, &b'0')) => {
                 let y = iter.next();
                 match (y, f) {
                     // \0
@@ -512,7 +512,7 @@ impl Decoder {
                         None => Ok(moredata),
                     },
                     // \0 followed by a new escape
-                    (Some((j, b'\\')), _) => {
+                    (Some((j, &b'\\')), _) => {
                         dst[0] = b'\0';
                         // 1 for this character, and 2 for the next call to handle_escape.
                         if dst.len() >= 3 {
@@ -546,7 +546,7 @@ impl Decoder {
                 }
             }
             // \\
-            Some((i, b'\\')) => {
+            Some((i, &b'\\')) => {
                 dst[0] = b'\\';
                 Ok(Status::Ok(i + 1, 1))
             }
@@ -583,7 +583,7 @@ impl Codec for Decoder {
                 return Ok(Status::Ok(i, j));
             }
 
-            match x {
+            match *x {
                 b'\\' => match self.handle_escape(i, &mut iter, &mut dst[j..], f)? {
                     Status::Ok(_, b) => j += b,
                     Status::BufError(a, b) => return Ok(Status::BufError(a, j + b)),
@@ -633,7 +633,7 @@ mod tests {
                     match c.transform($inp.to_vec()) {
                         Ok(_) => panic!("got success for invalid sequence"),
                         Err(e) => match e.get_ref().unwrap().downcast_ref::<Error>() {
-                            Some($x) => (),
+                            Some(&$x) => (),
                             Some(e) => panic!("got wrong error: {:?}", e),
                             None => panic!("No internal error?"),
                         },

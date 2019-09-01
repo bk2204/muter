@@ -468,7 +468,7 @@ impl ChunkedDecoder {
             iter.map(|(k, &v)| (self.table[(v as usize)] as i64) << ((is - 1 - k) * bits))
                 .sum()
         } else {
-            iter.filter(|(_, &x)| self.table[x as usize] != -1)
+            iter.filter(|&(_, &x)| self.table[x as usize] != -1)
                 .map(|(k, &v)| (self.table[(v as usize)] as i64) << ((is - 1 - k) * bits))
                 .sum()
         };

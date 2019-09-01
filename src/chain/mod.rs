@@ -81,19 +81,16 @@ impl<'a> Chain<'a> {
     }
 
     pub fn transform<'b>(&self, b: Vec<u8>) -> io::Result<Vec<u8>> {
-        let mut buf = Vec::new();
-        {
-            let mut out = io::Cursor::new(&mut buf);
-            // Cursor provides a BufRead implementation, but we use a BufReader so we can set the
-            // buffer size explicitly for test purposes.
-            let inp = Box::new(io::BufReader::with_capacity(
-                self.bufsize,
-                io::Cursor::new(b),
-            ));
-            let mut res = self.build(inp)?;
-            io::copy(&mut res, &mut out)?;
-        }
-        Ok(buf)
+        let mut out = io::Cursor::new(Vec::new());
+        // Cursor provides a BufRead implementation, but we use a BufReader so we can set the
+        // buffer size explicitly for test purposes.
+        let inp = Box::new(io::BufReader::with_capacity(
+            self.bufsize,
+            io::Cursor::new(b),
+        ));
+        let mut res = self.build(inp)?;
+        io::copy(&mut res, &mut out)?;
+        Ok(out.into_inner())
     }
 
     fn codec_settings(&self, t: &ChainTransform) -> CodecSettings {

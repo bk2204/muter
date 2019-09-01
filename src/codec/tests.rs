@@ -4,6 +4,7 @@ use codec::registry::CodecRegistry;
 use codec::{Codec, Error, FlushState, PaddedDecoder, PaddedEncoder, Status};
 use rand_chacha::ChaCha20Rng;
 use rand_core::{RngCore, SeedableRng};
+use std::env;
 use std::time::SystemTime;
 
 // Fixed constants for use in tests.
@@ -18,7 +19,7 @@ fn prng(time: bool) -> ChaCha20Rng {
             0
         }
     } else {
-        u64::from_str_radix(&std::env::var("RAND_SEED").unwrap_or("0".to_string()), 10).unwrap_or(0)
+        u64::from_str_radix(&env::var("RAND_SEED").unwrap_or("0".to_string()), 10).unwrap_or(0)
     };
     ChaCha20Rng::seed_from_u64(seed)
 }

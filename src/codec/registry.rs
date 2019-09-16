@@ -2,17 +2,20 @@ use codec;
 use codec::CodecSettings;
 use codec::CodecTransform;
 use codec::Error;
-use std::collections::HashMap;
+use std::collections::btree_map;
+use std::collections::BTreeMap;
 use std::io;
+
+type Iter<'a> = btree_map::Iter<'a, &'static str, Box<CodecTransform>>;
 
 #[derive(Default)]
 pub struct CodecRegistry {
-    map: HashMap<&'static str, Box<CodecTransform>>,
+    map: BTreeMap<&'static str, Box<CodecTransform>>,
 }
 
 impl CodecRegistry {
     pub fn new() -> Self {
-        let mut map: HashMap<&'static str, Box<CodecTransform>> = HashMap::new();
+        let mut map: BTreeMap<&'static str, Box<CodecTransform>> = BTreeMap::new();
 
         map.insert(
             "base16",
@@ -53,6 +56,10 @@ impl CodecRegistry {
 
     pub fn insert(&mut self, k: &'static str, f: Box<CodecTransform>) {
         self.map.insert(k, f);
+    }
+
+    pub fn iter<'a>(&'a self) -> Iter<'a> {
+        self.map.iter()
     }
 
     pub fn create<'a>(
@@ -136,5 +143,15 @@ mod tests {
                 panic!("failed to insert random");
             }
         }
+    }
+
+    #[test]
+    fn iterates_in_sorted_order() {
+        let cr = CodecRegistry::new();
+        let keys: Vec<_> = cr.iter().map(|(key, _)| key).collect();
+        let mut keys_sorted = keys.clone();
+        keys_sorted.sort();
+
+        assert_eq!(keys, keys_sorted);
     }
 }

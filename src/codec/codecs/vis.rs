@@ -311,8 +311,17 @@ impl CodecTransform for VisTransformFactory {
 
     fn options(&self) -> BTreeMap<String, &'static str> {
         let mut map = BTreeMap::new();
-        map.insert("lower".to_string(), "use lowercase letters");
-        map.insert("upper".to_string(), "use uppercase letters");
+        map.insert("cstyle".to_string(), "encode using C-like escape sequences");
+        map.insert(
+            "glob".to_string(),
+            "encode characters recognized by glob(3) and hash mark",
+        );
+        map.insert("nl".to_string(), "encode newline");
+        map.insert("octal".to_string(), "encode using octal escape sequences");
+        map.insert("sp".to_string(), "encode space");
+        map.insert("space".to_string(), "encode space");
+        map.insert("tab".to_string(), "encode tab");
+        map.insert("white".to_string(), "encode space, tab, and newline");
         map
     }
 

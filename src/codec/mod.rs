@@ -200,19 +200,12 @@ impl<R: BufRead, C: Codec> CodecReader<R, C> {
 impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
     fn read(&mut self, dst: &mut [u8]) -> io::Result<usize> {
         let obj = &mut self.r;
-        let mut last_read: Option<usize> = None;
         loop {
             let (ret, eof);
             let last = {
                 let read = obj.read(&mut self.buf[self.off..])?;
                 let input = &self.buf[..self.off + read];
-                eof = read == 0
-                    || match (last_read, input.len()) {
-                        (Some(x), y) if x == y => true,
-                        _ => false,
-                    };
-
-                last_read = Some(read);
+                eof = read == 0;
 
                 let flush = if eof {
                     FlushState::Finish

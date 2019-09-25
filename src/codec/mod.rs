@@ -23,6 +23,7 @@ pub enum Error {
     ExtraData,
     ForwardOnly(String),
     UnknownCodec(String),
+    MissingArgument(String),
     UnknownArgument(String),
     IncompatibleParameters(String, String),
 }
@@ -37,6 +38,7 @@ impl fmt::Display for Error {
             Error::TruncatedData => write!(f, "truncated data"),
             Error::ExtraData => write!(f, "extra data"),
             Error::ForwardOnly(ref name) => write!(f, "no reverse transform for {}", name),
+            Error::MissingArgument(ref name) => write!(f, "missing argument for {}", name),
             Error::UnknownArgument(ref name) => write!(f, "no such argument: {}", name),
             Error::UnknownCodec(ref name) => write!(f, "no such codec: {}", name),
             Error::IncompatibleParameters(ref name1, ref name2) => write!(

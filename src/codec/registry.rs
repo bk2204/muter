@@ -33,6 +33,10 @@ impl CodecRegistry {
             "form",
             Box::new(codec::codecs::uri::FormTransformFactory::new()),
         );
+        map.insert(
+            "hash",
+            Box::new(codec::codecs::hash::TransformFactory::new()),
+        );
         map.insert("hex", Box::new(codec::codecs::hex::TransformFactory::new()));
         map.insert(
             "identity",

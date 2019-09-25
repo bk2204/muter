@@ -34,6 +34,7 @@ pub fn round_trip(name: &'static str) {
     for i in 0..512 {
         round_trip_with_fill(name, i);
     }
+    round_trip_with_fill(name, 32768);
     round_trip_bytes(name, BYTE_SEQ);
 }
 

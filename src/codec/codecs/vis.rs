@@ -11,6 +11,7 @@ use codec::Status;
 use codec::Transform;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
+use std::iter::Peekable;
 
 #[derive(PartialEq, Eq, Debug)]
 enum Character {
@@ -459,7 +460,7 @@ impl Decoder {
     fn handle_escape<'a, I: Iterator<Item = (usize, &'a u8)>>(
         &self,
         offset: usize,
-        iter: &mut I,
+        iter: &mut Peekable<I>,
         dst: &mut [u8],
         f: FlushState,
     ) -> Result<Status, Error> {
@@ -504,8 +505,8 @@ impl Decoder {
                 Ok(Status::Ok(i + 3, 1))
             }
             Some((i, &b'0')) => {
-                let y = iter.next();
-                match (y, f) {
+                let y = iter.peek();
+                match (y, &f) {
                     // \0
                     (None, FlushState::Finish) => {
                         dst[0] = b'\0';
@@ -513,29 +514,24 @@ impl Decoder {
                     }
                     (None, FlushState::None) => Ok(moredata),
                     // 3-digit octal escape
-                    (Some((_, &c)), _) if c >= b'0' && c <= b'7' => match iter.next() {
-                        Some((j, &c2)) => {
-                            dst[0] = ((c - b'0') << 3) | (c2 - b'0');
-                            Ok(Status::Ok(j + 1, 1))
-                        }
-                        None => Ok(moredata),
-                    },
-                    // \0 followed by a new escape
-                    (Some((j, &b'\\')), _) => {
-                        dst[0] = b'\0';
-                        // 1 for this character, and 2 for the next call to handle_escape.
-                        if dst.len() >= 3 {
-                            match self.handle_escape(j, iter, &mut dst[1..], f)? {
-                                Status::Ok(a, b) => Ok(Status::Ok(a, b + 1)),
-                                Status::BufError(a, b) => Ok(Status::BufError(a, b + 1)),
-                                Status::StreamEnd(a, b) => Ok(Status::StreamEnd(a, b + 1)),
+                    (Some((_, &c)), _) if c >= b'0' && c <= b'7' => {
+                        iter.next();
+                        match iter.next() {
+                            Some((j, &c2)) => {
+                                dst[0] = ((c - b'0') << 3) | (c2 - b'0');
+                                Ok(Status::Ok(j + 1, 1))
                             }
-                        } else {
-                            Ok(Status::BufError(i, 1))
+                            None => Ok(moredata),
                         }
                     }
+                    // \0 followed by a new escape
+                    (Some((_, &b'\\')), _) => {
+                        dst[0] = b'\0';
+                        Ok(Status::Ok(i + 1, 1))
+                    }
                     // \0 followed by normal character
-                    (Some((i, &c1)), _) => {
+                    (Some((_, _)), _) => {
+                        let (i, &c1) = iter.next().unwrap();
                         dst[0] = b'\0';
                         dst[1] = c1;
                         Ok(Status::Ok(i + 1, 2))
@@ -580,7 +576,7 @@ impl Decoder {
 
 impl Codec for Decoder {
     fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
-        let mut iter = src.iter().enumerate();
+        let mut iter = src.iter().enumerate().peekable();
         let mut j = 0;
         loop {
             let s = iter.next();

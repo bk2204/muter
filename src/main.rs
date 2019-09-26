@@ -30,22 +30,50 @@ fn source() -> io::Result<Box<io::BufRead>> {
     )))
 }
 
-fn create_chain(m: ArgMatches) -> io::Result<Box<io::BufRead>> {
+fn create_chain(reg: &CodecRegistry, m: ArgMatches) -> io::Result<Box<io::BufRead>> {
     let chain = m.value_of("chain").unwrap();
-    let reg = CodecRegistry::new();
-    let c = chain::Chain::new(&reg, chain, BUFFER_SIZE, true);
+    let c = chain::Chain::new(reg, chain, BUFFER_SIZE, true);
     c.build(source()?)
 }
 
-fn process(m: ArgMatches) -> io::Result<()> {
-    let mut transform = create_chain(m)?;
+fn process(reg: &CodecRegistry, m: ArgMatches) -> io::Result<()> {
+    let mut transform = create_chain(reg, m)?;
     std::io::copy(&mut transform, &mut io::stdout())?;
     Ok(())
 }
 
+fn help(reg: &CodecRegistry) -> String {
+    let mut s: String = "
+Modify the bytes in the concatentation of INPUT (or standard input) by using the
+specification in CHAIN.
+
+CHAIN is a colon-separated list of encoding transform.  A transform can be
+prefixed with - to reverse it (if possible).  A transform can be followed by one
+or more comma-separated parenthesized arguments as well.  Instead of
+parentheses, a single comma may be used.
+
+For example, '-hex:hash(sha256):base64' (or '-hex:hash,sha256:base64') decodes a
+hex-encoded string, hashes it with SHA-256, and converts the result to base64.
+
+The following transforms are available:
+"
+    .into();
+    let mut v: Vec<String> = vec![];
+    for (name, xfrm) in reg.iter() {
+        v.push(format!("  {}", name));
+        for (opt, desc) in xfrm.options() {
+            v.push(format!("    {:10}: {}", opt, desc));
+        }
+    }
+    s += &v.join("\n");
+    s
+}
+
 fn main() {
+    let reg = CodecRegistry::new();
+    let help = help(&reg);
     let matches = App::new("muter")
-        .about("Encodes and decodes byte sequence")
+        .about("Encodes and decodes byte sequences")
         .arg(
             Arg::with_name("chain")
                 .short("c")
@@ -61,8 +89,9 @@ fn main() {
                 .multiple(true)
                 .index(1),
         )
+        .after_help(&*help)
         .get_matches();
-    if let Err(e) = process(matches) {
+    if let Err(e) = process(&reg, matches) {
         if let Some(err) = e.get_ref() {
             eprintln!("muter: {}", err);
             process::exit(2);

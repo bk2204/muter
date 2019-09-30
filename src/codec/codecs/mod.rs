@@ -6,3 +6,4 @@ pub mod hex;
 pub mod identity;
 pub mod uri;
 pub mod vis;
+pub mod xml;

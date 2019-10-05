@@ -94,6 +94,16 @@ pub enum Status {
     StreamEnd(usize, usize),
 }
 
+impl Status {
+    fn unpack(&self) -> (usize, usize) {
+        match *self {
+            Status::Ok(a, b) => (a, b),
+            Status::BufError(a, b) => (a, b),
+            Status::StreamEnd(a, b) => (a, b),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum FlushState {
     Finish,
@@ -308,9 +318,7 @@ where
 
     fn offsets(r: Result<Status, Error>) -> Result<(usize, usize), Error> {
         match r {
-            Ok(Status::Ok(a, b)) => Ok((a, b)),
-            Ok(Status::BufError(a, b)) => Ok((a, b)),
-            Ok(Status::StreamEnd(a, b)) => Ok((a, b)),
+            Ok(s) => Ok(s.unpack()),
             Err(e) => Err(e),
         }
     }

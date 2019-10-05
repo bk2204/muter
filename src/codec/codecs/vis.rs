@@ -505,8 +505,8 @@ impl Decoder {
                 Ok(Status::Ok(i + 3, 1))
             }
             Some((i, &b'0')) => {
-                let y = iter.peek();
-                match (y, &f) {
+                let y = iter.peek().cloned();
+                match (y, f) {
                     // \0
                     (None, FlushState::Finish) => {
                         dst[0] = b'\0';

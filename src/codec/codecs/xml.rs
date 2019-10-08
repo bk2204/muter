@@ -10,7 +10,7 @@ use codec::Error;
 use codec::FlushState;
 use codec::StatelessEncoder;
 use codec::Status;
-use codec::Transform;
+use codec::TransformableCodec;
 use std::char;
 use std::collections::BTreeMap;
 use std::io;
@@ -81,10 +81,12 @@ impl CodecTransform for XMLTransformFactory {
                 } else {
                     DEFAULT
                 };
-                let enc = StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &arr));
-                Ok(Box::new(Transform::new(r, enc)))
+                Ok(
+                    StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &arr))
+                        .into_bufread(r, s.bufsize),
+                )
             }
-            Direction::Reverse => Ok(Box::new(Transform::new(r, Decoder::new()))),
+            Direction::Reverse => Ok(Decoder::new().into_bufread(r, s.bufsize)),
         }
     }
 

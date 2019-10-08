@@ -5,7 +5,7 @@ use codec::CodecSettings;
 use codec::CodecTransform;
 use codec::Error;
 use codec::StatelessEncoder;
-use codec::Transform;
+use codec::TransformableCodec;
 use std::cmp;
 use std::collections::BTreeMap;
 use std::io;
@@ -26,9 +26,8 @@ impl TransformFactory {
 }
 
 impl CodecTransform for TransformFactory {
-    fn factory(&self, r: Box<io::BufRead>, _s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        let enc = StatelessEncoder::new(move |inp, out| transform(inp, out));
-        Ok(Box::new(Transform::new(r, enc)))
+    fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+        Ok(StatelessEncoder::new(move |inp, out| transform(inp, out)).into_bufread(r, s.bufsize))
     }
 
     fn options(&self) -> BTreeMap<String, &'static str> {

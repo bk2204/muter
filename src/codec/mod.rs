@@ -129,6 +129,19 @@ pub trait Codec {
     fn chunk_size(&self) -> usize;
 }
 
+pub trait TransformableCodec<'a, C> {
+    fn into_bufread(self, r: Box<io::BufRead>, bufsize: usize) -> Box<io::BufRead + 'a>;
+}
+
+impl<'a, C> TransformableCodec<'a, C> for C
+where
+    C: Codec + 'a,
+{
+    fn into_bufread(self, r: Box<io::BufRead>, _bufsize: usize) -> Box<io::BufRead + 'a> {
+        Box::new(Transform::new(r, self))
+    }
+}
+
 pub struct StatelessEncoder<F> {
     f: F,
 }

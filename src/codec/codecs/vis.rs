@@ -8,7 +8,7 @@ use codec::Direction;
 use codec::Error;
 use codec::FlushState;
 use codec::Status;
-use codec::Transform;
+use codec::TransformableCodec;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
 use std::iter::Peekable;
@@ -305,8 +305,8 @@ impl VisTransformFactory {
 impl CodecTransform for VisTransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
-            Direction::Forward => Ok(Box::new(Transform::new(r, Encoder::new(&s.args)))),
-            Direction::Reverse => Ok(Box::new(Transform::new(r, Decoder::new()))),
+            Direction::Forward => Ok(Encoder::new(&s.args).into_bufread(r, s.bufsize)),
+            Direction::Reverse => Ok(Decoder::new().into_bufread(r, s.bufsize)),
         }
     }
 

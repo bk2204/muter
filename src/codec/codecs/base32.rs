@@ -8,7 +8,7 @@ use codec::Direction;
 use codec::Error;
 use codec::PaddedDecoder;
 use codec::PaddedEncoder;
-use codec::Transform;
+use codec::TransformableCodec;
 use std::cmp;
 use std::collections::BTreeMap;
 use std::io;
@@ -80,24 +80,20 @@ impl TransformFactory {
 impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
-            Direction::Forward => {
-                let enc = PaddedEncoder::new(
-                    move |inp, out| forward_transform(inp, out, &BASE32),
-                    5,
-                    8,
-                    Some(b'='),
-                );
-                Ok(Box::new(Transform::new(r, enc)))
-            }
-            Direction::Reverse => Ok(Box::new(Transform::new(
-                r,
-                PaddedDecoder::new(
-                    ChunkedDecoder::new(s.strict, "base32", 8, 5, &REV),
-                    8,
-                    5,
-                    Some(b'='),
-                ),
-            ))),
+            Direction::Forward => Ok(PaddedEncoder::new(
+                move |inp, out| forward_transform(inp, out, &BASE32),
+                5,
+                8,
+                Some(b'='),
+            )
+            .into_bufread(r, s.bufsize)),
+            Direction::Reverse => Ok(PaddedDecoder::new(
+                ChunkedDecoder::new(s.strict, "base32", 8, 5, &REV),
+                8,
+                5,
+                Some(b'='),
+            )
+            .into_bufread(r, s.bufsize)),
         }
     }
 

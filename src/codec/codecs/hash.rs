@@ -9,7 +9,7 @@ use codec::Direction;
 use codec::Error;
 use codec::FlushState;
 use codec::Status;
-use codec::Transform;
+use codec::TransformableCodec;
 use digest::{Digest, DynDigest};
 use md5::Md5;
 use sha1::Sha1;
@@ -61,10 +61,9 @@ impl CodecTransform for TransformFactory {
             }
         };
         match s.dir {
-            Direction::Forward => Ok(Box::new(Transform::new(
-                r,
-                Encoder::new(Self::digest(args[0])?),
-            ))),
+            Direction::Forward => {
+                Ok(Encoder::new(Self::digest(args[0])?).into_bufread(r, s.bufsize))
+            }
             Direction::Reverse => Err(Error::ForwardOnly("hash".to_string())),
         }
     }

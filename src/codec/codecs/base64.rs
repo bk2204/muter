@@ -8,7 +8,7 @@ use codec::Direction;
 use codec::Error;
 use codec::PaddedDecoder;
 use codec::PaddedEncoder;
-use codec::Transform;
+use codec::TransformableCodec;
 use std::cmp;
 use std::collections::BTreeMap;
 use std::io;
@@ -85,24 +85,20 @@ impl Base64TransformFactory {
 impl CodecTransform for Base64TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
-            Direction::Forward => {
-                let enc = PaddedEncoder::new(
-                    move |inp, out| forward_transform(inp, out, &BASE64),
-                    3,
-                    4,
-                    Some(b'='),
-                );
-                Ok(Box::new(Transform::new(r, enc)))
-            }
-            Direction::Reverse => Ok(Box::new(Transform::new(
-                r,
-                PaddedDecoder::new(
-                    ChunkedDecoder::new(s.strict, "base64", 4, 3, &REV),
-                    4,
-                    3,
-                    Some(b'='),
-                ),
-            ))),
+            Direction::Forward => Ok(PaddedEncoder::new(
+                move |inp, out| forward_transform(inp, out, &BASE64),
+                3,
+                4,
+                Some(b'='),
+            )
+            .into_bufread(r, s.bufsize)),
+            Direction::Reverse => Ok(PaddedDecoder::new(
+                ChunkedDecoder::new(s.strict, "base64", 4, 3, &REV),
+                4,
+                3,
+                Some(b'='),
+            )
+            .into_bufread(r, s.bufsize)),
         }
     }
 
@@ -131,24 +127,20 @@ impl URL64TransformFactory {
 impl CodecTransform for URL64TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
-            Direction::Forward => {
-                let enc = PaddedEncoder::new(
-                    move |inp, out| forward_transform(inp, out, &URL64),
-                    3,
-                    4,
-                    None,
-                );
-                Ok(Box::new(Transform::new(r, enc)))
-            }
-            Direction::Reverse => Ok(Box::new(Transform::new(
-                r,
-                PaddedDecoder::new(
-                    ChunkedDecoder::new(s.strict, "url64", 4, 3, &URLREV),
-                    4,
-                    3,
-                    None,
-                ),
-            ))),
+            Direction::Forward => Ok(PaddedEncoder::new(
+                move |inp, out| forward_transform(inp, out, &URL64),
+                3,
+                4,
+                None,
+            )
+            .into_bufread(r, s.bufsize)),
+            Direction::Reverse => Ok(PaddedDecoder::new(
+                ChunkedDecoder::new(s.strict, "url64", 4, 3, &URLREV),
+                4,
+                3,
+                None,
+            )
+            .into_bufread(r, s.bufsize)),
         }
     }
 

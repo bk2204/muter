@@ -10,7 +10,7 @@ use codec::Error;
 use codec::FlushState;
 use codec::StatelessEncoder;
 use codec::Status;
-use codec::Transform;
+use codec::TransformableCodec;
 use std::collections::BTreeMap;
 use std::io;
 
@@ -354,11 +354,12 @@ impl URITransformFactory {
                     true => &LOWER,
                     false => &UPPER,
                 };
-                let enc =
-                    StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr, form));
-                Ok(Box::new(Transform::new(r, enc)))
+                Ok(
+                    StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr, form))
+                        .into_bufread(r, s.bufsize),
+                )
             }
-            Direction::Reverse => Ok(Box::new(Transform::new(r, Decoder::new(s.strict, form)))),
+            Direction::Reverse => Ok(Decoder::new(s.strict, form).into_bufread(r, s.bufsize)),
         }
     }
 }

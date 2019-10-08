@@ -9,7 +9,7 @@ use codec::Error;
 use codec::FlushState;
 use codec::StatelessEncoder;
 use codec::Status;
-use codec::Transform;
+use codec::TransformableCodec;
 use std::cmp;
 use std::collections::BTreeMap;
 use std::io;
@@ -61,10 +61,12 @@ impl CodecTransform for TransformFactory {
                     true => &UPPER,
                     false => &LOWER,
                 };
-                let enc = StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr));
-                Ok(Box::new(Transform::new(r, enc)))
+                Ok(
+                    StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr))
+                        .into_bufread(r, s.bufsize),
+                )
             }
-            Direction::Reverse => Ok(Box::new(Transform::new(r, Decoder::new(s.strict)))),
+            Direction::Reverse => Ok(Decoder::new(s.strict).into_bufread(r, s.bufsize)),
         }
     }
 

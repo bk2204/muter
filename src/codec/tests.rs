@@ -35,30 +35,46 @@ pub fn round_trip(name: &'static str) {
         round_trip_with_fill(name, i);
     }
     round_trip_with_fill(name, 32768);
-    round_trip_bytes(name, BYTE_SEQ);
+    round_trip_bytes(name, BYTE_SEQ, "all-bytes");
 }
 
 fn round_trip_with_prng(name: &'static str, rng: &mut RngCore, sz: usize) {
     let mut v = vec![0u8; sz];
     rng.fill_bytes(v.as_mut_slice());
-    round_trip_bytes(name, &v);
+    round_trip_bytes(name, &v, "random");
 }
 
 fn round_trip_with_fill(name: &'static str, sz: usize) {
     let v = vec![sz as u8; sz];
-    round_trip_bytes(name, &v);
+    round_trip_bytes(name, &v, "fill");
 }
 
-fn round_trip_bytes(name: &'static str, inp: &[u8]) {
+fn round_trip_bytes(name: &'static str, inp: &[u8], desc: &str) {
     let reg = CodecRegistry::new();
     let reverse = format!("-{}", name);
     for i in vec![5, 6, 7, 8, 512] {
         let c = Chain::new(&reg, name, i, true);
         let outp = c.transform(inp.to_vec()).unwrap();
         let c = Chain::new(&reg, &reverse, i, true);
-        assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
+        assert_eq!(
+            c.transform(outp.to_vec()).unwrap(),
+            inp,
+            "round-trip {} ({} bytes, {}-byte chunks, {})",
+            name,
+            inp.len(),
+            i,
+            desc
+        );
         let c = Chain::new(&reg, &reverse, i, false);
-        assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
+        assert_eq!(
+            c.transform(outp.to_vec()).unwrap(),
+            inp,
+            "round-trip {} ({} bytes, {}-byte chunks, {}, strict)",
+            name,
+            inp.len(),
+            i,
+            desc
+        );
     }
 }
 

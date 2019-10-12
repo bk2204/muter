@@ -137,8 +137,8 @@ impl<'a, C> TransformableCodec<'a, C> for C
 where
     C: Codec + 'a,
 {
-    fn into_bufread(self, r: Box<io::BufRead>, _bufsize: usize) -> Box<io::BufRead + 'a> {
-        Box::new(Transform::new(r, self))
+    fn into_bufread(self, r: Box<io::BufRead>, bufsize: usize) -> Box<io::BufRead + 'a> {
+        Box::new(Transform::new(r, self, bufsize))
     }
 }
 
@@ -182,11 +182,11 @@ pub struct CodecReader<R: BufRead, C: Codec> {
 }
 
 impl<R: BufRead, C: Codec> CodecReader<R, C> {
-    fn new(r: R, c: C) -> Self {
+    fn new(r: R, c: C, bufsize: usize) -> Self {
         CodecReader {
             r,
             codec: c,
-            buf: vec![0u8; DEFAULT_BUFFER_SIZE],
+            buf: vec![0u8; bufsize],
             off: 0,
         }
     }
@@ -275,9 +275,9 @@ pub struct Transform<C: Codec> {
 }
 
 impl<C: Codec> Transform<C> {
-    pub fn new(r: Box<io::BufRead>, c: C) -> Self {
+    pub fn new(r: Box<io::BufRead>, c: C, bufsize: usize) -> Self {
         Transform {
-            b: io::BufReader::new(CodecReader::new(r, c)),
+            b: io::BufReader::with_capacity(bufsize, CodecReader::new(r, c, bufsize)),
         }
     }
 }

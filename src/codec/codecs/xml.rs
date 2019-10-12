@@ -221,7 +221,7 @@ mod tests {
 
     fn check(name: &str, inp: &[u8], outp: &[u8]) {
         let reg = CodecRegistry::new();
-        for i in vec![6, 7, 8, 512] {
+        for i in vec![10, 11, 12, 512] {
             let c = Chain::new(&reg, name, i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
             let c = Chain::new(&reg, "-xml", i, true);
@@ -233,7 +233,7 @@ mod tests {
 
     fn check_decode(inp: &[u8], outp: &[u8]) {
         let reg = CodecRegistry::new();
-        for i in vec![6, 7, 8, 512] {
+        for i in vec![10, 11, 12, 512] {
             let c = Chain::new(&reg, "-xml", i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
             let c = Chain::new(&reg, "-xml", i, false);
@@ -267,6 +267,7 @@ mod tests {
         check("xml,default", br#"<>&'""#, b"&lt;&gt;&amp;&apos;&quot;");
         check("xml,hex", br#"<>&'""#, b"&#x3c;&#x3e;&#x26;&#x27;&#x22;");
         check("xml,html", br#"<>&'""#, b"&lt;&gt;&amp;&#x27;&quot;");
+        check("xml", b"&#x10ffff;", b"&amp;#x10ffff;");
     }
 
     #[test]
@@ -275,6 +276,9 @@ mod tests {
         check_decode(b"&#x30;", b"0");
         check_decode(b"&#xfeff;", b"\xef\xbb\xbf");
         check_decode(b"&#65279;", b"\xef\xbb\xbf");
+        check_decode(b"&#x10ffff;", b"\xf4\x8f\xbf\xbf");
+        check_decode(b"&#1114111;", b"\xf4\x8f\xbf\xbf");
+        check_decode(b"&#1114111;&#x10fffe;", b"\xf4\x8f\xbf\xbf\xf4\x8f\xbf\xbe");
     }
 
     #[test]

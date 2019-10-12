@@ -121,6 +121,9 @@ mod tests {
         for i in vec![5, 6, 7, 8, 512] {
             let c = Chain::new(&reg, "base32", i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
+        }
+
+        for i in vec![8, 9, 10, 11, 512] {
             let c = Chain::new(&reg, "-base32", i, true);
             assert_eq!(c.transform(outp.to_vec()).unwrap(), inp);
             let c = Chain::new(&reg, "-base32", i, false);

@@ -142,7 +142,8 @@ mod tests {
     fn check(algo: &str, inp: &[u8], outp: &[u8]) {
         let reg = CodecRegistry::new();
         let codec = format!("hash({}):hex", algo);
-        for i in vec![5, 6, 7, 8, 512] {
+        let dlen = outp.len() / 2;
+        for i in vec![dlen, dlen + 1, dlen + 2, dlen + 3, 512] {
             let c = Chain::new(&reg, &codec, i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
             let c = Chain::new(&reg, &codec, i, false);

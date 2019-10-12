@@ -493,14 +493,16 @@ impl Decoder {
                 let z = iter.next();
                 match (y, z) {
                     (Some((_, &b'-')), Some((_, c))) => dst[0] = c | 0x80,
+                    (Some((_, &b'-')), None) => return Ok(moredata),
                     (Some((_, &b'^')), Some((_, c))) => dst[0] = c ^ 0xc0,
+                    (Some((_, &b'^')), None) => return Ok(moredata),
                     (Some((_, &c1)), _) => {
                         return Err(Error::InvalidSequence(
                             "vis".to_string(),
                             vec![b'\\', b'M', c1],
                         ))
                     }
-                    (_, None) | (None, _) => return Ok(moredata),
+                    (None, _) => return Ok(moredata),
                 };
                 Ok(Status::Ok(i + 3, 1))
             }
@@ -675,8 +677,8 @@ mod tests {
         check_failure!(b"abc\\", Error::TruncatedData);
         check_failure!(b"abc\\^", Error::TruncatedData);
         check_failure!(b"abc\\M", Error::TruncatedData);
-        check_failure!(b"abc\\M-", Error::InvalidSequence(_, _));
-        check_failure!(b"abc\\M^", Error::InvalidSequence(_, _));
+        check_failure!(b"abc\\M-", Error::TruncatedData);
+        check_failure!(b"abc\\M^", Error::TruncatedData);
         check_failure!(b"abc\\Mx", Error::InvalidSequence(_, _));
     }
 

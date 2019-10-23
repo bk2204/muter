@@ -109,7 +109,7 @@ impl<'a> Chain<'a> {
             bufsize: self.bufsize,
             strict: self.strict,
             args: t.args.clone(),
-            dir: t.dir.clone(),
+            dir: t.dir,
         }
     }
 

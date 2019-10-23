@@ -46,6 +46,7 @@ impl CodecTransform for TransformFactory {
 mod tests {
     use chain::Chain;
     use codec::registry::CodecRegistry;
+    use codec::tests;
 
     fn check(inp: &[u8], upper: &[u8]) {
         let reg = CodecRegistry::new();
@@ -64,5 +65,11 @@ mod tests {
         check(b"\xc2\xa9", b"C2A9");
         check(b"\x01\x23\x45\x67\x89\xab\xcd\xef", b"0123456789ABCDEF");
         check(b"\xfe\xdc\xba", b"FEDCBA");
+    }
+
+    #[test]
+    fn default_tests() {
+        tests::round_trip("base16");
+        tests::basic_configuration("base16");
     }
 }

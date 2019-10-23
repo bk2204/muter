@@ -255,6 +255,7 @@ mod tests {
     #[test]
     fn default_tests() {
         tests::round_trip("uuencode");
+        tests::basic_configuration("uuencode");
     }
 
     #[test]

@@ -49,6 +49,11 @@ impl TransformFactory {
 
 impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+        match s.dir {
+            Direction::Forward => (),
+            Direction::Reverse => return Err(Error::ForwardOnly("hash".to_string())),
+        }
+
         let args: Vec<_> = s.args.iter().collect();
         match args.len() {
             0 => return Err(Error::MissingArgument("hash".to_string())),
@@ -60,12 +65,7 @@ impl CodecTransform for TransformFactory {
                 ));
             }
         };
-        match s.dir {
-            Direction::Forward => {
-                Ok(Encoder::new(Self::digest(args[0])?).into_bufread(r, s.bufsize))
-            }
-            Direction::Reverse => Err(Error::ForwardOnly("hash".to_string())),
-        }
+        Ok(Encoder::new(Self::digest(args[0])?).into_bufread(r, s.bufsize))
     }
 
     fn options(&self) -> BTreeMap<String, &'static str> {
@@ -90,7 +90,7 @@ impl CodecTransform for TransformFactory {
     }
 
     fn name(&self) -> &'static str {
-        "hex"
+        "hash"
     }
 }
 
@@ -138,6 +138,7 @@ impl Encoder {
 mod tests {
     use chain::Chain;
     use codec::registry::CodecRegistry;
+    use codec::tests;
 
     fn check(algo: &str, inp: &[u8], outp: &[u8]) {
         let reg = CodecRegistry::new();
@@ -247,5 +248,10 @@ mod tests {
             check(algo, b"message digest", md);
             check(algo, &buf, lotsa);
         }
+    }
+
+    #[test]
+    fn default_tests() {
+        tests::basic_configuration("hash");
     }
 }

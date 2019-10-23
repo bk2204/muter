@@ -188,6 +188,7 @@ mod tests {
         tests::round_trip("hex");
         tests::round_trip("hex,upper");
         tests::round_trip("hex,lower");
+        tests::basic_configuration("hex");
     }
 
     #[test]

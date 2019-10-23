@@ -39,7 +39,7 @@ impl CodecTransform for TransformFactory {
     }
 
     fn name(&self) -> &'static str {
-        "base32"
+        "identity"
     }
 }
 
@@ -47,6 +47,7 @@ impl CodecTransform for TransformFactory {
 mod tests {
     use chain::Chain;
     use codec::registry::CodecRegistry;
+    use codec::tests;
 
     fn check(inp: &[u8]) {
         let reg = CodecRegistry::new();
@@ -70,5 +71,11 @@ mod tests {
         check(b"\x01\x23\x45\x67\x89\xab\xcd\xef");
         check(b"\xfe\xdc\xba");
         check(&(0u8..255u8).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn default_tests() {
+        tests::round_trip("identity");
+        tests::basic_configuration("identity");
     }
 }

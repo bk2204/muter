@@ -565,6 +565,7 @@ mod tests {
         tests::round_trip("uri");
         tests::round_trip("uri,upper");
         tests::round_trip("uri,lower");
+        tests::basic_configuration("uri");
     }
 
     #[test]
@@ -572,6 +573,7 @@ mod tests {
         tests::round_trip("form");
         tests::round_trip("form,upper");
         tests::round_trip("form,lower");
+        tests::basic_configuration("form");
     }
 
     #[test]

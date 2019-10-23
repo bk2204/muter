@@ -282,11 +282,12 @@ mod tests {
     }
 
     #[test]
-    fn round_trip() {
+    fn default_tests() {
         tests::round_trip("xml");
         tests::round_trip("xml,default");
         tests::round_trip("xml,hex");
         tests::round_trip("xml,html");
+        tests::basic_configuration("xml");
     }
 
     #[test]

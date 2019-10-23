@@ -683,7 +683,7 @@ mod tests {
     }
 
     #[test]
-    fn round_trip() {
+    fn default_tests() {
         tests::round_trip("vis");
         tests::round_trip("vis,cstyle");
         tests::round_trip("vis,octal");
@@ -691,6 +691,7 @@ mod tests {
         tests::round_trip("vis,cstyle,space,glob");
         tests::round_trip("vis,octal,space,glob");
         tests::round_trip("vis,cstyle,octal,space,glob");
+        tests::basic_configuration("vis");
     }
 
     #[test]

@@ -145,6 +145,7 @@ mod tests {
     #[test]
     fn default_tests() {
         tests::round_trip("base32");
+        tests::basic_configuration("base32");
     }
 
     #[test]

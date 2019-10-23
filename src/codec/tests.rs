@@ -1,10 +1,15 @@
 /// A variety of useful test case generators.
 use chain::Chain;
 use codec::registry::CodecRegistry;
-use codec::{Codec, Error, FlushState, PaddedDecoder, PaddedEncoder, Status};
+use codec::{
+    Codec, CodecSettings, CodecTransform, Direction, Error, FlushState, PaddedDecoder,
+    PaddedEncoder, Status,
+};
 use rand_chacha::ChaChaRng;
 use rand_core::{RngCore, SeedableRng};
+use std::collections::BTreeSet;
 use std::env;
+use std::io;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 // Fixed constants for use in tests.
@@ -76,6 +81,63 @@ fn round_trip_bytes(name: &'static str, inp: &[u8], desc: &str) {
             desc
         );
     }
+}
+
+pub fn basic_configuration(name: &str) {
+    let reg = CodecRegistry::new();
+
+    let transform = match reg.iter().find(|&(&k, _)| k == name) {
+        Some((_, v)) => v,
+        None => panic!("Can't find {}", name),
+    };
+
+    assert_eq!(
+        transform.name(),
+        name,
+        "transform has expected name: {}",
+        name
+    );
+
+    let settings = CodecSettings {
+        bufsize: 8192,
+        strict: true,
+        args: BTreeSet::new(),
+        dir: Direction::Reverse,
+    };
+    if transform.can_reverse() {
+        match instantiate(transform, settings) {
+            Ok(_) => (),
+            Err(Error::MissingArgument(_)) => (),
+            Err(e) => panic!("Can't instantiate reverse transform: {}", e),
+        };
+    } else {
+        match instantiate(transform, settings) {
+            Ok(_) => panic!("Successfully instantiated unreversible codec"),
+            Err(Error::ForwardOnly(_)) => (),
+            Err(e) => panic!("Unexpected error instantiating reverse transform: {}", e),
+        };
+    }
+
+    for (arg, _) in transform.options() {
+        let mut args = BTreeSet::new();
+        args.insert(arg);
+
+        let settings = CodecSettings {
+            bufsize: 8192,
+            strict: true,
+            args: args,
+            dir: Direction::Forward,
+        };
+
+        instantiate(transform, settings).expect("Can instantiate with each arg");
+    }
+}
+
+fn instantiate(
+    transform: &Box<CodecTransform>,
+    settings: CodecSettings,
+) -> Result<Box<io::BufRead>, Error> {
+    transform.factory(Box::new(io::Cursor::new("abc")), settings)
 }
 
 // Test objects.

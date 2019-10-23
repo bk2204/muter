@@ -202,12 +202,14 @@ mod tests {
     fn default_tests_base64() {
         tests::round_trip("base64");
         tests::basic_configuration("base64");
+        tests::invalid_data("base64");
     }
 
     #[test]
     fn default_tests_url64() {
         tests::round_trip("url64");
         tests::basic_configuration("url64");
+        tests::invalid_data("url64");
     }
 
     #[test]

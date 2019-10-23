@@ -71,5 +71,6 @@ mod tests {
     fn default_tests() {
         tests::round_trip("base16");
         tests::basic_configuration("base16");
+        tests::invalid_data("base16");
     }
 }

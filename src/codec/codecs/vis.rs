@@ -546,10 +546,16 @@ impl Decoder {
                 let z = iter.next();
                 match (y, z) {
                     (None, _) | (_, None) => Ok(moredata),
-                    (Some((_, &c2)), Some((i, &c3))) => {
+                    (Some((_, &c2)), Some((i, &c3)))
+                        if c2 >= b'0' && c3 >= b'0' && c2 <= b'7' && c3 <= b'7' =>
+                    {
                         dst[0] = ((c1 - b'0') << 6) | ((c2 - b'0') << 3) | (c3 - b'0');
                         Ok(Status::Ok(i + 1, 1))
                     }
+                    (Some((_, &c2)), Some((_, &c3))) => Err(Error::InvalidSequence(
+                        "vis".to_string(),
+                        vec![b'\\', c1, c2, c3],
+                    )),
                 }
             }
             // \\
@@ -692,6 +698,7 @@ mod tests {
         tests::round_trip("vis,octal,space,glob");
         tests::round_trip("vis,cstyle,octal,space,glob");
         tests::basic_configuration("vis");
+        tests::invalid_data("vis");
     }
 
     #[test]

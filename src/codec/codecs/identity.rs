@@ -77,5 +77,6 @@ mod tests {
     fn default_tests() {
         tests::round_trip("identity");
         tests::basic_configuration("identity");
+        tests::invalid_data("identity");
     }
 }

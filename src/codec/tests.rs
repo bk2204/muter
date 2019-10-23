@@ -83,6 +83,42 @@ fn round_trip_bytes(name: &'static str, inp: &[u8], desc: &str) {
     }
 }
 
+pub fn invalid_data(name: &str) {
+    for p in &[true, false] {
+        let mut prng = prng(*p);
+        for i in 0..512 {
+            invalid_data_with_prng(name, &mut prng, i);
+        }
+    }
+    for i in 0..512 {
+        invalid_data_with_fill(name, i);
+    }
+}
+
+fn invalid_data_with_prng(name: &str, rng: &mut RngCore, sz: usize) {
+    let mut v = vec![0u8; sz];
+    rng.fill_bytes(v.as_mut_slice());
+    invalid_data_bytes(name, &v);
+}
+
+fn invalid_data_with_fill(name: &str, sz: usize) {
+    let v = vec![sz as u8; sz];
+    invalid_data_bytes(name, &v);
+}
+
+#[allow(unused_must_use)]
+fn invalid_data_bytes(name: &str, inp: &[u8]) {
+    let reg = CodecRegistry::new();
+    let reverse = format!("-{}", name);
+
+    // This is a test for not panicking.  We don't mandate an error because it's possible that some
+    // byte sequences may happen to coincide with valid encodings, especially for short sequences.
+    let c = Chain::new(&reg, &reverse, 512, true);
+    c.transform(inp.to_vec());
+    let c = Chain::new(&reg, &reverse, 512, false);
+    c.transform(inp.to_vec());
+}
+
 pub fn basic_configuration(name: &str) {
     let reg = CodecRegistry::new();
 

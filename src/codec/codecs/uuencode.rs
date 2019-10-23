@@ -133,7 +133,7 @@ impl Decoder {
     }
 
     fn dec(b: u8) -> u8 {
-        (b - 32) & 63
+        (b.wrapping_sub(32)) & 63
     }
 
     fn valid_char(b: u8) -> bool {
@@ -256,6 +256,7 @@ mod tests {
     fn default_tests() {
         tests::round_trip("uuencode");
         tests::basic_configuration("uuencode");
+        tests::invalid_data("uuencode");
     }
 
     #[test]

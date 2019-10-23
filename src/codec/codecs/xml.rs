@@ -288,6 +288,7 @@ mod tests {
         tests::round_trip("xml,hex");
         tests::round_trip("xml,html");
         tests::basic_configuration("xml");
+        tests::invalid_data("xml");
     }
 
     #[test]

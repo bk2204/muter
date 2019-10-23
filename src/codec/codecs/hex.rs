@@ -108,36 +108,31 @@ impl Codec for Decoder {
             _ => (),
         }
 
-        let vec: Vec<(usize, u8)> = if self.strict {
-            src.iter()
-                .cloned()
-                .enumerate()
-                .take(dst.len() * 2)
-                .collect()
+        let vec: Vec<u8> = if self.strict {
+            src.iter().cloned().take(dst.len() * 2).collect()
         } else {
             src.iter()
                 .cloned()
-                .enumerate()
-                .filter(|&(_, x)| REV[x as usize] != -1)
+                .filter(|&x| REV[x as usize] != -1)
                 .take(dst.len() * 2)
                 .collect()
         };
 
         let bytes = vec.len() / 2;
-        let mut n = 0;
+        let mut consumed = 0;
         for (i, j) in (0..bytes).map(|x| (x * 2, x)) {
-            let ((_, x), (b, y)) = (vec[i], vec[i + 1]);
+            let (x, y) = (vec[i], vec[i + 1]);
             let v: i16 = ((REV[x as usize] as i16) << 4) | REV[y as usize] as i16;
             if v < 0 {
                 return Err(Error::InvalidSequence("hex".to_string(), vec![x, y]));
             }
             dst[j] = (v & 0xff) as u8;
-            n = b;
+            consumed = i + 2;
         }
 
         match f {
-            FlushState::Finish if n == src.len() => Ok(Status::StreamEnd(n + 1, bytes)),
-            _ => Ok(Status::Ok(n + 1, bytes)),
+            FlushState::Finish if consumed == src.len() => Ok(Status::StreamEnd(consumed, bytes)),
+            _ => Ok(Status::Ok(consumed, bytes)),
         }
     }
 

@@ -413,8 +413,7 @@ impl Codec for Decoder {
         let mut iter = src.iter().enumerate();
         let mut j = 0;
         loop {
-            let s = iter.next();
-            let (i, x) = match s {
+            let (i, x) = match iter.next() {
                 Some((a, b)) => (a, b),
                 None => break,
             };
@@ -425,18 +424,18 @@ impl Codec for Decoder {
             match *x {
                 b'-' | b'.' | b'0'...b'9' | b'A'...b'Z' | b'_' | b'a'...b'z' | b'~' => dst[j] = *x,
                 b'%' => {
-                    let y = iter.next();
-                    let z = iter.next();
-                    match (y, z) {
-                        (Some((_, a)), Some((_, b))) => {
-                            let v: i16 = ((REV[*a as usize] as i16) << 4) | REV[*b as usize] as i16;
-                            if v < 0 {
+                    let b1 = iter.next();
+                    let b2 = iter.next();
+                    match (b1, b2) {
+                        (Some((_, c1)), Some((_, c2))) => {
+                            let val: i16 = ((REV[*c1 as usize] as i16) << 4) | REV[*c2 as usize] as i16;
+                            if val < 0 {
                                 return Err(Error::InvalidSequence(
                                     "uri".to_string(),
-                                    vec![*a, *b],
+                                    vec![*c1, *c2],
                                 ));
                             }
-                            dst[j] = v as u8;
+                            dst[j] = val as u8;
                         }
                         _ => return Ok(Status::BufError(i, j)),
                     }

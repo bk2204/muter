@@ -350,7 +350,7 @@ impl Codec for Encoder {
         while i < maxin && j < max {
             let x = inp[i];
             // If this is a NUL byte and we're in cstyle-mode,…
-            let s: &[u8] = if x == b'\0' && self.cstyle {
+            let sl: &[u8] = if x == b'\0' && self.cstyle {
                 // …and there's another character which is an octal character, then write this out
                 // as a full three-digit escape.
                 if i + 1 < maxin && TABLE[inp[i + 1] as usize] == Character::Octal {
@@ -364,10 +364,10 @@ impl Codec for Encoder {
                 self.table[x as usize].as_slice()
             };
 
-            outp[j..j + s.len()].copy_from_slice(s);
+            outp[j..j + sl.len()].copy_from_slice(sl);
 
             i += 1;
-            j += s.len();
+            j += sl.len();
         }
         Ok(Status::Ok(i, j))
     }
@@ -462,7 +462,7 @@ impl Decoder {
         offset: usize,
         iter: &mut Peekable<I>,
         dst: &mut [u8],
-        f: FlushState,
+        flush: FlushState,
     ) -> Result<Status, Error> {
         // This function returns different values than the typical transform method.  A typical
         // method returns the number of bytes consumed in each of the source and destination
@@ -489,9 +489,9 @@ impl Decoder {
             },
             // \M-C and \M^C
             Some((i, &b'M')) => {
-                let y = iter.next();
-                let z = iter.next();
-                match (y, z) {
+                let b1 = iter.next();
+                let b2 = iter.next();
+                match (b1, b2) {
                     (Some((_, &b'-')), Some((_, c))) => dst[0] = c | 0x80,
                     (Some((_, &b'-')), None) => return Ok(moredata),
                     (Some((_, &b'^')), Some((_, c))) => dst[0] = c ^ 0xc0,
@@ -507,8 +507,8 @@ impl Decoder {
                 Ok(Status::Ok(i + 3, 1))
             }
             Some((i, &b'0')) => {
-                let y = iter.peek().cloned();
-                match (y, f) {
+                let val = iter.peek().cloned();
+                match (val, flush) {
                     // \0
                     (None, FlushState::Finish) => {
                         dst[0] = b'\0';
@@ -542,9 +542,9 @@ impl Decoder {
             }
             // 3-digit octal escape
             Some((_, &c1)) if c1 >= b'1' && c1 <= b'7' => {
-                let y = iter.next();
-                let z = iter.next();
-                match (y, z) {
+                let b1 = iter.next();
+                let b2 = iter.next();
+                match (b1, b2) {
                     (None, _) | (_, None) => Ok(moredata),
                     (Some((_, &c2)), Some((i, &c3)))
                         if c2 >= b'0' && c3 >= b'0' && c2 <= b'7' && c3 <= b'7' =>
@@ -583,12 +583,11 @@ impl Decoder {
 }
 
 impl Codec for Decoder {
-    fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
+    fn transform(&mut self, src: &[u8], dst: &mut [u8], flush: FlushState) -> Result<Status, Error> {
         let mut iter = src.iter().enumerate().peekable();
         let mut j = 0;
         loop {
-            let s = iter.next();
-            let (i, x) = match s {
+            let (i, val) = match iter.next() {
                 Some((a, b)) => (a, b),
                 None => break,
             };
@@ -596,14 +595,14 @@ impl Codec for Decoder {
                 return Ok(Status::Ok(i, j));
             }
 
-            match *x {
-                b'\\' => match self.handle_escape(i, &mut iter, &mut dst[j..], f)? {
+            match *val {
+                b'\\' => match self.handle_escape(i, &mut iter, &mut dst[j..], flush)? {
                     Status::Ok(_, b) => j += b,
                     Status::BufError(a, b) => return Ok(Status::BufError(a, j + b)),
                     Status::StreamEnd(a, b) => return Ok(Status::StreamEnd(a, j + b)),
                 },
                 _ => {
-                    dst[j] = *x;
+                    dst[j] = *val;
                     j += 1;
                 }
             }

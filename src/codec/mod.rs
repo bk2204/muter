@@ -425,8 +425,8 @@ impl<T: Codec> PaddedDecoder<T> {
 }
 
 impl<T: Codec> Codec for PaddedDecoder<T> {
-    fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
-        match f {
+    fn transform(&mut self, src: &[u8], dst: &mut [u8], flush: FlushState) -> Result<Status, Error> {
+        match flush {
             FlushState::None if src.len() < self.isize => {
                 return Ok(Status::BufError(0, 0));
             }
@@ -436,10 +436,10 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
             _ => (),
         }
 
-        let r = self.codec.transform(src, dst, f)?;
+        let r = self.codec.transform(src, dst, flush)?;
         let (a, b) = Self::offsets(r)?;
         // This code relies on us only processing full chunks with the transform function.
-        let padoffset = match (self.pad, f) {
+        let padoffset = match (self.pad, flush) {
             (Some(byte), _) => src[..a].iter().position(|&x| x == byte),
             (None, FlushState::Finish) if a == src.len() => Some(src.len()),
             (None, _) => None,

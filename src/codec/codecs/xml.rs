@@ -148,8 +148,7 @@ impl Codec for Decoder {
         let mut iter = src.iter().enumerate();
         let mut j = 0;
         loop {
-            let s = iter.next();
-            let (i, x) = match s {
+            let (i, x) = match iter.next() {
                 Some((a, b)) => (a, b),
                 None => break,
             };

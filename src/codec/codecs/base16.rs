@@ -7,6 +7,7 @@ use codec::Error;
 use std::collections::BTreeMap;
 use std::io;
 
+#[derive(Default)]
 pub struct TransformFactory {}
 
 impl TransformFactory {

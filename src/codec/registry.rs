@@ -51,6 +51,10 @@ impl CodecRegistry {
             Box::new(codec::codecs::base64::URL64TransformFactory::new()),
         );
         map.insert(
+            "uuencode",
+            Box::new(codec::codecs::uuencode::UuencodeTransformFactory::new()),
+        );
+        map.insert(
             "vis",
             Box::new(codec::codecs::vis::VisTransformFactory::new()),
         );

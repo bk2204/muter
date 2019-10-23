@@ -5,5 +5,6 @@ pub mod hash;
 pub mod hex;
 pub mod identity;
 pub mod uri;
+pub mod uuencode;
 pub mod vis;
 pub mod xml;

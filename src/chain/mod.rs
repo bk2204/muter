@@ -91,7 +91,7 @@ impl<'a> Chain<'a> {
             })
     }
 
-    pub fn transform<'b>(&self, b: Vec<u8>) -> io::Result<Vec<u8>> {
+    pub fn transform(&self, b: Vec<u8>) -> io::Result<Vec<u8>> {
         let mut out = io::Cursor::new(Vec::new());
         // Cursor provides a BufRead implementation, but we use a BufReader so we can set the
         // buffer size explicitly for test purposes.

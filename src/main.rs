@@ -32,7 +32,10 @@ fn source() -> io::Result<Box<io::BufRead>> {
 
 fn create_chain(reg: &CodecRegistry, m: ArgMatches) -> io::Result<Box<io::BufRead>> {
     let chain = m.value_of("chain").unwrap();
-    let c = chain::Chain::new(reg, chain, BUFFER_SIZE, true);
+    let mut c = chain::Chain::new(reg, chain, BUFFER_SIZE, true);
+    if m.is_present("reverse") {
+        c = c.reverse();
+    }
     c.build(source()?)
 }
 
@@ -54,6 +57,8 @@ parentheses, a single comma may be used.
 
 For example, '-hex:hash(sha256):base64' (or '-hex:hash,sha256:base64') decodes a
 hex-encoded string, hashes it with SHA-256, and converts the result to base64.
+
+If --reverse is specified, reverse the order of transforms in order and in sense.
 
 The following transforms are available:
 "
@@ -82,6 +87,11 @@ fn main() {
                 .required(true)
                 .takes_value(true)
                 .allow_hyphen_values(true),
+        )
+        .arg(
+            Arg::with_name("reverse")
+                .short("r")
+                .help("List of transforms to perform"),
         )
         .arg(
             Arg::with_name("INPUT")

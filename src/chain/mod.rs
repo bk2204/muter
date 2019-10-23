@@ -54,11 +54,13 @@ struct ChainTransform<'a> {
     dir: Direction,
 }
 
+#[derive(Clone)]
 pub struct Chain<'a> {
     chain: &'a str,
     bufsize: usize,
     strict: bool,
     codecs: &'a CodecRegistry,
+    dir: Direction,
 }
 
 impl<'a> Chain<'a> {
@@ -68,16 +70,25 @@ impl<'a> Chain<'a> {
             bufsize,
             strict,
             codecs,
+            dir: Direction::Forward,
         }
+    }
+
+    pub fn reverse(self) -> Self {
+        let mut obj = self.clone();
+        obj.dir = obj.dir.invert();
+        obj
     }
 
     pub fn build(&self, src: Box<io::BufRead>) -> io::Result<Box<io::BufRead>> {
         let start: io::Result<_> = Ok(src);
-        Self::parse(self.chain)?.iter().fold(start, |cur, xfrm| {
-            Ok(self
-                .codecs
-                .create(xfrm.name, cur?, self.codec_settings(xfrm))?)
-        })
+        Self::parse(self.chain, self.dir)?
+            .iter()
+            .fold(start, |cur, xfrm| {
+                Ok(self
+                    .codecs
+                    .create(xfrm.name, cur?, self.codec_settings(xfrm))?)
+            })
     }
 
     pub fn transform<'b>(&self, b: Vec<u8>) -> io::Result<Vec<u8>> {
@@ -102,11 +113,15 @@ impl<'a> Chain<'a> {
         }
     }
 
-    fn parse(chain: &str) -> Result<Vec<ChainTransform>, Error> {
-        chain.split(':').map(|s| Self::parse_unit(s)).collect()
+    fn parse(chain: &str, dir: Direction) -> Result<Vec<ChainTransform>, Error> {
+        let iter = chain.split(':').map(|s| Self::parse_unit(s, dir));
+        match dir {
+            Direction::Forward => iter.collect(),
+            Direction::Reverse => iter.rev().collect(),
+        }
     }
 
-    fn parse_unit(unit: &str) -> Result<ChainTransform, Error> {
+    fn parse_unit(unit: &str, d: Direction) -> Result<ChainTransform, Error> {
         if unit == "" {
             return Err(Error::InvalidName(String::from(unit)));
         }
@@ -115,6 +130,11 @@ impl<'a> Chain<'a> {
             (&unit[1..], Direction::Reverse)
         } else {
             (unit, Direction::Forward)
+        };
+
+        let dir = match d {
+            Direction::Forward => dir,
+            Direction::Reverse => dir.invert(),
         };
 
         let (name, args): (&str, Option<&str>) = if let Some(off) = s.find('(') {
@@ -173,35 +193,51 @@ mod tests {
     #[test]
     fn parses_simple_names() {
         assert_eq!(
-            Chain::parse("hex").unwrap(),
+            Chain::parse("hex", Direction::Forward).unwrap(),
             vec![xfrm("hex", vec![], true)]
         );
         assert_eq!(
-            Chain::parse("base64").unwrap(),
-            vec![xfrm("base64", vec![], true)]
-        );
-        assert_eq!(
-            Chain::parse("-hex").unwrap(),
+            Chain::parse("hex", Direction::Reverse).unwrap(),
             vec![xfrm("hex", vec![], false)]
         );
         assert_eq!(
-            Chain::parse("-base64").unwrap(),
+            Chain::parse("base64", Direction::Forward).unwrap(),
+            vec![xfrm("base64", vec![], true)]
+        );
+        assert_eq!(
+            Chain::parse("base64", Direction::Reverse).unwrap(),
             vec![xfrm("base64", vec![], false)]
+        );
+        assert_eq!(
+            Chain::parse("-hex", Direction::Forward).unwrap(),
+            vec![xfrm("hex", vec![], false)]
+        );
+        assert_eq!(
+            Chain::parse("-hex", Direction::Reverse).unwrap(),
+            vec![xfrm("hex", vec![], true)]
+        );
+        assert_eq!(
+            Chain::parse("-base64", Direction::Forward).unwrap(),
+            vec![xfrm("base64", vec![], false)]
+        );
+        assert_eq!(
+            Chain::parse("-base64", Direction::Reverse).unwrap(),
+            vec![xfrm("base64", vec![], true)]
         );
     }
 
     #[test]
     fn parses_parenthesized_names() {
         assert_eq!(
-            Chain::parse("hash(sha256)").unwrap(),
+            Chain::parse("hash(sha256)", Direction::Forward).unwrap(),
             vec![xfrm("hash", vec!["sha256"], true)]
         );
         assert_eq!(
-            Chain::parse("vis(cstyle,white)").unwrap(),
+            Chain::parse("vis(cstyle,white)", Direction::Forward).unwrap(),
             vec![xfrm("vis", vec!["cstyle", "white"], true)]
         );
         assert_eq!(
-            Chain::parse("-vis(cstyle,white)").unwrap(),
+            Chain::parse("-vis(cstyle,white)", Direction::Forward).unwrap(),
             vec![xfrm("vis", vec!["cstyle", "white"], false)]
         );
     }
@@ -209,15 +245,15 @@ mod tests {
     #[test]
     fn parses_comma_split_names() {
         assert_eq!(
-            Chain::parse("hash,sha256").unwrap(),
+            Chain::parse("hash,sha256", Direction::Forward).unwrap(),
             vec![xfrm("hash", vec!["sha256"], true)]
         );
         assert_eq!(
-            Chain::parse("vis,cstyle,white").unwrap(),
+            Chain::parse("vis,cstyle,white", Direction::Forward).unwrap(),
             vec![xfrm("vis", vec!["cstyle", "white"], true)]
         );
         assert_eq!(
-            Chain::parse("-vis,cstyle,white").unwrap(),
+            Chain::parse("-vis,cstyle,white", Direction::Forward).unwrap(),
             vec![xfrm("vis", vec!["cstyle", "white"], false)]
         );
     }
@@ -225,18 +261,26 @@ mod tests {
     #[test]
     fn parses_complex_chains() {
         assert_eq!(
-            Chain::parse("-base64:hash,sha256").unwrap(),
+            Chain::parse("-base64:hash,sha256", Direction::Forward).unwrap(),
             vec![
                 xfrm("base64", vec![], false),
                 xfrm("hash", vec!["sha256"], true)
             ]
         );
         assert_eq!(
-            Chain::parse("-vis,cstyle,white:xml(html):uri,lower").unwrap(),
+            Chain::parse("-vis,cstyle,white:xml(html):uri,lower", Direction::Forward).unwrap(),
             vec![
                 xfrm("vis", vec!["cstyle", "white"], false),
                 xfrm("xml", vec!["html"], true),
                 xfrm("uri", vec!["lower"], true)
+            ]
+        );
+        assert_eq!(
+            Chain::parse("-vis,cstyle,white:xml(html):uri,lower", Direction::Reverse).unwrap(),
+            vec![
+                xfrm("uri", vec!["lower"], false),
+                xfrm("xml", vec!["html"], false),
+                xfrm("vis", vec!["cstyle", "white"], true),
             ]
         );
     }
@@ -244,23 +288,23 @@ mod tests {
     #[test]
     fn rejects_invalid_data() {
         assert_eq!(
-            Chain::parse("").unwrap_err(),
+            Chain::parse("", Direction::Forward).unwrap_err(),
             Error::InvalidName(String::from(""))
         );
         assert_eq!(
-            Chain::parse("-").unwrap_err(),
+            Chain::parse("-", Direction::Forward).unwrap_err(),
             Error::InvalidName(String::from(""))
         );
         assert_eq!(
-            Chain::parse("name(").unwrap_err(),
+            Chain::parse("name(", Direction::Forward).unwrap_err(),
             Error::MismatchedParentheses(String::from("name("))
         );
         assert_eq!(
-            Chain::parse("-name(").unwrap_err(),
+            Chain::parse("-name(", Direction::Forward).unwrap_err(),
             Error::MismatchedParentheses(String::from("name("))
         );
         assert_eq!(
-            Chain::parse("hex,").unwrap_err(),
+            Chain::parse("hex,", Direction::Forward).unwrap_err(),
             Error::InvalidArgument(String::from(","))
         );
     }

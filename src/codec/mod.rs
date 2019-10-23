@@ -74,10 +74,19 @@ impl convert::From<Error> for io::Error {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Direction {
     Forward,
     Reverse,
+}
+
+impl Direction {
+    pub fn invert(&self) -> Self {
+        match *self {
+            Direction::Forward => Direction::Reverse,
+            Direction::Reverse => Direction::Forward,
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

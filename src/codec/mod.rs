@@ -504,8 +504,8 @@ impl ChunkedDecoder {
         if x < 0 {
             return Err(Error::InvalidSequence(self.name.to_string(), inp.to_vec()));
         }
-        for k in 0..os {
-            outp[k] = ((x as u64) >> ((os - 1 - k) * 8) & 0xff) as u8;
+        for (k, val) in outp.iter_mut().enumerate().take(os) {
+            *val = ((x as u64) >> ((os - 1 - k) * 8) & 0xff) as u8;
         }
         Ok(Status::Ok(inp.len(), os))
     }

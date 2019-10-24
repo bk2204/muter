@@ -64,8 +64,9 @@ fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 32]) -> (usize, usi
             .enumerate()
             .map(|(k, &v)| (v as u64) << ((is - 1 - k) * 8))
             .sum();
-        for k in 0..os {
-            outp[j + k] = arr[(x >> ((os - 1 - k) * bits) & mask) as usize];
+
+        for (k, val) in outp[j..j + os].iter_mut().enumerate().take(os) {
+            *val = arr[(x >> ((os - 1 - k) * bits) & mask) as usize];
         }
     }
     (n * is, n * os)
@@ -146,6 +147,7 @@ mod tests {
     fn default_tests() {
         tests::round_trip("base32");
         tests::basic_configuration("base32");
+        tests::invalid_data("base32");
     }
 
     #[test]

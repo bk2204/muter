@@ -66,8 +66,9 @@ fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 64]) -> (usize, usi
             .enumerate()
             .map(|(k, &v)| (v as u64) << ((is - 1 - k) * 8))
             .sum();
-        for k in 0..os {
-            outp[j + k] = arr[(x >> ((os - 1 - k) * bits) & mask) as usize];
+
+        for (k, val) in outp[j..j + os].iter_mut().enumerate().take(os) {
+            *val = arr[(x >> ((os - 1 - k) * bits) & mask) as usize];
         }
     }
     (n * is, n * os)

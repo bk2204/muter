@@ -75,8 +75,9 @@ impl Encoder {
                 .enumerate()
                 .map(|(k, &v)| (v as u64) << ((is - 1 - k) * 8))
                 .sum();
-            for k in 0..os {
-                outp[j + k + 1] = Self::enc((x >> ((os - 1 - k) * bits) & mask) as u8);
+
+            for (k, val) in outp[j + 1..j + os + 1].iter_mut().enumerate().take(os) {
+                *val = Self::enc((x >> ((os - 1 - k) * bits) & mask) as u8);
             }
             (max, j + os)
         });

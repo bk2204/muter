@@ -425,7 +425,12 @@ impl<T: Codec> PaddedDecoder<T> {
 }
 
 impl<T: Codec> Codec for PaddedDecoder<T> {
-    fn transform(&mut self, src: &[u8], dst: &mut [u8], flush: FlushState) -> Result<Status, Error> {
+    fn transform(
+        &mut self,
+        src: &[u8],
+        dst: &mut [u8],
+        flush: FlushState,
+    ) -> Result<Status, Error> {
         match flush {
             FlushState::None if src.len() < self.isize => {
                 return Ok(Status::BufError(0, 0));

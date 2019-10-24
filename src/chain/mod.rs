@@ -155,10 +155,7 @@ impl<'a> Chain<'a> {
         }
 
         let set = match args {
-            Some(s) => s
-                .split(',')
-                .map(String::from)
-                .collect::<BTreeSet<String>>(),
+            Some(s) => s.split(',').map(String::from).collect::<BTreeSet<String>>(),
             None => BTreeSet::new(),
         };
         Ok(ChainTransform {

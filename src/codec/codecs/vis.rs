@@ -583,7 +583,12 @@ impl Decoder {
 }
 
 impl Codec for Decoder {
-    fn transform(&mut self, src: &[u8], dst: &mut [u8], flush: FlushState) -> Result<Status, Error> {
+    fn transform(
+        &mut self,
+        src: &[u8],
+        dst: &mut [u8],
+        flush: FlushState,
+    ) -> Result<Status, Error> {
         let mut iter = src.iter().enumerate().peekable();
         let mut j = 0;
         loop {

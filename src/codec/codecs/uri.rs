@@ -428,7 +428,8 @@ impl Codec for Decoder {
                     let b2 = iter.next();
                     match (b1, b2) {
                         (Some((_, c1)), Some((_, c2))) => {
-                            let val: i16 = ((REV[*c1 as usize] as i16) << 4) | REV[*c2 as usize] as i16;
+                            let val: i16 =
+                                ((REV[*c1 as usize] as i16) << 4) | REV[*c2 as usize] as i16;
                             if val < 0 {
                                 return Err(Error::InvalidSequence(
                                     "uri".to_string(),

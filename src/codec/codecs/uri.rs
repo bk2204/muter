@@ -414,11 +414,7 @@ impl Codec for Decoder {
     fn transform(&mut self, src: &[u8], dst: &mut [u8], _f: FlushState) -> Result<Status, Error> {
         let mut iter = src.iter().enumerate();
         let mut j = 0;
-        loop {
-            let (i, x) = match iter.next() {
-                Some((a, b)) => (a, b),
-                None => break,
-            };
+        while let Some((i, x)) = iter.next() {
             if j == dst.len() {
                 return Ok(Status::Ok(i, j));
             }

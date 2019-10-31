@@ -591,11 +591,7 @@ impl Codec for Decoder {
     ) -> Result<Status, Error> {
         let mut iter = src.iter().enumerate().peekable();
         let mut j = 0;
-        loop {
-            let (i, val) = match iter.next() {
-                Some((a, b)) => (a, b),
-                None => break,
-            };
+        while let Some((i, val)) = iter.next() {
             if j >= dst.len() - 1 {
                 return Ok(Status::Ok(i, j));
             }

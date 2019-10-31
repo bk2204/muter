@@ -352,9 +352,10 @@ impl URITransformFactory {
     ) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
-                let arr = match s.args.contains("lower") {
-                    true => &LOWER,
-                    false => &UPPER,
+                let arr = if s.args.contains("lower") {
+                    &LOWER
+                } else {
+                    &UPPER
                 };
                 Ok(
                     StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr, form))

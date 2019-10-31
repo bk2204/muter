@@ -41,8 +41,8 @@ pub const REV: [i8; 256] = [
 fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 16]) -> (usize, usize) {
     let n = cmp::min(inp.len(), outp.len() / 2);
     for (i, j) in (0..n).map(|x| (x, x * 2)) {
-        outp[j + 0] = arr[(inp[i] >> 4) as usize];
-        outp[j + 1] = arr[(inp[i] & 0xf) as usize];
+        outp[j..j + 2]
+            .copy_from_slice(&[arr[(inp[i] >> 4) as usize], arr[(inp[i] & 0xf) as usize]]);
     }
     (n, n * 2)
 }

@@ -299,9 +299,11 @@ fn forward_transform(
             Characters::Identity => outp[j] = x,
             Characters::Space if special_plus => outp[j] = b'+',
             _ => {
-                outp[j + 0] = b'%';
-                outp[j + 1] = arr[(x as usize) >> 4];
-                outp[j + 2] = arr[(x as usize) & 15];
+                outp[j..j + 3].copy_from_slice(&[
+                    b'%',
+                    arr[(x as usize) >> 4],
+                    arr[(x as usize) & 15],
+                ]);
                 j += 2;
             }
         }

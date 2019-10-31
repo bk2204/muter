@@ -265,7 +265,7 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 // then we need to keep asking for more data because if we
                 // return that 0 bytes of data have been read then it will
                 // be interpreted as EOF.
-                Ok(Status::Ok(_, 0)) | Ok(Status::BufError(_, 0)) if !eof && dst.len() > 0 => continue,
+                Ok(Status::Ok(_, 0)) | Ok(Status::BufError(_, 0)) if !eof && !dst.is_empty() => continue,
                 Ok(Status::BufError(0, _)) if eof => {
                     return Err(io::Error::from(Error::TruncatedData))
                 }
@@ -351,7 +351,7 @@ where
     fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
         let needed = (src.len() + self.isize - 1) / self.isize * self.osize;
         match f {
-            FlushState::Finish if src.len() > 0 && dst.len() >= needed => {
+            FlushState::Finish if !src.is_empty() && dst.len() >= needed => {
                 let (a, b) = Self::offsets(self.enc.transform(&src[..src.len() - 1], dst, f))?;
                 let padbytes = self.pad_bytes_needed(src.len() - a);
                 if padbytes == 0 {
@@ -435,7 +435,7 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
             FlushState::None if src.len() < self.isize => {
                 return Ok(Status::BufError(0, 0));
             }
-            FlushState::Finish if src.len() == 0 => {
+            FlushState::Finish if src.is_empty() => {
                 return Ok(Status::StreamEnd(0, 0));
             }
             _ => (),

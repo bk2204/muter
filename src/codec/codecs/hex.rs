@@ -102,7 +102,7 @@ impl Codec for Decoder {
             FlushState::None if src.len() < 2 => {
                 return Ok(Status::BufError(0, 0));
             }
-            FlushState::Finish if src.len() == 0 => {
+            FlushState::Finish if src.is_empty() => {
                 return Ok(Status::StreamEnd(0, 0));
             }
             _ => (),

@@ -62,7 +62,7 @@ fn forward_transform(inp: &[u8], outp: &mut [u8], arr: &[u8; 32]) -> (usize, usi
         let x: u64 = inp[i..i + is]
             .iter()
             .enumerate()
-            .map(|(k, &v)| (v as u64) << ((is - 1 - k) * 8))
+            .map(|(k, &v)| u64::from(v) << ((is - 1 - k) * 8))
             .sum();
 
         for (k, val) in outp[j..j + os].iter_mut().enumerate().take(os) {

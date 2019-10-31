@@ -122,7 +122,7 @@ impl Codec for Decoder {
         let mut consumed = 0;
         for (i, j) in (0..bytes).map(|x| (x * 2, x)) {
             let (x, y) = (vec[i], vec[i + 1]);
-            let v: i16 = ((REV[x as usize] as i16) << 4) | REV[y as usize] as i16;
+            let v: i16 = (i16::from(REV[x as usize]) << 4) | i16::from(REV[y as usize]);
             if v < 0 {
                 return Err(Error::InvalidSequence("hex".to_string(), vec![x, y]));
             }

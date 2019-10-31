@@ -73,7 +73,7 @@ impl Encoder {
             let x: u64 = inp[i..max]
                 .iter()
                 .enumerate()
-                .map(|(k, &v)| (v as u64) << ((is - 1 - k) * 8))
+                .map(|(k, &v)| u64::from(v) << ((is - 1 - k) * 8))
                 .sum();
 
             for (k, val) in outp[j + 1..j + os + 1].iter_mut().enumerate().take(os) {
@@ -176,7 +176,7 @@ impl Decoder {
             let x: u64 = inp[i..max]
                 .iter()
                 .enumerate()
-                .map(|(k, &v)| (Self::dec(v) as u64) << ((is - 1 - k) * bits))
+                .map(|(k, &v)| u64::from(Self::dec(v)) << ((is - 1 - k) * bits))
                 .sum();
 
             let mut k = 0;

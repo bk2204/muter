@@ -23,7 +23,11 @@ impl CodecRegistry {
         );
         map.insert(
             "base32",
-            Box::new(codec::codecs::base32::TransformFactory::new()),
+            Box::new(codec::codecs::base32::Base32TransformFactory::new()),
+        );
+        map.insert(
+            "base32hex",
+            Box::new(codec::codecs::base32::Base32HexTransformFactory::new()),
         );
         map.insert(
             "base64",

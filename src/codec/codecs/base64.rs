@@ -1,13 +1,13 @@
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 
-use codec::ChunkedDecoder;
+use codec::helpers::codecs::ChunkedDecoder;
+use codec::helpers::codecs::PaddedDecoder;
+use codec::helpers::codecs::PaddedEncoder;
 use codec::CodecSettings;
 use codec::CodecTransform;
 use codec::Direction;
 use codec::Error;
-use codec::PaddedDecoder;
-use codec::PaddedEncoder;
 use codec::TransformableCodec;
 use std::cmp;
 use std::collections::BTreeMap;

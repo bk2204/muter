@@ -1,10 +1,7 @@
 /// A variety of useful test case generators.
 use chain::Chain;
 use codec::registry::CodecRegistry;
-use codec::{
-    Codec, CodecSettings, CodecTransform, Direction, Error, FlushState, PaddedDecoder,
-    PaddedEncoder, Status,
-};
+use codec::{CodecSettings, CodecTransform, Direction, Error};
 use rand_chacha::ChaChaRng;
 use rand_core::{RngCore, SeedableRng};
 use std::collections::BTreeSet;
@@ -174,63 +171,4 @@ fn instantiate(
     settings: CodecSettings,
 ) -> Result<Box<io::BufRead>, Error> {
     transform.factory(Box::new(io::Cursor::new("abc")), settings)
-}
-
-// Test objects.
-pub struct TestCodec {}
-
-impl TestCodec {
-    pub fn new() -> Self {
-        TestCodec {}
-    }
-}
-
-impl Codec for TestCodec {
-    fn transform(&mut self, inp: &[u8], outp: &mut [u8], _f: FlushState) -> Result<Status, Error> {
-        Ok(Status::StreamEnd(inp.len(), outp.len()))
-    }
-
-    fn chunk_size(&self) -> usize {
-        1
-    }
-}
-
-// Tests.
-#[test]
-fn pads_encoding_correctly() {
-    let cases = vec![
-        (5, 8, 0, 0),
-        (5, 8, 1, 6),
-        (5, 8, 2, 4),
-        (5, 8, 3, 3),
-        (5, 8, 4, 1),
-        (3, 4, 0, 0),
-        (3, 4, 1, 2),
-        (3, 4, 2, 1),
-    ];
-
-    for (isize, osize, inbytes, padbytes) in cases {
-        let p = PaddedEncoder::new(|_, _| (0, 0), isize, osize, Some(b'='));
-        assert_eq!(p.pad_bytes_needed(inbytes), padbytes);
-    }
-}
-
-#[test]
-fn pads_decoding_correctly() {
-    let cases = vec![
-        (5, 8, 0, 0),
-        (5, 8, 2, 4),
-        (5, 8, 4, 3),
-        (5, 8, 5, 2),
-        (5, 8, 7, 1),
-        (3, 4, 0, 0),
-        (3, 4, 2, 2),
-        (3, 4, 3, 1),
-        (3, 4, 10, 2),
-    ];
-
-    for (isize, osize, inbytes, padbytes) in cases {
-        let p = PaddedDecoder::new(TestCodec::new(), osize, isize, Some(b'='));
-        assert_eq!(p.bytes_to_trim(inbytes), padbytes);
-    }
 }

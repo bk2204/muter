@@ -1,10 +1,10 @@
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 
+use codec::helpers::codecs::StatelessEncoder;
 use codec::CodecSettings;
 use codec::CodecTransform;
 use codec::Error;
-use codec::StatelessEncoder;
 use codec::TransformableCodec;
 use std::cmp;
 use std::collections::BTreeMap;

@@ -2,13 +2,13 @@
 #![allow(bare_trait_objects)]
 #![allow(ellipsis_inclusive_range_patterns)]
 
+use codec::helpers::codecs::StatelessEncoder;
 use codec::Codec;
 use codec::CodecSettings;
 use codec::CodecTransform;
 use codec::Direction;
 use codec::Error;
 use codec::FlushState;
-use codec::StatelessEncoder;
 use codec::Status;
 use codec::TransformableCodec;
 use std::char;

@@ -265,7 +265,9 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 // then we need to keep asking for more data because if we
                 // return that 0 bytes of data have been read then it will
                 // be interpreted as EOF.
-                Ok(Status::Ok(_, 0)) | Ok(Status::BufError(_, 0)) if !eof && !dst.is_empty() => continue,
+                Ok(Status::Ok(_, 0)) | Ok(Status::BufError(_, 0)) if !eof && !dst.is_empty() => {
+                    continue
+                }
                 Ok(Status::BufError(0, _)) if eof => {
                     return Err(io::Error::from(Error::TruncatedData))
                 }

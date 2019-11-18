@@ -18,6 +18,10 @@ impl CodecRegistry {
         let mut map: BTreeMap<&'static str, Box<CodecTransform>> = BTreeMap::new();
 
         map.insert(
+            "ascii85",
+            Box::new(codec::codecs::ascii85::Ascii85TransformFactory::new()),
+        );
+        map.insert(
             "base16",
             Box::new(codec::codecs::base16::TransformFactory::new()),
         );

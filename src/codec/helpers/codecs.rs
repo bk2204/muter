@@ -33,20 +33,20 @@ where
     }
 }
 
-pub struct PaddedEncoder<F> {
-    enc: StatelessEncoder<F>,
+pub struct PaddedEncoder<T> {
+    enc: T,
     isize: usize,
     osize: usize,
     pad: Option<u8>,
 }
 
-impl<F> PaddedEncoder<F>
+impl<T> PaddedEncoder<T>
 where
-    F: Fn(&[u8], &mut [u8]) -> (usize, usize),
+    T: Codec,
 {
-    pub fn new(f: F, isize: usize, osize: usize, pad: Option<u8>) -> Self {
+    pub fn new(enc: T, isize: usize, osize: usize, pad: Option<u8>) -> Self {
         PaddedEncoder {
-            enc: StatelessEncoder::new(f),
+            enc,
             isize,
             osize,
             pad,
@@ -70,9 +70,9 @@ where
     }
 }
 
-impl<F> Codec for PaddedEncoder<F>
+impl<T> Codec for PaddedEncoder<T>
 where
-    F: Fn(&[u8], &mut [u8]) -> (usize, usize),
+    T: Codec,
 {
     fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
         let needed = (src.len() + self.isize - 1) / self.isize * self.osize;
@@ -262,7 +262,7 @@ impl Codec for ChunkedDecoder {
 
 #[cfg(test)]
 mod tests {
-    use super::{PaddedDecoder, PaddedEncoder};
+    use super::{PaddedDecoder, PaddedEncoder, StatelessEncoder};
     use codec::{Codec, Error, FlushState, Status};
 
     // Test objects.
@@ -304,7 +304,12 @@ mod tests {
         ];
 
         for (isize, osize, inbytes, padbytes) in cases {
-            let p = PaddedEncoder::new(|_, _| (0, 0), isize, osize, Some(b'='));
+            let p = PaddedEncoder::new(
+                StatelessEncoder::new(|_, _| (0, 0)),
+                isize,
+                osize,
+                Some(b'='),
+            );
             assert_eq!(p.pad_bytes_needed(inbytes), padbytes);
         }
     }

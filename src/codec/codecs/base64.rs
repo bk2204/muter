@@ -4,6 +4,7 @@
 use codec::helpers::codecs::ChunkedDecoder;
 use codec::helpers::codecs::PaddedDecoder;
 use codec::helpers::codecs::PaddedEncoder;
+use codec::helpers::codecs::StatelessEncoder;
 use codec::CodecSettings;
 use codec::CodecTransform;
 use codec::Direction;
@@ -87,7 +88,7 @@ impl CodecTransform for Base64TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => Ok(PaddedEncoder::new(
-                move |inp, out| forward_transform(inp, out, &BASE64),
+                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &BASE64)),
                 3,
                 4,
                 Some(b'='),
@@ -129,7 +130,7 @@ impl CodecTransform for URL64TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => Ok(PaddedEncoder::new(
-                move |inp, out| forward_transform(inp, out, &URL64),
+                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &URL64)),
                 3,
                 4,
                 None,

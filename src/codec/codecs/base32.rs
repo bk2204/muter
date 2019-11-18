@@ -4,6 +4,7 @@
 use codec::helpers::codecs::ChunkedDecoder;
 use codec::helpers::codecs::PaddedDecoder;
 use codec::helpers::codecs::PaddedEncoder;
+use codec::helpers::codecs::StatelessEncoder;
 use codec::CodecSettings;
 use codec::CodecTransform;
 use codec::Direction;
@@ -89,7 +90,7 @@ impl Base32TransformFactory {
     ) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => Ok(PaddedEncoder::new(
-                move |inp, out| forward_transform(inp, out, forward),
+                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, forward)),
                 5,
                 8,
                 Some(b'='),

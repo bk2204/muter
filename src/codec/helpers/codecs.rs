@@ -38,6 +38,7 @@ pub struct PaddedEncoder<T> {
     isize: usize,
     osize: usize,
     pad: Option<u8>,
+    padfn: fn(usize, usize, usize) -> usize,
 }
 
 impl<T> PaddedEncoder<T>
@@ -50,16 +51,37 @@ where
             isize,
             osize,
             pad,
+            padfn: Self::default_padfn,
         }
     }
 
-    fn pad_bytes_needed(&self, b: usize) -> usize {
+    pub fn new_with_pad_function(
+        enc: T,
+        isize: usize,
+        osize: usize,
+        pad: Option<u8>,
+        padfn: fn(usize, usize, usize) -> usize,
+    ) -> Self {
+        PaddedEncoder {
+            enc,
+            isize,
+            osize,
+            pad,
+            padfn,
+        }
+    }
+
+    fn default_padfn(b: usize, is: usize, os: usize) -> usize {
         if b == 0 {
             return 0;
         }
-        let bits_per_unit = self.isize * 8;
-        let out_bits_per_char = bits_per_unit / self.osize;
+        let bits_per_unit = is * 8;
+        let out_bits_per_char = bits_per_unit / os;
         (bits_per_unit - b * 8) / out_bits_per_char
+    }
+
+    fn pad_bytes_needed(&self, b: usize) -> usize {
+        (self.padfn)(b, self.isize, self.osize)
     }
 
     fn offsets(r: Result<Status, Error>) -> Result<(usize, usize), Error> {
@@ -260,10 +282,82 @@ impl Codec for ChunkedDecoder {
     }
 }
 
+pub struct AffixEncoder<T> {
+    codec: T,
+    prefix: Vec<u8>,
+    suffix: Vec<u8>,
+    start: bool,
+    end: bool,
+}
+
+impl<T: Codec> AffixEncoder<T> {
+    pub fn new(codec: T, prefix: Vec<u8>, suffix: Vec<u8>) -> Self {
+        AffixEncoder {
+            codec,
+            prefix,
+            suffix,
+            start: false,
+            end: false,
+        }
+    }
+}
+
+impl<T: Codec> Codec for AffixEncoder<T> {
+    fn transform(
+        &mut self,
+        src: &[u8],
+        dst: &mut [u8],
+        flush: FlushState,
+    ) -> Result<Status, Error> {
+        if !self.start {
+            let prefixlen = self.prefix.len();
+
+            if dst.len() < prefixlen {
+                return Ok(Status::BufError(0, 0));
+            } else {
+                self.start = true;
+                dst[0..prefixlen].copy_from_slice(&self.prefix);
+
+                let r = self.transform(src, &mut dst[prefixlen..], flush)?;
+                return match r {
+                    Status::Ok(a, b) => Ok(Status::Ok(a, b + prefixlen)),
+                    Status::BufError(a, b) => Ok(Status::Ok(a, b + prefixlen)),
+                    Status::StreamEnd(a, b) => Ok(Status::StreamEnd(a, b + prefixlen)),
+                };
+            }
+        }
+
+        if self.end {
+            if src.is_empty() {
+                return Ok(Status::StreamEnd(0, 0));
+            }
+            return Err(Error::ExtraData);
+        }
+
+        let r = self.codec.transform(src, dst, flush)?;
+        match (flush, r, r.unpack()) {
+            (FlushState::None, _, _) => Ok(r),
+            (FlushState::Finish, _, (a, len)) if len + self.suffix.len() <= dst.len() => {
+                let end = len + self.suffix.len();
+                dst[len..end].copy_from_slice(&self.suffix);
+                self.end = true;
+                Ok(Status::StreamEnd(a, end))
+            }
+            (FlushState::Finish, Status::StreamEnd(a, b), _) => Ok(Status::Ok(a, b)),
+            (FlushState::Finish, _, _) => Ok(r),
+        }
+    }
+
+    fn chunk_size(&self) -> usize {
+        self.codec.chunk_size()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{PaddedDecoder, PaddedEncoder, StatelessEncoder};
+    use super::{AffixEncoder, PaddedDecoder, PaddedEncoder, StatelessEncoder};
     use codec::{Codec, Error, FlushState, Status};
+    use std::cmp;
 
     // Test objects.
     pub struct TestCodec {}
@@ -282,6 +376,26 @@ mod tests {
             _f: FlushState,
         ) -> Result<Status, Error> {
             Ok(Status::StreamEnd(inp.len(), outp.len()))
+        }
+
+        fn chunk_size(&self) -> usize {
+            1
+        }
+    }
+
+    #[derive(Default)]
+    pub struct IdentityCodec {}
+
+    impl Codec for IdentityCodec {
+        fn transform(
+            &mut self,
+            inp: &[u8],
+            outp: &mut [u8],
+            _f: FlushState,
+        ) -> Result<Status, Error> {
+            let n = cmp::min(inp.len(), outp.len());
+            outp[..n].clone_from_slice(&inp[..n]);
+            Ok(Status::Ok(n, n))
         }
 
         fn chunk_size(&self) -> usize {
@@ -331,6 +445,53 @@ mod tests {
         for (isize, osize, inbytes, padbytes) in cases {
             let p = PaddedDecoder::new(TestCodec::new(), osize, isize, Some(b'='));
             assert_eq!(p.bytes_to_trim(inbytes), padbytes);
+        }
+    }
+
+    fn affix_encoder() -> AffixEncoder<IdentityCodec> {
+        AffixEncoder::new(IdentityCodec::default(), b"<~".to_vec(), b"~>".to_vec())
+    }
+
+    #[test]
+    fn affix_works_correctly() {
+        let tests: &[(&[u8], &[u8])] = &[
+            (b"", b"<~~>"),
+            (b"abc", b"<~abc~>"),
+            (
+                b"abcdefghijklmnopqrstuvwxyz",
+                b"<~abcdefghijklmnopqrstuvwxyz~>",
+            ),
+        ];
+
+        for &(inp, outp) in tests {
+            // Process as one chunk.
+            let mut buf = [0u8; 256];
+            let mut codec = affix_encoder();
+            let r = codec.transform(inp, &mut buf, FlushState::Finish).unwrap();
+            let (r1, r2) = r.unpack();
+            assert_eq!(r1, inp.len());
+            assert_eq!(&buf[0..r2], outp);
+
+            // Process as lots of tiny chunks.
+            let mut buf = [0u8; 256];
+            let mut codec = affix_encoder();
+            let (mut i, mut j) = (0, 0);
+            while i < inp.len() {
+                let r = codec
+                    .transform(&inp[i..i + 1], &mut buf[j..], FlushState::None)
+                    .unwrap();
+                let (r1, r2) = r.unpack();
+                i += r1;
+                j += r2;
+            }
+            let r = codec
+                .transform(&[], &mut buf[j..], FlushState::Finish)
+                .unwrap();
+            let (r1, r2) = r.unpack();
+            i += r1;
+            j += r2;
+            assert_eq!(i, inp.len());
+            assert_eq!(&buf[0..j], outp);
         }
     }
 }

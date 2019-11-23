@@ -3,6 +3,14 @@ name = "muter"
 version = "0.1.0"
 authors = ["brian m. carlson <sandals@crustytoothpaste.net>"]
 
+[lib]
+name = "muter"
+path = "src/lib/mod.rs"
+
+[[bin]]
+name = "muter"
+path = "src/main.rs"
+
 [build-dependencies]
 autocfg = "0.1"
 

@@ -5,6 +5,7 @@ extern crate blake2;
 extern crate clap;
 extern crate digest;
 extern crate md5;
+extern crate muter;
 #[cfg(test)]
 extern crate rand_chacha;
 #[cfg(test)]
@@ -12,10 +13,10 @@ extern crate rand_core;
 extern crate sha1;
 extern crate sha2;
 extern crate sha3;
-pub mod chain;
-pub mod codec;
 
-use codec::registry::CodecRegistry;
+use muter::chain;
+use muter::codec;
+use muter::codec::registry::CodecRegistry;
 use std::io;
 use std::process;
 

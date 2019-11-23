@@ -1,7 +1,6 @@
 pub mod codecs;
 pub mod helpers;
 pub mod registry;
-
 #[cfg(test)]
 pub mod tests;
 

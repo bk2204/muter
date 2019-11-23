@@ -25,10 +25,8 @@ impl Ascii85Encoder {
         Ascii85Encoder {}
     }
 
-    fn pad_bytes_needed(b: usize, is: usize, os: usize) -> usize {
-        let r = is - b;
-        eprintln!("b={} is={} os={} r={}", b, is, os, r);
-        r
+    fn pad_bytes_needed(b: usize, is: usize, _os: usize) -> usize {
+        is - b
     }
 }
 
@@ -138,15 +136,6 @@ impl Ascii85Decoder {
 
         // We remove as many characters from the output as from the input.
         let off = outp.len() - (is - inp.len());
-        eprintln!(
-            "inp={:?} inp={} outp={} buf={:?} off={}",
-            inp,
-            inp.len(),
-            outp.len(),
-            buf,
-            off
-        );
-
         let x: u64 = buf.iter().enumerate().map(|(k, &v)| Self::dec(v, k)).sum();
 
         for (k, val) in outp[0..off].iter_mut().enumerate() {
@@ -184,7 +173,6 @@ impl Codec for Ascii85Decoder {
         }
 
         let loc = src.iter().position(|&x| x == b'~');
-        eprintln!("src={:?} loc={:?} end={}", src, loc, self.end);
         let end = if let Some(x) = loc {
             match (x, src.len(), self.end) {
                 (_, _, true) => return Err(Error::ExtraData),

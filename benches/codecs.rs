@@ -72,6 +72,7 @@ mod tests {
     benchmark!("form", form);
     benchmark!("hex", hex);
     benchmark!("identity", identity);
+    benchmark!("quotedprintable", quotedprintable);
     benchmark!("uri", uri);
     benchmark!("url64", url64);
     benchmark!("uuencode", uuencode);

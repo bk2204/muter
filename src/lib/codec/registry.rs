@@ -106,7 +106,7 @@ mod tests {
     use codec::CodecTransform;
     use codec::Direction;
     use codec::Error;
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::io;
     use std::io::Read;
 
@@ -136,7 +136,7 @@ mod tests {
 
     fn codec_settings() -> CodecSettings {
         CodecSettings {
-            args: BTreeSet::new(),
+            args: BTreeMap::new(),
             bufsize: 512,
             dir: Direction::Forward,
             strict: true,

@@ -9,7 +9,7 @@ use codec::Error;
 use codec::FlushState;
 use codec::Status;
 use codec::TransformableCodec;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::io;
 use std::iter::Peekable;
 
@@ -378,20 +378,21 @@ impl Codec for Encoder {
 }
 
 impl Encoder {
-    pub fn new(args: &BTreeSet<String>) -> Self {
+    pub fn new(args: &BTreeMap<String, Option<String>>) -> Self {
         Encoder {
             table: Self::build_table(args),
-            cstyle: args.contains("cstyle"),
+            cstyle: args.contains_key("cstyle"),
         }
     }
 
-    fn build_table(args: &BTreeSet<String>) -> Vec<Vec<u8>> {
-        let cstyle = args.contains("cstyle");
-        let octal = args.contains("octal");
-        let glob = args.contains("glob");
-        let space = args.contains("sp") || args.contains("space") || args.contains("white");
-        let tab = args.contains("tab") || args.contains("white");
-        let nl = args.contains("nl") || args.contains("white");
+    fn build_table(args: &BTreeMap<String, Option<String>>) -> Vec<Vec<u8>> {
+        let cstyle = args.contains_key("cstyle");
+        let octal = args.contains_key("octal");
+        let glob = args.contains_key("glob");
+        let space =
+            args.contains_key("sp") || args.contains_key("space") || args.contains_key("white");
+        let tab = args.contains_key("tab") || args.contains_key("white");
+        let nl = args.contains_key("nl") || args.contains_key("white");
 
         (0..256)
             .map(|x| {

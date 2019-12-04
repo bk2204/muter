@@ -21,7 +21,10 @@ impl CodecTransform for TransformFactory {
         let settings = CodecSettings {
             bufsize: s.bufsize,
             strict: s.strict,
-            args: vec!["upper"].iter().map(|&x| String::from(x)).collect(),
+            args: vec!["upper"]
+                .iter()
+                .map(|&x| (String::from(x), None))
+                .collect(),
             dir: s.dir,
         };
         ::codec::codecs::hex::TransformFactory::new().factory(r, settings)

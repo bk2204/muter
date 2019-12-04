@@ -1,7 +1,7 @@
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 use std::convert;
 use std::error;
 use std::fmt;
@@ -50,7 +50,7 @@ impl convert::From<Error> for io::Error {
 #[derive(Debug, PartialEq, Eq)]
 struct ChainTransform<'a> {
     name: &'a str,
-    args: BTreeSet<String>,
+    args: BTreeMap<String, Option<String>>,
     dir: Direction,
 }
 
@@ -154,32 +154,47 @@ impl<'a> Chain<'a> {
             return Err(Error::InvalidName(String::from(name)));
         }
 
-        let set = match args {
-            Some(s) => s.split(',').map(String::from).collect::<BTreeSet<String>>(),
-            None => BTreeSet::new(),
+        let map = match args {
+            Some(s) => s
+                .split(',')
+                .map(Self::parse_arg)
+                .collect::<BTreeMap<String, Option<String>>>(),
+            None => BTreeMap::new(),
         };
         Ok(ChainTransform {
             name,
-            args: set,
+            args: map,
             dir,
         })
+    }
+
+    fn parse_arg(s: &str) -> (String, Option<String>) {
+        match s.find('=') {
+            Some(off) => (s[0..off].to_string(), Some(s[off + 1..].to_string())),
+            None => (s.to_string(), None),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
-    use std::iter::FromIterator;
-
     use chain::Chain;
     use chain::ChainTransform;
     use chain::Error;
     use codec::Direction;
 
-    fn xfrm<'a>(s: &'a str, v: Vec<&'a str>, forward: bool) -> ChainTransform<'a> {
+    fn xfrm<'a>(
+        s: &'a str,
+        v: Vec<(&'a str, Option<&'a str>)>,
+        forward: bool,
+    ) -> ChainTransform<'a> {
         ChainTransform {
             name: s,
-            args: BTreeSet::from_iter(v.iter().map(|&x| String::from(x))),
+            args: v
+                .iter()
+                .cloned()
+                .map(|(k, v)| (k.to_string(), v.map(|s| s.to_string())))
+                .collect(),
             dir: match forward {
                 true => Direction::Forward,
                 false => Direction::Reverse,
@@ -227,15 +242,15 @@ mod tests {
     fn parses_parenthesized_names() {
         assert_eq!(
             Chain::parse("hash(sha256)", Direction::Forward).unwrap(),
-            vec![xfrm("hash", vec!["sha256"], true)]
+            vec![xfrm("hash", vec![("sha256", None)], true)]
         );
         assert_eq!(
             Chain::parse("vis(cstyle,white)", Direction::Forward).unwrap(),
-            vec![xfrm("vis", vec!["cstyle", "white"], true)]
+            vec![xfrm("vis", vec![("cstyle", None), ("white", None)], true)]
         );
         assert_eq!(
             Chain::parse("-vis(cstyle,white)", Direction::Forward).unwrap(),
-            vec![xfrm("vis", vec!["cstyle", "white"], false)]
+            vec![xfrm("vis", vec![("cstyle", None), ("white", None)], false)]
         );
     }
 
@@ -243,15 +258,35 @@ mod tests {
     fn parses_comma_split_names() {
         assert_eq!(
             Chain::parse("hash,sha256", Direction::Forward).unwrap(),
-            vec![xfrm("hash", vec!["sha256"], true)]
+            vec![xfrm("hash", vec![("sha256", None)], true)]
         );
         assert_eq!(
             Chain::parse("vis,cstyle,white", Direction::Forward).unwrap(),
-            vec![xfrm("vis", vec!["cstyle", "white"], true)]
+            vec![xfrm("vis", vec![("cstyle", None), ("white", None)], true)]
         );
         assert_eq!(
             Chain::parse("-vis,cstyle,white", Direction::Forward).unwrap(),
-            vec![xfrm("vis", vec!["cstyle", "white"], false)]
+            vec![xfrm("vis", vec![("cstyle", None), ("white", None)], false)]
+        );
+    }
+
+    #[test]
+    fn parses_names_with_arguments() {
+        assert_eq!(
+            Chain::parse("hash(blake2b,length=32)", Direction::Forward).unwrap(),
+            vec![xfrm(
+                "hash",
+                vec![("blake2b", None), ("length", Some("32"))],
+                true
+            )]
+        );
+        assert_eq!(
+            Chain::parse("hash,blake2b,length=32", Direction::Forward).unwrap(),
+            vec![xfrm(
+                "hash",
+                vec![("blake2b", None), ("length", Some("32"))],
+                true
+            )]
         );
     }
 
@@ -261,23 +296,23 @@ mod tests {
             Chain::parse("-base64:hash,sha256", Direction::Forward).unwrap(),
             vec![
                 xfrm("base64", vec![], false),
-                xfrm("hash", vec!["sha256"], true)
+                xfrm("hash", vec![("sha256", None)], true)
             ]
         );
         assert_eq!(
             Chain::parse("-vis,cstyle,white:xml(html):uri,lower", Direction::Forward).unwrap(),
             vec![
-                xfrm("vis", vec!["cstyle", "white"], false),
-                xfrm("xml", vec!["html"], true),
-                xfrm("uri", vec!["lower"], true)
+                xfrm("vis", vec![("cstyle", None), ("white", None)], false),
+                xfrm("xml", vec![("html", None)], true),
+                xfrm("uri", vec![("lower", None)], true)
             ]
         );
         assert_eq!(
             Chain::parse("-vis,cstyle,white:xml(html):uri,lower", Direction::Reverse).unwrap(),
             vec![
-                xfrm("uri", vec!["lower"], false),
-                xfrm("xml", vec!["html"], false),
-                xfrm("vis", vec!["cstyle", "white"], true),
+                xfrm("uri", vec![("lower", None)], false),
+                xfrm("xml", vec![("html", None)], false),
+                xfrm("vis", vec![("cstyle", None), ("white", None)], true),
             ]
         );
     }

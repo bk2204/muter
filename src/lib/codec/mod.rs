@@ -3,7 +3,7 @@ pub mod helpers;
 pub mod registry;
 pub mod tests;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::convert;
 use std::error;
 use std::fmt;
@@ -127,7 +127,7 @@ pub trait CodecTransform {
 pub struct CodecSettings {
     pub bufsize: usize,
     pub strict: bool,
-    pub args: BTreeSet<String>,
+    pub args: BTreeMap<String, Option<String>>,
     pub dir: Direction,
 }
 

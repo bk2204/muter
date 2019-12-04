@@ -54,7 +54,7 @@ impl CodecTransform for TransformFactory {
             Direction::Reverse => return Err(Error::ForwardOnly("hash".to_string())),
         }
 
-        let args: Vec<_> = s.args.iter().collect();
+        let args: Vec<_> = s.args.iter().map(|(s, _)| s).collect();
         match args.len() {
             0 => return Err(Error::MissingArgument("hash".to_string())),
             1 => (),
@@ -65,7 +65,7 @@ impl CodecTransform for TransformFactory {
                 ));
             }
         };
-        Ok(Encoder::new(Self::digest(args[0])?).into_bufread(r, s.bufsize))
+        Ok(Encoder::new(Self::digest(&args[0])?).into_bufread(r, s.bufsize))
     }
 
     fn options(&self) -> BTreeMap<String, &'static str> {

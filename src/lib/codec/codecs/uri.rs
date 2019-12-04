@@ -352,7 +352,7 @@ impl URITransformFactory {
     ) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
-                let arr = if s.args.contains("lower") {
+                let arr = if s.args.contains_key("lower") {
                     &LOWER
                 } else {
                     &UPPER

@@ -57,7 +57,7 @@ impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
-                let arr = if s.args.contains("upper") {
+                let arr = if s.args.contains_key("upper") {
                     &UPPER
                 } else {
                     &LOWER

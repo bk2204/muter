@@ -4,7 +4,7 @@ use codec::registry::CodecRegistry;
 use codec::{CodecSettings, CodecTransform, Direction, Error};
 use rand_chacha::ChaChaRng;
 use rand_core::{RngCore, SeedableRng};
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 use std::env;
 use std::io;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -134,7 +134,7 @@ pub fn basic_configuration(name: &str) {
     let settings = CodecSettings {
         bufsize: 8192,
         strict: true,
-        args: BTreeSet::new(),
+        args: BTreeMap::new(),
         dir: Direction::Reverse,
     };
     if transform.can_reverse() {
@@ -152,8 +152,8 @@ pub fn basic_configuration(name: &str) {
     }
 
     for (arg, _) in transform.options() {
-        let mut args = BTreeSet::new();
-        args.insert(arg);
+        let mut args = BTreeMap::new();
+        args.insert(arg, None);
 
         let settings = CodecSettings {
             bufsize: 8192,

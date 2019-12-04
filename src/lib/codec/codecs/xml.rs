@@ -74,9 +74,9 @@ impl CodecTransform for XMLTransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
-                let arr = if s.args.contains("hex") {
+                let arr = if s.args.contains_key("hex") {
                     HEX
-                } else if s.args.contains("html") {
+                } else if s.args.contains_key("html") {
                     HTML
                 } else {
                     DEFAULT

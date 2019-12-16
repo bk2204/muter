@@ -158,7 +158,7 @@ pub fn basic_configuration(name: &str) {
         let settings = CodecSettings {
             bufsize: 8192,
             strict: true,
-            args: args,
+            args,
             dir: Direction::Forward,
         };
 

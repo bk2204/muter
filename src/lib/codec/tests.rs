@@ -120,7 +120,7 @@ pub fn basic_configuration(name: &str) {
     let reg = CodecRegistry::new();
 
     let transform = match reg.iter().find(|&(&k, _)| k == name) {
-        Some((_, v)) => v,
+        Some((_, v)) => v.as_ref(),
         None => panic!("Can't find {}", name),
     };
 
@@ -167,7 +167,7 @@ pub fn basic_configuration(name: &str) {
 }
 
 fn instantiate(
-    transform: &Box<CodecTransform>,
+    transform: &CodecTransform,
     settings: CodecSettings,
 ) -> Result<Box<io::BufRead>, Error> {
     transform.factory(Box::new(io::Cursor::new("abc")), settings)

@@ -21,7 +21,11 @@ fn prng(time: bool) -> ChaChaRng {
             0
         }
     } else {
-        u64::from_str_radix(&env::var("RAND_SEED").unwrap_or("0".to_string()), 10).unwrap_or(0)
+        u64::from_str_radix(
+            &env::var("RAND_SEED").unwrap_or_else(|_| "0".to_string()),
+            10,
+        )
+        .unwrap_or(0)
     };
     ChaChaRng::seed_from_u64(seed)
 }

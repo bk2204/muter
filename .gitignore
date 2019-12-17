@@ -4,3 +4,5 @@ target/
 *.bk
 *.1
 *.html
+test/Dockerfile.*
+!test/Dockerfile.*.erb

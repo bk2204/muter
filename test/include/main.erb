@@ -1,0 +1,7 @@
+WORKDIR /usr/src/muter
+
+COPY . /usr/src/muter/
+
+RUN rm -fr target/ Cargo.lock
+
+ENV RUST_BACKTRACE=1

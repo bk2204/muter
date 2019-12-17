@@ -2,3 +2,5 @@ Cargo.lock
 target/
 *.bak
 *.bk
+*.1
+*.html

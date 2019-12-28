@@ -9,8 +9,15 @@ all:
 	cargo build --release
 
 clean:
-	$(RM) -r target
-	find -name '*.bk' | xargs $(RM)
+	cargo clean
+	$(RM) -fr target tmp Cargo.lock
+	for i in "$(DOCKER_STAMPS)"; \
+	do \
+		[ ! -f "$$i" ] || docker image rm -f "$$i"; \
+	done
+	$(RM) -f $(DOCKER_FILES) $(DOCKER_STAMPS)
+	$(RM) -fr tmp
+	$(RM) -fr doc/man/*.1
 
 test:
 	cargo test

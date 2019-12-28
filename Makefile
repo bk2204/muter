@@ -22,6 +22,11 @@ clean:
 test:
 	cargo test
 
+doc:
+	for i in doc/man/*.adoc; do \
+		asciidoctor -b manpage -a compat-mode $$i; \
+	done
+
 # We do not require both of these commands here since nightly Rust may be
 # missing one or more of these. When run under CI, they should be present for
 # stable Rust and catch any issues.

@@ -23,6 +23,7 @@ pub enum Error {
     UnknownCodec(String),
     MissingArgument(String),
     UnknownArgument(String),
+    InvalidArgument(String, String),
     IncompatibleParameters(String, String),
 }
 
@@ -38,6 +39,9 @@ impl fmt::Display for Error {
             Error::ForwardOnly(ref name) => write!(f, "no reverse transform for {}", name),
             Error::MissingArgument(ref name) => write!(f, "missing argument for {}", name),
             Error::UnknownArgument(ref name) => write!(f, "no such argument: {}", name),
+            Error::InvalidArgument(ref name, ref val) => {
+                write!(f, "value for argument {} is invalid: {}", name, val)
+            }
             Error::UnknownCodec(ref name) => write!(f, "no such codec: {}", name),
             Error::IncompatibleParameters(ref name1, ref name2) => write!(
                 f,

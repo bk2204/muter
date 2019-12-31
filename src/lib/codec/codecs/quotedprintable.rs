@@ -292,14 +292,20 @@ impl TransformFactory {
 
 impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+        let linelen = s.length_arg("length", 4, Some(76))?;
         match s.dir {
-            Direction::Forward => Ok(Encoder::new().into_bufread(r, s.bufsize)),
+            Direction::Forward => Ok(Encoder::new(linelen).into_bufread(r, s.bufsize)),
             Direction::Reverse => Ok(Decoder::new(s.strict).into_bufread(r, s.bufsize)),
         }
     }
 
     fn options(&self) -> BTreeMap<String, &'static str> {
-        BTreeMap::new()
+        let mut map = BTreeMap::new();
+        map.insert(
+            "length".to_string(),
+            "wrap at specified line length (default 76; 0 disables)",
+        );
+        map
     }
 
     fn can_reverse(&self) -> bool {
@@ -314,14 +320,14 @@ impl CodecTransform for TransformFactory {
 #[derive(Default)]
 pub struct Encoder {
     curline: usize,
-    linelen: usize,
+    linelen: Option<usize>,
 }
 
 impl Encoder {
-    pub fn new() -> Self {
+    pub fn new(linelen: Option<usize>) -> Self {
         Encoder {
             curline: 0,
-            linelen: 76,
+            linelen,
         }
     }
 }
@@ -340,11 +346,13 @@ impl Codec for Encoder {
                 Characters::Identity => 1,
                 Characters::Encoded => 3,
             };
-            // +1 for b'='.  Note that we don't count the LF, since the RFC says not to.
-            if enclen + curline + 1 > self.linelen {
-                outp[j..j + 2].copy_from_slice(&[b'=', b'\n']);
-                j += 2;
-                curline = 0;
+            if let Some(linelen) = self.linelen {
+                // +1 for b'='.  Note that we don't count the LF, since the RFC says not to.
+                if enclen + curline + 1 > linelen {
+                    outp[j..j + 2].copy_from_slice(&[b'=', b'\n']);
+                    j += 2;
+                    curline = 0;
+                }
             }
             match typ {
                 Characters::Identity => outp[j] = x,
@@ -463,6 +471,21 @@ mod tests {
         };
     }
 
+    macro_rules! check_length {
+        ($inp:expr, $x:pat) => {
+            let reg = CodecRegistry::new();
+            let c = Chain::new(&reg, $inp, 512, false);
+            match c.transform((0..32).collect()) {
+                Ok(_) => panic!("got success for invalid sequence"),
+                Err(e) => match e.get_ref().unwrap().downcast_ref::<Error>() {
+                    Some(&$x) => (),
+                    Some(e) => panic!("got wrong error: {:?}", e),
+                    None => panic!("No internal error?"),
+                },
+            }
+        };
+    }
+
     fn check_std(inp: &[u8], outp: &[u8]) {
         check("quotedprintable", inp, outp);
     }
@@ -485,10 +508,29 @@ mod tests {
     }
 
     #[test]
+    fn rejects_invalid_length() {
+        check_length!("quotedprintable,length", Error::MissingArgument(_));
+        check_length!("quotedprintable,length=3", Error::InvalidArgument(_, _));
+        check_length!(
+            "quotedprintable,length=lalala",
+            Error::InvalidArgument(_, _)
+        );
+    }
+
+    #[test]
     fn round_trip() {
         tests::round_trip("quotedprintable");
         tests::basic_configuration("quotedprintable");
         tests::invalid_data("quotedprintable");
+    }
+
+    #[test]
+    fn wrapping() {
+        let b: Vec<u8> = (0..32).collect();
+        check("quotedprintable", &b, b"=00=01=02=03=04=05=06=07=08=09=0A=0B=0C=0D=0E=0F=10=11=12=13=14=15=16=17=18=\n=19=1A=1B=1C=1D=1E=1F");
+        check("quotedprintable,length=76", &b, b"=00=01=02=03=04=05=06=07=08=09=0A=0B=0C=0D=0E=0F=10=11=12=13=14=15=16=17=18=\n=19=1A=1B=1C=1D=1E=1F");
+        check("quotedprintable,length=0", &b, b"=00=01=02=03=04=05=06=07=08=09=0A=0B=0C=0D=0E=0F=10=11=12=13=14=15=16=17=18=19=1A=1B=1C=1D=1E=1F");
+        check("quotedprintable,length=7", &b, b"=00=01=\n=02=03=\n=04=05=\n=06=07=\n=08=09=\n=0A=0B=\n=0C=0D=\n=0E=0F=\n=10=11=\n=12=13=\n=14=15=\n=16=17=\n=18=19=\n=1A=1B=\n=1C=1D=\n=1E=1F");
     }
 
     #[test]

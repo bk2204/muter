@@ -3,6 +3,7 @@ pub mod helpers;
 pub mod registry;
 pub mod tests;
 
+use std;
 use std::collections::BTreeMap;
 use std::convert;
 use std::error;
@@ -133,6 +134,38 @@ pub struct CodecSettings {
     pub strict: bool,
     pub args: BTreeMap<String, Option<String>>,
     pub dir: Direction,
+}
+
+impl CodecSettings {
+    fn int_arg<T: std::str::FromStr + ToString + Ord + From<u8> + Copy>(
+        &self,
+        name: &str,
+    ) -> Result<Option<T>, Error> {
+        match self.args.get(name) {
+            Some(&None) => Err(Error::MissingArgument(name.to_string())),
+            Some(&Some(ref val)) => match val.parse() {
+                Ok(x) => Ok(Some(x)),
+                Err(_) => Err(Error::InvalidArgument(name.to_string(), val.clone())),
+            },
+            None => Ok(None),
+        }
+    }
+
+    fn length_arg<T: std::str::FromStr + ToString + Ord + From<u8> + Copy>(
+        &self,
+        name: &str,
+        min: T,
+        default: Option<T>,
+    ) -> Result<Option<T>, Error> {
+        let zero: T = 0u8.into();
+        let val: Option<T> = match self.int_arg(name)? {
+            Some(x) if x == zero => None,
+            Some(x) if x >= min => Some(x),
+            Some(x) => return Err(Error::InvalidArgument(name.to_string(), x.to_string())),
+            None => default,
+        };
+        Ok(val)
+    }
 }
 
 pub trait Codec {

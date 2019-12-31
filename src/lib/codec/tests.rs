@@ -156,18 +156,33 @@ pub fn basic_configuration(name: &str) {
     }
 
     for (arg, _) in transform.options() {
-        let mut args = BTreeMap::new();
-        args.insert(arg, None);
-
-        let settings = CodecSettings {
-            bufsize: 8192,
-            strict: true,
-            args,
-            dir: Direction::Forward,
-        };
-
-        instantiate(transform, settings).expect("Can instantiate with each arg");
+        match instantiate_with_arg(transform, &arg, None) {
+            Ok(_) => (),
+            Err(Error::MissingArgument(_)) => {
+                instantiate_with_arg(transform, &arg, Some("512".to_string()))
+                    .expect("Can instantiate with each arg");
+            }
+            Err(e) => panic!("Unexpected error instantiating with argument: {}", e),
+        }
     }
+}
+
+fn instantiate_with_arg(
+    transform: &CodecTransform,
+    arg: &str,
+    val: Option<String>,
+) -> Result<Box<io::BufRead>, Error> {
+    let mut args = BTreeMap::new();
+    args.insert(arg.to_string(), val);
+
+    let settings = CodecSettings {
+        bufsize: 8192,
+        strict: true,
+        args,
+        dir: Direction::Forward,
+    };
+
+    instantiate(transform, settings)
 }
 
 fn instantiate(

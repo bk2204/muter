@@ -57,11 +57,7 @@ impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
-                let arr = if s.args.contains_key("upper") {
-                    &UPPER
-                } else {
-                    &LOWER
-                };
+                let arr = if s.bool_arg("upper")? { &UPPER } else { &LOWER };
                 Ok(
                     StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr))
                         .into_bufread(r, s.bufsize),

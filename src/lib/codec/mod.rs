@@ -166,6 +166,14 @@ impl CodecSettings {
         };
         Ok(val)
     }
+
+    fn bool_arg(&self, name: &str) -> Result<bool, Error> {
+        match self.args.get(name) {
+            Some(&None) => Ok(true),
+            Some(&Some(ref val)) => Err(Error::InvalidArgument(name.to_string(), val.clone())),
+            None => Ok(false),
+        }
+    }
 }
 
 pub trait Codec {

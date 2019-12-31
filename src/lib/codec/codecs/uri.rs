@@ -352,11 +352,7 @@ impl URITransformFactory {
     ) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => {
-                let arr = if s.args.contains_key("lower") {
-                    &LOWER
-                } else {
-                    &UPPER
-                };
+                let arr = if s.bool_arg("lower")? { &LOWER } else { &UPPER };
                 Ok(
                     StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr, form))
                         .into_bufread(r, s.bufsize),

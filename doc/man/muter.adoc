@@ -71,6 +71,9 @@ base32hex::
   Extended Hex Alphabet encoding, better known as 'base32hex'.
 base64::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 encoding.
+crlf::
+  Implements an LF to CRLF conversion.  CR bytes in the input are passed through
+  unmodified.
 form::
   Implements URI percent encoding, like 'uri', except it encodes space as `+`
   instead of `%20`, as for use in  'application/x-www-form-urlencoded'.  This

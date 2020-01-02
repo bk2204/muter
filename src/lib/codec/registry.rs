@@ -38,6 +38,10 @@ impl CodecRegistry {
             Box::new(codec::codecs::base64::Base64TransformFactory::new()),
         );
         map.insert(
+            "crlf",
+            Box::new(codec::codecs::crlf::TransformFactory::new()),
+        );
+        map.insert(
             "form",
             Box::new(codec::codecs::uri::FormTransformFactory::new()),
         );

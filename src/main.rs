@@ -5,6 +5,7 @@ extern crate blake2;
 extern crate clap;
 extern crate digest;
 extern crate md5;
+extern crate multi_reader;
 extern crate muter;
 #[cfg(test)]
 extern crate rand_chacha;
@@ -17,6 +18,8 @@ extern crate sha3;
 use muter::chain;
 use muter::codec;
 use muter::codec::registry::CodecRegistry;
+use std::ffi::OsStr;
+use std::fs;
 use std::io;
 use std::process;
 
@@ -24,20 +27,34 @@ use clap::{App, Arg, ArgMatches};
 
 const BUFFER_SIZE: usize = codec::DEFAULT_BUFFER_SIZE;
 
-fn source() -> io::Result<Box<io::BufRead>> {
+fn source(values: Vec<&OsStr>) -> io::Result<Box<io::BufRead>> {
+    if values.is_empty() {
+        return Ok(Box::new(io::BufReader::with_capacity(
+            BUFFER_SIZE,
+            io::stdin(),
+        )));
+    }
+    let files = values
+        .iter()
+        .map(|name| Ok(fs::File::open(name)?))
+        .collect::<Result<Vec<_>, io::Error>>()?;
     Ok(Box::new(io::BufReader::with_capacity(
         BUFFER_SIZE,
-        io::stdin(),
+        multi_reader::MultiReader::new(files.into_iter()),
     )))
 }
 
 fn create_chain(reg: &CodecRegistry, m: ArgMatches) -> io::Result<Box<io::BufRead>> {
     let chain = m.value_of("chain").unwrap();
+    let sources = match m.values_of_os("INPUT") {
+        Some(x) => x.collect(),
+        None => vec![],
+    };
     let mut c = chain::Chain::new(reg, chain, BUFFER_SIZE, true);
     if m.is_present("reverse") {
         c = c.reverse();
     }
-    c.build(source()?)
+    c.build(source(sources)?)
 }
 
 fn process(reg: &CodecRegistry, m: ArgMatches) -> io::Result<()> {

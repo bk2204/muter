@@ -7,6 +7,8 @@ pub mod hash;
 pub mod hex;
 pub mod identity;
 pub mod quotedprintable;
+#[cfg(test)]
+mod tests;
 pub mod uri;
 pub mod uuencode;
 pub mod vis;

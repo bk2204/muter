@@ -111,7 +111,7 @@ where
                     let off = a + i;
                     inp.push(if off >= src.len() { 0 } else { src[off] })
                 }
-                self.enc.transform(inp.as_slice(), dst, f)?;
+                self.enc.transform(inp.as_slice(), &mut dst[b..], f)?;
 
                 let off = self.osize - padbytes;
                 match self.pad {

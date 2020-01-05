@@ -75,6 +75,10 @@ impl CodecRegistry {
             Box::new(codec::codecs::vis::VisTransformFactory::new()),
         );
         map.insert(
+            "wrap",
+            Box::new(codec::codecs::wrap::TransformFactory::new()),
+        );
+        map.insert(
             "xml",
             Box::new(codec::codecs::xml::XMLTransformFactory::new()),
         );

@@ -10,4 +10,5 @@ pub mod quotedprintable;
 pub mod uri;
 pub mod uuencode;
 pub mod vis;
+pub mod wrap;
 pub mod xml;

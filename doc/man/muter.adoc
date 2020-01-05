@@ -126,6 +126,14 @@ bit set in the form `\M^C`, other characters with the eighth bit in the form
 +
 The flags 'httpstyle' and 'mimestyle' are not implemented.  Instead, use the
 'uri' and 'quotedprintable' encoders.
+wrap::
+  Implements line wrapping.  The forward transform wraps lines at 'length'
+  (default 80) characters unless they're already shorter.  The reverse
+  transforms strips all newlines from the input.  To wrap using CRLF line
+  endings, use this codec in conjunction with the 'crlf' codec.
++
+Note that unlike most other codecs, using the forward and reverse transforms
+together do not round-trip all data.
 xml::
   Implements encoding of XML special characters.  Note that the reverse transform
   decodes arbitrary decimal and hexadecimal entities into UTF-8.

@@ -102,7 +102,7 @@ where
             FlushState::Finish if !src.is_empty() && dst.len() >= needed => {
                 let (a, b) = Self::offsets(self.enc.transform(&src[..src.len() - 1], dst, f))?;
                 let padbytes = self.pad_bytes_needed(src.len() - a);
-                if padbytes == 0 {
+                if b > 0 && padbytes == 0 {
                     return Ok(Status::Ok(a, b));
                 }
 

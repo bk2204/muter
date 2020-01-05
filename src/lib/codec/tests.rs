@@ -57,13 +57,12 @@ fn round_trip_with_fill(name: &'static str, sz: usize) {
 
 fn round_trip_bytes(name: &'static str, inp: &[u8], desc: &str) {
     let reg = CodecRegistry::new();
-    let reverse = format!("-{}", name);
     for &i in &[64, 65, 66, 67, 512] {
         let c = Chain::new(&reg, name, i, true);
         let outp = c.transform(inp.to_vec()).unwrap();
-        let c = Chain::new(&reg, &reverse, i, true);
+        let c = Chain::new(&reg, name, i, true);
         assert_eq!(
-            c.transform(outp.to_vec()).unwrap(),
+            c.reverse().transform(outp.to_vec()).unwrap(),
             inp,
             "round-trip {} ({} bytes, {}-byte chunks, {})",
             name,
@@ -71,9 +70,9 @@ fn round_trip_bytes(name: &'static str, inp: &[u8], desc: &str) {
             i,
             desc
         );
-        let c = Chain::new(&reg, &reverse, i, false);
+        let c = Chain::new(&reg, name, i, false);
         assert_eq!(
-            c.transform(outp.to_vec()).unwrap(),
+            c.reverse().transform(outp.to_vec()).unwrap(),
             inp,
             "round-trip {} ({} bytes, {}-byte chunks, {}, strict)",
             name,

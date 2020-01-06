@@ -433,7 +433,7 @@ impl Codec for Decoder {
                             }
                             dst[j] = val as u8;
                         }
-                        _ => return Ok(Status::BufError(i, j)),
+                        _ => return Ok(Status::SeqError(i, j)),
                     }
                 }
                 b'+' if self.special_plus => dst[j] = b' ',

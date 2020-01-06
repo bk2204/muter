@@ -164,7 +164,7 @@ impl Codec for Decoder {
                     // either we need more data or we've got a truncated sequence.
                     if src.len() == name.len() + i + 1 {
                         match f {
-                            FlushState::None => return Ok(Status::BufError(i, j)),
+                            FlushState::None => return Ok(Status::SeqError(i, j)),
                             FlushState::Finish => return Err(Error::TruncatedData),
                         }
                     }

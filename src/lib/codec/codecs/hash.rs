@@ -110,7 +110,7 @@ impl Codec for Encoder {
             FlushState::Finish => {
                 let digestlen = self.digest.output_size();
                 if outp.len() < digestlen {
-                    Ok(Status::BufError(inp.len(), 0))
+                    Ok(Status::SeqError(inp.len(), 0))
                 } else {
                     outp[0..digestlen].copy_from_slice(&self.digest.result_reset());
                     self.done = true;

@@ -157,7 +157,7 @@ impl Codec for Ascii85Decoder {
 
         if !self.start {
             if src.len() < prefixlen {
-                return Ok(Status::BufError(0, 0));
+                return Ok(Status::SeqError(0, 0));
             } else {
                 self.start = true;
                 if &src[0..prefixlen] != b"<~" {
@@ -200,7 +200,7 @@ impl Codec for Ascii85Decoder {
 
         let maxi = match (flush, end) {
             (FlushState::Finish, x) => x,
-            (FlushState::None, x) if x <= is => return Ok(Status::BufError(0, 0)),
+            (FlushState::None, x) if x <= is => return Ok(Status::SeqError(0, 0)),
             (FlushState::None, x) => x - is,
         };
         let maxj = dst.len() - os;

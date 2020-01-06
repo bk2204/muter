@@ -100,7 +100,7 @@ pub enum Status {
     Ok(usize, usize),
     // As above, but the remaining input bytes did not form a complete sequence; we must receive
     // more bytes. If there are none, the sequence has been truncated.
-    BufError(usize, usize),
+    SeqError(usize, usize),
     // As for Ok, but we have detected the end of the input stream and no further bytes should be
     // expected. If there are more bytes, the data is corrupt.
     StreamEnd(usize, usize),
@@ -110,7 +110,7 @@ impl Status {
     fn unpack(&self) -> (usize, usize) {
         match *self {
             Status::Ok(a, b) => (a, b),
-            Status::BufError(a, b) => (a, b),
+            Status::SeqError(a, b) => (a, b),
             Status::StreamEnd(a, b) => (a, b),
         }
     }
@@ -263,7 +263,7 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
 
             match ret {
                 Ok(Status::Ok(consumed, _))
-                | Ok(Status::BufError(consumed, _))
+                | Ok(Status::SeqError(consumed, _))
                 | Ok(Status::StreamEnd(consumed, _)) => {
                     Self::memmove(&mut self.buf, consumed..last, 0);
                     self.off = last - consumed;
@@ -276,14 +276,14 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 // then we need to keep asking for more data because if we
                 // return that 0 bytes of data have been read then it will
                 // be interpreted as EOF.
-                Ok(Status::Ok(_, 0)) | Ok(Status::BufError(_, 0)) if !eof && !dst.is_empty() => {
+                Ok(Status::Ok(_, 0)) | Ok(Status::SeqError(_, 0)) if !eof && !dst.is_empty() => {
                     continue
                 }
-                Ok(Status::BufError(0, _)) if eof => {
+                Ok(Status::SeqError(0, _)) if eof => {
                     return Err(io::Error::from(Error::TruncatedData))
                 }
                 Ok(Status::Ok(_, read))
-                | Ok(Status::BufError(_, read))
+                | Ok(Status::SeqError(_, read))
                 | Ok(Status::StreamEnd(_, read)) => return Ok(read),
 
                 Err(e) => return Err(io::Error::from(e)),

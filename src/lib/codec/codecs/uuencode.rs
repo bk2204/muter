@@ -107,7 +107,7 @@ impl Codec for Encoder {
                     Ok(Status::StreamEnd(a, b + 2))
                 }
                 (FlushState::Finish, true, _, _) => Ok(Status::StreamEnd(0, 0)),
-                (_, _, _, _) => Ok(Status::BufError(0, 0)),
+                (_, _, _, _) => Ok(Status::SeqError(0, 0)),
             };
         }
         let ret = (0..chunks).fold(Ok((0, 0)), |_, i| {
@@ -198,7 +198,7 @@ impl Codec for Decoder {
         };
 
         if chunks == 0 && f == FlushState::None {
-            return Ok(Status::BufError(0, 0));
+            return Ok(Status::SeqError(0, 0));
         }
 
         let ret = (0..chunks).fold(Ok((0, 0)), |_, i| {

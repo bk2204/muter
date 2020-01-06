@@ -356,7 +356,7 @@ impl Codec for Encoder {
                 if i + 1 < maxin && TABLE[inp[i + 1] as usize] == Character::Octal {
                     b"\\000"
                 } else if i + 1 == maxin && f == FlushState::None {
-                    return Ok(Status::BufError(i, j));
+                    return Ok(Status::SeqError(i, j));
                 } else {
                     b"\\0"
                 }
@@ -477,7 +477,7 @@ impl Decoder {
         assert!(dst.len() >= 2);
 
         // This is the value we return indicating we need more data.
-        let moredata = Status::BufError(offset, 0);
+        let moredata = Status::SeqError(offset, 0);
         let x = iter.next();
         match x {
             // \^C
@@ -600,7 +600,7 @@ impl Codec for Decoder {
             match *val {
                 b'\\' => match self.handle_escape(i, &mut iter, &mut dst[j..], flush)? {
                     Status::Ok(_, b) => j += b,
-                    Status::BufError(a, b) => return Ok(Status::BufError(a, j + b)),
+                    Status::SeqError(a, b) => return Ok(Status::SeqError(a, j + b)),
                     Status::StreamEnd(a, b) => return Ok(Status::StreamEnd(a, j + b)),
                 },
                 _ => {

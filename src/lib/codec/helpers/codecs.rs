@@ -166,7 +166,7 @@ impl<T: Codec> PaddedDecoder<T> {
     fn offsets(r: Status) -> Result<(usize, usize), Error> {
         match r {
             Status::Ok(a, b) => Ok((a, b)),
-            Status::BufError(a, b) => Ok((a, b)),
+            Status::SeqError(a, b) => Ok((a, b)),
             Status::StreamEnd(a, b) => Ok((a, b)),
         }
     }
@@ -181,7 +181,7 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
     ) -> Result<Status, Error> {
         match flush {
             FlushState::None if src.len() < self.isize => {
-                return Ok(Status::BufError(0, 0));
+                return Ok(Status::SeqError(0, 0));
             }
             FlushState::Finish if src.is_empty() => {
                 return Ok(Status::StreamEnd(0, 0));
@@ -313,7 +313,7 @@ impl<T: Codec> Codec for AffixEncoder<T> {
             let prefixlen = self.prefix.len();
 
             if dst.len() < prefixlen {
-                return Ok(Status::BufError(0, 0));
+                return Ok(Status::SeqError(0, 0));
             } else {
                 self.start = true;
                 dst[0..prefixlen].copy_from_slice(&self.prefix);
@@ -321,7 +321,7 @@ impl<T: Codec> Codec for AffixEncoder<T> {
                 let r = self.transform(src, &mut dst[prefixlen..], flush)?;
                 return match r {
                     Status::Ok(a, b) => Ok(Status::Ok(a, b + prefixlen)),
-                    Status::BufError(a, b) => Ok(Status::Ok(a, b + prefixlen)),
+                    Status::SeqError(a, b) => Ok(Status::Ok(a, b + prefixlen)),
                     Status::StreamEnd(a, b) => Ok(Status::StreamEnd(a, b + prefixlen)),
                 };
             }

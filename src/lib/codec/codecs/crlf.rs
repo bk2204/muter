@@ -112,7 +112,7 @@ impl Codec for Decoder {
                     (2, 2)
                 }
                 (None, FlushState::None) => {
-                    return Ok(Status::BufError(srcpos, dstpos));
+                    return Ok(Status::SeqError(srcpos, dstpos));
                 }
                 (None, FlushState::Finish) => {
                     dst[dstpos] = b'\r';

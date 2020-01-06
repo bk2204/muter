@@ -97,7 +97,7 @@ impl Codec for Decoder {
     fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
         match f {
             FlushState::None if src.len() < 2 => {
-                return Ok(Status::BufError(0, 0));
+                return Ok(Status::SeqError(0, 0));
             }
             FlushState::Finish if src.is_empty() => {
                 return Ok(Status::StreamEnd(0, 0));

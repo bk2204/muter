@@ -375,6 +375,10 @@ impl Codec for Encoder {
     fn chunk_size(&self) -> usize {
         1
     }
+
+    fn buffer_size(&self) -> usize {
+        4
+    }
 }
 
 impl Encoder {
@@ -602,6 +606,7 @@ impl Codec for Decoder {
                     Status::Ok(_, b) => j += b,
                     Status::SeqError(a, b) => return Ok(Status::SeqError(a, j + b)),
                     Status::StreamEnd(a, b) => return Ok(Status::StreamEnd(a, j + b)),
+                    Status::BufError(a, b) => return Ok(Status::BufError(a, j + b)),
                 },
                 _ => {
                     dst[j] = *val;
@@ -614,6 +619,10 @@ impl Codec for Decoder {
 
     fn chunk_size(&self) -> usize {
         4
+    }
+
+    fn buffer_size(&self) -> usize {
+        1
     }
 }
 

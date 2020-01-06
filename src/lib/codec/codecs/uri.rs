@@ -354,8 +354,11 @@ impl URITransformFactory {
             Direction::Forward => {
                 let arr = if s.bool_arg("lower")? { &LOWER } else { &UPPER };
                 Ok(
-                    StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr, form))
-                        .into_bufread(r, s.bufsize),
+                    StatelessEncoder::new(
+                        move |inp, out| forward_transform(inp, out, arr, form),
+                        3,
+                    )
+                    .into_bufread(r, s.bufsize),
                 )
             }
             Direction::Reverse => Ok(Decoder::new(s.strict, form).into_bufread(r, s.bufsize)),
@@ -451,6 +454,10 @@ impl Codec for Decoder {
 
     fn chunk_size(&self) -> usize {
         3
+    }
+
+    fn buffer_size(&self) -> usize {
+        1
     }
 }
 

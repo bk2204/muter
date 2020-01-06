@@ -25,7 +25,7 @@ enum Characters {
 }
 
 // The maximum length in bytes of any encoding.
-const MAX_LEN: usize = 5;
+const MAX_LEN: usize = 6;
 
 const DEFAULT: [&[u8]; 5] = [b"&lt;", b"&gt;", b"&amp;", b"&apos;", b"&quot;"];
 
@@ -81,10 +81,11 @@ impl CodecTransform for XMLTransformFactory {
                 } else {
                     DEFAULT
                 };
-                Ok(
-                    StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &arr))
-                        .into_bufread(r, s.bufsize),
+                Ok(StatelessEncoder::new(
+                    move |inp, out| forward_transform(inp, out, &arr),
+                    MAX_LEN,
                 )
+                .into_bufread(r, s.bufsize))
             }
             Direction::Reverse => Ok(Decoder::new().into_bufread(r, s.bufsize)),
         }
@@ -203,6 +204,10 @@ impl Codec for Decoder {
 
     fn chunk_size(&self) -> usize {
         3
+    }
+
+    fn buffer_size(&self) -> usize {
+        1
     }
 }
 

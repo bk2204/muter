@@ -58,6 +58,10 @@ impl Codec for Ascii85Encoder {
     fn chunk_size(&self) -> usize {
         4
     }
+
+    fn buffer_size(&self) -> usize {
+        5
+    }
 }
 
 #[derive(Default)]
@@ -217,6 +221,10 @@ impl Codec for Ascii85Decoder {
 
     fn chunk_size(&self) -> usize {
         5
+    }
+
+    fn buffer_size(&self) -> usize {
+        4
     }
 }
 

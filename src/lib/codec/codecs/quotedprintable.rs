@@ -376,6 +376,10 @@ impl Codec for Encoder {
     fn chunk_size(&self) -> usize {
         76
     }
+
+    fn buffer_size(&self) -> usize {
+        5
+    }
 }
 
 pub struct Decoder {}
@@ -429,6 +433,10 @@ impl Codec for Decoder {
 
     fn chunk_size(&self) -> usize {
         3
+    }
+
+    fn buffer_size(&self) -> usize {
+        1
     }
 }
 

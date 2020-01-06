@@ -88,7 +88,7 @@ impl CodecTransform for Base64TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => Ok(PaddedEncoder::new(
-                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &BASE64)),
+                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &BASE64), 4),
                 3,
                 4,
                 Some(b'='),
@@ -130,7 +130,7 @@ impl CodecTransform for URL64TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => Ok(PaddedEncoder::new(
-                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &URL64)),
+                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &URL64), 4),
                 3,
                 4,
                 None,

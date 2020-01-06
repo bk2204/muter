@@ -3,14 +3,15 @@ use std::cmp;
 
 pub struct StatelessEncoder<F> {
     f: F,
+    bufsize: usize,
 }
 
 impl<F> StatelessEncoder<F>
 where
     F: Fn(&[u8], &mut [u8]) -> (usize, usize),
 {
-    pub fn new(f: F) -> Self {
-        StatelessEncoder { f }
+    pub fn new(f: F, bufsize: usize) -> Self {
+        StatelessEncoder { f, bufsize }
     }
 }
 
@@ -30,6 +31,10 @@ where
 
     fn chunk_size(&self) -> usize {
         1
+    }
+
+    fn buffer_size(&self) -> usize {
+        self.bufsize
     }
 }
 
@@ -131,6 +136,10 @@ where
     fn chunk_size(&self) -> usize {
         self.isize
     }
+
+    fn buffer_size(&self) -> usize {
+        self.osize
+    }
 }
 
 pub struct PaddedDecoder<T> {
@@ -167,6 +176,7 @@ impl<T: Codec> PaddedDecoder<T> {
         match r {
             Status::Ok(a, b) => Ok((a, b)),
             Status::SeqError(a, b) => Ok((a, b)),
+            Status::BufError(a, b) => Ok((a, b)),
             Status::StreamEnd(a, b) => Ok((a, b)),
         }
     }
@@ -207,6 +217,10 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
 
     fn chunk_size(&self) -> usize {
         self.isize
+    }
+
+    fn buffer_size(&self) -> usize {
+        self.osize
     }
 }
 
@@ -280,6 +294,10 @@ impl Codec for ChunkedDecoder {
     fn chunk_size(&self) -> usize {
         self.inpsize
     }
+
+    fn buffer_size(&self) -> usize {
+        self.outsize
+    }
 }
 
 pub struct AffixEncoder<T> {
@@ -313,7 +331,7 @@ impl<T: Codec> Codec for AffixEncoder<T> {
             let prefixlen = self.prefix.len();
 
             if dst.len() < prefixlen {
-                return Ok(Status::SeqError(0, 0));
+                return Ok(Status::BufError(0, 0));
             } else {
                 self.start = true;
                 dst[0..prefixlen].copy_from_slice(&self.prefix);
@@ -322,6 +340,7 @@ impl<T: Codec> Codec for AffixEncoder<T> {
                 return match r {
                     Status::Ok(a, b) => Ok(Status::Ok(a, b + prefixlen)),
                     Status::SeqError(a, b) => Ok(Status::Ok(a, b + prefixlen)),
+                    Status::BufError(a, b) => Ok(Status::Ok(a, b + prefixlen)),
                     Status::StreamEnd(a, b) => Ok(Status::StreamEnd(a, b + prefixlen)),
                 };
             }
@@ -350,6 +369,10 @@ impl<T: Codec> Codec for AffixEncoder<T> {
 
     fn chunk_size(&self) -> usize {
         self.codec.chunk_size()
+    }
+
+    fn buffer_size(&self) -> usize {
+        cmp::max(self.prefix.len(), self.suffix.len())
     }
 }
 
@@ -381,6 +404,10 @@ mod tests {
         fn chunk_size(&self) -> usize {
             1
         }
+
+        fn buffer_size(&self) -> usize {
+            1
+        }
     }
 
     #[derive(Default)]
@@ -401,6 +428,10 @@ mod tests {
         fn chunk_size(&self) -> usize {
             1
         }
+
+        fn buffer_size(&self) -> usize {
+            1
+        }
     }
 
     // Tests.
@@ -419,7 +450,7 @@ mod tests {
 
         for (isize, osize, inbytes, padbytes) in cases {
             let p = PaddedEncoder::new(
-                StatelessEncoder::new(|_, _| (0, 0)),
+                StatelessEncoder::new(|_, _| (0, 0), osize),
                 isize,
                 osize,
                 Some(b'='),

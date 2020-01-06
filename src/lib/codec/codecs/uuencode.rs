@@ -121,6 +121,10 @@ impl Codec for Encoder {
     fn chunk_size(&self) -> usize {
         45
     }
+
+    fn buffer_size(&self) -> usize {
+        62
+    }
 }
 
 #[derive(Default)]
@@ -211,6 +215,10 @@ impl Codec for Decoder {
 
     fn chunk_size(&self) -> usize {
         62
+    }
+
+    fn buffer_size(&self) -> usize {
+        45
     }
 }
 

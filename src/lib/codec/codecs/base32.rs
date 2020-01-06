@@ -90,7 +90,7 @@ impl Base32TransformFactory {
     ) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => Ok(PaddedEncoder::new(
-                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, forward)),
+                StatelessEncoder::new(move |inp, out| forward_transform(inp, out, forward), 8),
                 5,
                 8,
                 Some(b'='),

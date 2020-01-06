@@ -59,7 +59,7 @@ impl CodecTransform for TransformFactory {
             Direction::Forward => {
                 let arr = if s.bool_arg("upper")? { &UPPER } else { &LOWER };
                 Ok(
-                    StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr))
+                    StatelessEncoder::new(move |inp, out| forward_transform(inp, out, arr), 2)
                         .into_bufread(r, s.bufsize),
                 )
             }
@@ -135,6 +135,10 @@ impl Codec for Decoder {
 
     fn chunk_size(&self) -> usize {
         2
+    }
+
+    fn buffer_size(&self) -> usize {
+        1
     }
 }
 

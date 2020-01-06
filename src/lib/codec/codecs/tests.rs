@@ -1,5 +1,6 @@
 // This file holds Integration tests for multiple codecs together.
 use chain::Chain;
+use codec;
 use codec::registry::CodecRegistry;
 use codec::tests;
 
@@ -17,6 +18,26 @@ fn check(name: &str, inp: &[u8], outp: &[u8]) {
     for i in vec![5, 6, 7, 8, 12, 512] {
         check_with_size(name, i, inp, outp);
     }
+}
+
+fn check_small_buffer(name: &str, size: usize) {
+    let reg = CodecRegistry::new();
+    let c = Chain::new(&reg, name, size, true);
+    let err = c.transform(tests::BYTE_SEQ.to_vec()).unwrap_err();
+    let err = err.get_ref();
+    let err: Option<&codec::Error> = err.and_then(|e| e.downcast_ref());
+    match err {
+        Some(&codec::Error::SmallBuffer) => (),
+        Some(e) => panic!("wrong error: {}", e),
+        None => panic!("wrong error"),
+    }
+}
+
+#[test]
+fn too_small_buffer() {
+    check_small_buffer("base64:wrap", 1);
+    check_small_buffer("base64:wrap", 2);
+    check_small_buffer("base64:wrap", 3);
 }
 
 #[test]

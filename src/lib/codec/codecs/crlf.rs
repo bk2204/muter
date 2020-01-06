@@ -26,12 +26,11 @@ impl TransformFactory {
 impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
-            Direction::Forward => {
-                Ok(
-                    StatelessEncoder::new(|inp, out| Self::forward_transform(inp, out))
-                        .into_bufread(r, s.bufsize),
-                )
-            }
+            Direction::Forward => Ok(StatelessEncoder::new(
+                |inp, out| Self::forward_transform(inp, out),
+                3,
+            )
+            .into_bufread(r, s.bufsize)),
             Direction::Reverse => Ok(Decoder::new().into_bufread(r, s.bufsize)),
         }
     }
@@ -135,6 +134,10 @@ impl Codec for Decoder {
 
     fn chunk_size(&self) -> usize {
         2
+    }
+
+    fn buffer_size(&self) -> usize {
+        3
     }
 }
 

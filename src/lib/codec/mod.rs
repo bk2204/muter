@@ -26,6 +26,7 @@ pub enum Error {
     UnknownArgument(String),
     InvalidArgument(String, String),
     IncompatibleParameters(String, String),
+    SmallBuffer,
 }
 
 impl fmt::Display for Error {
@@ -49,6 +50,7 @@ impl fmt::Display for Error {
                 "invalid parameter combination: '{}' and '{}",
                 name1, name2
             ),
+            Error::SmallBuffer => write!(f, "buffer is too small to make forward progress"),
         }
     }
 }
@@ -101,6 +103,9 @@ pub enum Status {
     // As above, but the remaining input bytes did not form a complete sequence; we must receive
     // more bytes. If there are none, the sequence has been truncated.
     SeqError(usize, usize),
+    // As for Ok, but there is not enough output buffer space to write data; we must receive a
+    // bigger buffer.
+    BufError(usize, usize),
     // As for Ok, but we have detected the end of the input stream and no further bytes should be
     // expected. If there are more bytes, the data is corrupt.
     StreamEnd(usize, usize),
@@ -111,6 +116,7 @@ impl Status {
         match *self {
             Status::Ok(a, b) => (a, b),
             Status::SeqError(a, b) => (a, b),
+            Status::BufError(a, b) => (a, b),
             Status::StreamEnd(a, b) => (a, b),
         }
     }
@@ -179,6 +185,7 @@ impl CodecSettings {
 pub trait Codec {
     fn transform(&mut self, &[u8], &mut [u8], FlushState) -> Result<Status, Error>;
     fn chunk_size(&self) -> usize;
+    fn buffer_size(&self) -> usize;
 }
 
 pub trait TransformableCodec<'a, C> {
@@ -244,6 +251,10 @@ impl<R: BufRead, C: Codec> CodecReader<R, C> {
 // This function and associated types derived from the flate2 crate.
 impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
     fn read(&mut self, dst: &mut [u8]) -> io::Result<usize> {
+        if dst.len() < self.codec.buffer_size() {
+            return Err(io::Error::from(Error::SmallBuffer));
+        }
+
         let obj = &mut self.r;
         loop {
             let (ret, eof);
@@ -279,10 +290,12 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 Ok(Status::Ok(_, 0)) | Ok(Status::SeqError(_, 0)) if !eof && !dst.is_empty() => {
                     continue
                 }
+                Ok(Status::BufError(_, 0)) => return Err(io::Error::from(Error::SmallBuffer)),
                 Ok(Status::SeqError(0, _)) if eof => {
                     return Err(io::Error::from(Error::TruncatedData))
                 }
                 Ok(Status::Ok(_, read))
+                | Ok(Status::BufError(_, read))
                 | Ok(Status::SeqError(_, read))
                 | Ok(Status::StreamEnd(_, read)) => return Ok(read),
 

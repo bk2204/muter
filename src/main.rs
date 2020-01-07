@@ -111,6 +111,7 @@ fn main() {
         .arg(
             Arg::with_name("chain")
                 .short("c")
+                .long("chain")
                 .value_name("CHAIN")
                 .help("List of transforms to perform")
                 .required(true)
@@ -120,6 +121,7 @@ fn main() {
         .arg(
             Arg::with_name("reverse")
                 .short("r")
+                .long("reverse")
                 .help("List of transforms to perform"),
         )
         .arg(

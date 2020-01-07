@@ -27,19 +27,16 @@ use clap::{App, Arg, ArgMatches};
 
 const BUFFER_SIZE: usize = codec::DEFAULT_BUFFER_SIZE;
 
-fn source(values: Vec<&OsStr>) -> io::Result<Box<io::BufRead>> {
+fn source(values: Vec<&OsStr>, bufsize: usize) -> io::Result<Box<io::BufRead>> {
     if values.is_empty() {
-        return Ok(Box::new(io::BufReader::with_capacity(
-            BUFFER_SIZE,
-            io::stdin(),
-        )));
+        return Ok(Box::new(io::BufReader::with_capacity(bufsize, io::stdin())));
     }
     let files = values
         .iter()
         .map(|name| Ok(fs::File::open(name)?))
         .collect::<Result<Vec<_>, io::Error>>()?;
     Ok(Box::new(io::BufReader::with_capacity(
-        BUFFER_SIZE,
+        bufsize,
         multi_reader::MultiReader::new(files.into_iter()),
     )))
 }
@@ -50,11 +47,25 @@ fn create_chain(reg: &CodecRegistry, m: ArgMatches) -> io::Result<Box<io::BufRea
         Some(x) => x.collect(),
         None => vec![],
     };
-    let mut c = chain::Chain::new(reg, chain, BUFFER_SIZE, true);
+    let bufsize = match m
+        .value_of("buffer-size")
+        .map(|val| val.parse())
+        .unwrap_or(Ok(BUFFER_SIZE))
+    {
+        Ok(x) => x,
+        Err(_) => {
+            return Err(muter::codec::Error::InvalidArgument(
+                "buffer-size".to_string(),
+                m.value_of("buffer-size").unwrap().to_string(),
+            )
+            .into())
+        }
+    };
+    let mut c = chain::Chain::new(reg, chain, bufsize, true);
     if m.is_present("reverse") {
         c = c.reverse();
     }
-    c.build(source(sources)?)
+    c.build(source(sources, bufsize)?)
 }
 
 fn process(reg: &CodecRegistry, m: ArgMatches) -> io::Result<()> {
@@ -110,6 +121,12 @@ fn main() {
             Arg::with_name("reverse")
                 .short("r")
                 .help("List of transforms to perform"),
+        )
+        .arg(
+            Arg::with_name("buffer-size")
+                .long("buffer-size")
+                .takes_value(true)
+                .help("Size of buffer"),
         )
         .arg(
             Arg::with_name("INPUT")

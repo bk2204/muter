@@ -39,6 +39,16 @@ strict decoding option may be provided in the future for improved robustness.
 
 == Options
 
+--buffer-size=<size>::
+  Specify the buffer size (in bytes) for processing data.  The default is 8192.
+  If this value is set too low for a given codec to make forward progress, an
+  error will be given.  Currently, no codec _requires_ a buffer size greater
+  than 64 bytes, although using such a small buffer will negatively impact
+  performance.
++
+This option is primarily for debugging purposes and need not be adjusted in
+ordinary use.
+
 -c<chain>::
 --chain=<chain>::
   Specify the chain of transforms.  This option is mandatory.

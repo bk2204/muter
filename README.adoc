@@ -1,0 +1,48 @@
+Muter
+=====
+
+Muter is a tool to convert to and from various data formats, such as
+hexadecimal, Base64, and URI encoding.
+
+== Use
+
+Muter takes a series of bytes like cat (as filenames or from standard input) and
+produces a byte sequence to standard out.  The bytes are modified by the
+argument to -c (--chain) that specifies the encodings to perform.
+
+For example, a chain of `-hex:base64` decodes hex input and then re-encodes the
+data in Base64.  `base64:uri` would Base64-encode the data, and then URI-encode
+it, but `url64` would just encode using the URL-safe version of Base64.
+A chain of `hash(sha256):hex` would hash the input data and then hex-encode the
+SHA-256 hash.
+
+Muter is written in Rust and supports Rust 1.24 or newer.  You can simply run
+`cargo build --release` to build it.  If you'd like to build the documentation,
+install Asciidoctor and GNU make, and type `make all doc`, and the man page will
+be in `doc/`.  The help output is also generally helpful.
+
+If you're looking for the older Perl version, you can find it in the `perl`
+branch.
+
+== Examples
+
+[source,shell-session]
+----
+# URI-decode some data, then HTML-encode it
+$ muter -c -uri:xml,html my-data >foo.html
+
+# Generate a subresource integrity hash
+$ printf 'sha256-'; \
+  curl -s https://code.jquery.com/jquery-3.2.1.js | muter -c hash,sha256:base64
+sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE=
+
+# Encode a password for use with curl
+$ curl https://user:$(printf 'very-complex/pass' | muter -c uri)@example.org
+----
+
+== Name
+
+Muter comes from the Spanish verb _mudar_ and the French verb _muter_, meaning
+_to mutate_, since what it does is, well, mutate data.
+
+The name is pronounced /ˈmjuːtər/ (MEW-ter).

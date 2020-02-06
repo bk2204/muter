@@ -120,6 +120,28 @@ fn invalid_data_bytes(name: &str, inp: &[u8]) {
 }
 
 pub fn basic_configuration(name: &str) {
+    basic_configuration_without_options(name);
+
+    let reg = CodecRegistry::new();
+
+    let transform = match reg.iter().find(|&(&k, _)| k == name) {
+        Some((_, v)) => v.as_ref(),
+        None => panic!("Can't find {}", name),
+    };
+
+    for (arg, _) in transform.options() {
+        match instantiate_with_arg(transform, &arg, None) {
+            Ok(_) => (),
+            Err(Error::MissingArgument(_)) => {
+                instantiate_with_arg(transform, &arg, Some("512".to_string()))
+                    .expect("Can instantiate with each arg");
+            }
+            Err(e) => panic!("Unexpected error instantiating with argument: {}", e),
+        }
+    }
+}
+
+pub fn basic_configuration_without_options(name: &str) {
     let reg = CodecRegistry::new();
 
     let transform = match reg.iter().find(|&(&k, _)| k == name) {
@@ -152,17 +174,6 @@ pub fn basic_configuration(name: &str) {
             Err(Error::ForwardOnly(_)) => (),
             Err(e) => panic!("Unexpected error instantiating reverse transform: {}", e),
         };
-    }
-
-    for (arg, _) in transform.options() {
-        match instantiate_with_arg(transform, &arg, None) {
-            Ok(_) => (),
-            Err(Error::MissingArgument(_)) => {
-                instantiate_with_arg(transform, &arg, Some("512".to_string()))
-                    .expect("Can instantiate with each arg");
-            }
-            Err(e) => panic!("Unexpected error instantiating with argument: {}", e),
-        }
     }
 }
 

@@ -108,6 +108,9 @@ The following hash algorithms are supported:
 * sha3-512
 * sha384
 * sha512
++
+The 'length' argument may additionally be passed to specify the length in bytes
+of a BLAKE2 hash.
 hex::
   Implements hex encoding.  Takes two options, 'lower' and 'upper', that control
   which type of letters are used.

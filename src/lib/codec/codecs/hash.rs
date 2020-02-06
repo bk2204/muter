@@ -1,7 +1,7 @@
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 
-use blake2::{Blake2b, Blake2s};
+use blake2::{VarBlake2b, VarBlake2s};
 use codec::Codec;
 use codec::CodecSettings;
 use codec::CodecTransform;
@@ -10,13 +10,80 @@ use codec::Error;
 use codec::FlushState;
 use codec::Status;
 use codec::TransformableCodec;
-use digest::{Digest, DynDigest};
+use digest::{Digest, DynDigest, Input, InvalidOutputSize, Reset, VariableOutput};
 use md5::Md5;
 use sha1::Sha1;
 use sha2::{Sha224, Sha256, Sha384, Sha512};
 use sha3::{Sha3_224, Sha3_256, Sha3_384, Sha3_512};
 use std::collections::BTreeMap;
 use std::io;
+
+trait Hash {
+    fn input(&mut self, data: &[u8]);
+    fn result_reset(&mut self) -> Box<[u8]>;
+    fn output_size(&self) -> usize;
+}
+
+macro_rules! hash_defn {
+    ($t: ty) => {
+        impl Hash for $t {
+            fn input(&mut self, data: &[u8]) {
+                DynDigest::input(self, data);
+            }
+
+            fn result_reset(&mut self) -> Box<[u8]> {
+                DynDigest::result_reset(self)
+            }
+
+            fn output_size(&self) -> usize {
+                DynDigest::output_size(self)
+            }
+        }
+    };
+}
+
+hash_defn!(Md5);
+hash_defn!(Sha1);
+hash_defn!(Sha224);
+hash_defn!(Sha256);
+hash_defn!(Sha384);
+hash_defn!(Sha512);
+hash_defn!(Sha3_224);
+hash_defn!(Sha3_256);
+hash_defn!(Sha3_384);
+hash_defn!(Sha3_512);
+
+impl Hash for VarBlake2b {
+    fn input(&mut self, data: &[u8]) {
+        Input::input(self, data);
+    }
+
+    fn result_reset(&mut self) -> Box<[u8]> {
+        let val = VariableOutput::vec_result(self.clone()).into_boxed_slice();
+        Reset::reset(self);
+        val
+    }
+
+    fn output_size(&self) -> usize {
+        VariableOutput::output_size(self)
+    }
+}
+
+impl Hash for VarBlake2s {
+    fn input(&mut self, data: &[u8]) {
+        Input::input(self, data);
+    }
+
+    fn result_reset(&mut self) -> Box<[u8]> {
+        let val = VariableOutput::vec_result(self.clone()).into_boxed_slice();
+        Reset::reset(self);
+        val
+    }
+
+    fn output_size(&self) -> usize {
+        VariableOutput::output_size(self)
+    }
+}
 
 #[derive(Default)]
 pub struct TransformFactory {}
@@ -28,20 +95,34 @@ impl TransformFactory {
 }
 
 impl TransformFactory {
-    fn digest(name: &str) -> Result<Box<DynDigest>, Error> {
-        match name {
-            "md5" => Ok(Box::new(Md5::new())),
-            "sha1" => Ok(Box::new(Sha1::new())),
-            "sha224" => Ok(Box::new(Sha224::new())),
-            "sha256" => Ok(Box::new(Sha256::new())),
-            "sha384" => Ok(Box::new(Sha384::new())),
-            "sha512" => Ok(Box::new(Sha512::new())),
-            "sha3-224" => Ok(Box::new(Sha3_224::new())),
-            "sha3-256" => Ok(Box::new(Sha3_256::new())),
-            "sha3-384" => Ok(Box::new(Sha3_384::new())),
-            "sha3-512" => Ok(Box::new(Sha3_512::new())),
-            "blake2b" => Ok(Box::new(Blake2b::new())),
-            "blake2s" => Ok(Box::new(Blake2s::new())),
+    fn mapped_error<T: Hash>(val: Result<T, InvalidOutputSize>, size: usize) -> Result<T, Error> {
+        val.map_err(|_| Error::InvalidArgument("length".to_string(), size.to_string()))
+    }
+
+    fn digest(name: &str, length: Option<usize>) -> Result<Box<Hash>, Error> {
+        match (name, length) {
+            ("blake2b", _) => {
+                let len = length.unwrap_or(64);
+                Ok(Box::new(Self::mapped_error(VarBlake2b::new(len), len)?))
+            }
+            ("blake2s", _) => {
+                let len = length.unwrap_or(32);
+                Ok(Box::new(Self::mapped_error(VarBlake2s::new(len), len)?))
+            }
+            (_, Some(val)) => Err(Error::InvalidArgument(
+                "length".to_string(),
+                val.to_string(),
+            )),
+            ("md5", _) => Ok(Box::new(Md5::new())),
+            ("sha1", _) => Ok(Box::new(Sha1::new())),
+            ("sha224", _) => Ok(Box::new(Sha224::new())),
+            ("sha256", _) => Ok(Box::new(Sha256::new())),
+            ("sha384", _) => Ok(Box::new(Sha384::new())),
+            ("sha512", _) => Ok(Box::new(Sha512::new())),
+            ("sha3-224", _) => Ok(Box::new(Sha3_224::new())),
+            ("sha3-256", _) => Ok(Box::new(Sha3_256::new())),
+            ("sha3-384", _) => Ok(Box::new(Sha3_384::new())),
+            ("sha3-512", _) => Ok(Box::new(Sha3_512::new())),
             _ => Err(Error::UnknownArgument(name.to_string())),
         }
     }
@@ -54,7 +135,13 @@ impl CodecTransform for TransformFactory {
             Direction::Reverse => return Err(Error::ForwardOnly("hash".to_string())),
         }
 
-        let args: Vec<_> = s.args.iter().map(|(s, _)| s).collect();
+        let length = s.int_arg("length")?;
+        let args: Vec<_> = s
+            .args
+            .iter()
+            .map(|(s, _)| s)
+            .filter(|&s| s != "length")
+            .collect();
         match args.len() {
             0 => return Err(Error::MissingArgument("hash".to_string())),
             1 => (),
@@ -65,7 +152,7 @@ impl CodecTransform for TransformFactory {
                 ));
             }
         };
-        Ok(Encoder::new(Self::digest(&args[0])?).into_bufread(r, s.bufsize))
+        Ok(Encoder::new(Self::digest(&args[0], length)?).into_bufread(r, s.bufsize))
     }
 
     fn options(&self) -> BTreeMap<String, &'static str> {
@@ -82,6 +169,10 @@ impl CodecTransform for TransformFactory {
         map.insert("sha3-512".to_string(), "use SHA3-512 as the hash");
         map.insert("blake2b".to_string(), "use BLAKE2b as the hash");
         map.insert("blake2s".to_string(), "use BLAKE2s as the hash");
+        map.insert(
+            "length".to_string(),
+            "specify the digest length in bytes for BLAKE2b and BLAKE2s",
+        );
         map
     }
 
@@ -95,7 +186,7 @@ impl CodecTransform for TransformFactory {
 }
 
 pub struct Encoder {
-    digest: Box<DynDigest>,
+    digest: Box<Hash>,
     done: bool,
 }
 
@@ -130,7 +221,7 @@ impl Codec for Encoder {
 }
 
 impl Encoder {
-    pub fn new(digest: Box<DynDigest>) -> Self {
+    fn new(digest: Box<Hash>) -> Self {
         Encoder {
             digest,
             done: false,
@@ -239,6 +330,20 @@ mod tests {
                 b"61c31edfd5786d52aeee64a113edbf3fe1094bf02158eef18d40bbf6aeccd886dd7534e74d80aee1c34c39fef394f47b0cb361892e538cbb05874ab5dd824749"
             ),
             (
+                "blake2b,length=64",
+                b"786a02f742015903c6c6fd852552d272912f4740e15847618a86e217f71f5419d25e1031afee585313896444934eb04b903a685b1448b755d56f701afe9be2ce",
+                b"ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923",
+                b"3c26ce487b1c0f062363afa3c675ebdbf5f4ef9bdc022cfbef91e3111cdc283840d8331fc30a8a0906cff4bcdbcd230c61aaec60fdfad457ed96b709a382359a",
+                b"61c31edfd5786d52aeee64a113edbf3fe1094bf02158eef18d40bbf6aeccd886dd7534e74d80aee1c34c39fef394f47b0cb361892e538cbb05874ab5dd824749"
+            ),
+            (
+                "blake2b,length=32",
+                b"0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8",
+                b"bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319",
+                b"31a65b562925c6ffefdafa0ad830f4e33eff148856c2b4754de273814adf8b85",
+                b"831b4bb049922b9ab127fd4c221b29fa1fbd2d66b6f04da86e5b2411895386cc"
+            ),
+            (
                 "blake2s",
                 b"69217a3079908094e11121d042354a7c1f55b6482ca1a51e1b250dfd1ed0eef9",
                 b"508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982",
@@ -256,6 +361,6 @@ mod tests {
 
     #[test]
     fn default_tests() {
-        tests::basic_configuration("hash");
+        tests::basic_configuration_without_options("hash");
     }
 }

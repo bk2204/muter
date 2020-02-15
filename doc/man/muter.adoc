@@ -116,6 +116,10 @@ hex::
   which type of letters are used.
 identity::
   Implements the identity transform.  Passes through the input unmodified.
+lf::
+  Adds a newline to the end of the output if it does not already contain one.
+  If the 'empty' option is specified, skip adding the newline if there is no
+  output.  There is no corresponding reverse transform.
 quotedprintable::
   Implements quoted-printable MIME encoding.
 uri::

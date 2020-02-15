@@ -54,6 +54,7 @@ impl CodecRegistry {
             "identity",
             Box::new(codec::codecs::identity::TransformFactory::new()),
         );
+        map.insert("lf", Box::new(codec::codecs::lf::TransformFactory::new()));
         map.insert(
             "quotedprintable",
             Box::new(codec::codecs::quotedprintable::TransformFactory::new()),

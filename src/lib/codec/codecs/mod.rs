@@ -6,6 +6,7 @@ pub mod crlf;
 pub mod hash;
 pub mod hex;
 pub mod identity;
+pub mod lf;
 pub mod quotedprintable;
 #[cfg(test)]
 mod tests;

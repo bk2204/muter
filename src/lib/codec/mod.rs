@@ -268,7 +268,7 @@ impl<R: BufRead, C: Codec> Read for CodecReader<R, C> {
                 } else {
                     FlushState::None
                 };
-                ret = { self.codec.transform(input, dst, flush) };
+                ret = self.codec.transform(input, dst, flush);
                 self.off + read
             };
 

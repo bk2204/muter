@@ -100,8 +100,10 @@ sub run_chain {
     $chain = App::Muter::Chain->new($chain, $reverse);
     $blocksize ||= 512;
 
+    $stdout->binmode;
+
     foreach my $io (@$handles) {
-        $io->binmode(1);
+        $io->binmode;
         while ($io->read(my $buf, $blocksize)) {
             $stdout->print($chain->process($buf));
         }

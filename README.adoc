@@ -40,6 +40,34 @@ sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE=
 $ curl https://user:$(printf 'very-complex/pass' | muter -c uri)@example.org
 ----
 
+== Transforms
+
+The following transforms are available, many with multiple options:
+
+* ascii85
+* base16
+* base32
+* base32hex
+* base64
+* crlf
+* form
+* hash
+* hex
+* identity
+* lf
+* quotedprintable
+* uri
+* url64
+* uuencode
+* vis
+* wrap
+* xml
+
+For a full description of the transforms that are available, see link:doc/man/muter.adoc[the manual page].
+
+If you're interested in a new transform, feel free to open an issue.
+Note that we try to ensure that transforms are deterministic and that they round-trip if there's a reverse variant, but sometimes we make exceptions.
+
 == Name
 
 Muter comes from the Spanish verb _mudar_ and the French verb _muter_, meaning

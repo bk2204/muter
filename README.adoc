@@ -68,6 +68,7 @@ For a full description of the transforms that are available, see link:doc/man/mu
 
 If you're interested in a new transform, feel free to open an issue.
 Note that we try to ensure that transforms are deterministic and that they round-trip if there's a reverse variant, but sometimes we make exceptions.
+We also generally prefer that the decoder encode all variants that the encoders can produce without any arguments.
 
 == Name
 

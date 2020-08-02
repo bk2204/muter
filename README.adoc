@@ -55,6 +55,7 @@ The following transforms are available, many with multiple options:
 * hex
 * identity
 * lf
+* modhex
 * quotedprintable
 * uri
 * url64

@@ -120,6 +120,10 @@ lf::
   Adds a newline to the end of the output if it does not already contain one.
   If the 'empty' option is specified, skip adding the newline if there is no
   output.  There is no corresponding reverse transform.
+modhex::
+  Implements the
+  https://developers.yubico.com/yubico-c/Manuals/modhex.1.html[Yubico modhex
+  alphabet].
 quotedprintable::
   Implements quoted-printable MIME encoding.
 uri::

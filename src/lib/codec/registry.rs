@@ -56,6 +56,10 @@ impl CodecRegistry {
         );
         map.insert("lf", Box::new(codec::codecs::lf::TransformFactory::new()));
         map.insert(
+            "modhex",
+            Box::new(codec::codecs::hex::ModHexTransformFactory::new()),
+        );
+        map.insert(
             "quotedprintable",
             Box::new(codec::codecs::quotedprintable::TransformFactory::new()),
         );

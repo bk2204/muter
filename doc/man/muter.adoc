@@ -71,6 +71,7 @@ The following backends are included with muter:
 
 ascii85::
   Implements the https://en.wikipedia.org/wiki/Ascii85[Ascii85 encoding].
+  If the 'bare' option is provided, the `<~` and `~>` affixes are not included.
 base16::
   Equivalent to the 'hex' backend with the 'upper' argument.  Implements the
   https://tools.ietf.org/html/rfc4648[RFC 4648] Base16 encoding.

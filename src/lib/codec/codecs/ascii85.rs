@@ -76,24 +76,29 @@ impl Ascii85TransformFactory {
 impl CodecTransform for Ascii85TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
-            Direction::Forward => Ok(AffixEncoder::new(
-                PaddedEncoder::new_with_pad_function(
+            Direction::Forward => {
+                let enc = PaddedEncoder::new_with_pad_function(
                     Ascii85Encoder::new(),
                     4,
                     5,
                     None,
                     Ascii85Encoder::pad_bytes_needed,
-                ),
-                vec![b'<', b'~'],
-                vec![b'~', b'>'],
-            )
-            .into_bufread(r, s.bufsize)),
+                );
+                if s.bool_arg("bare")? {
+                    Ok(enc.into_bufread(r, s.bufsize))
+                } else {
+                    Ok(AffixEncoder::new(enc, vec![b'<', b'~'], vec![b'~', b'>'])
+                        .into_bufread(r, s.bufsize))
+                }
+            }
             Direction::Reverse => Ok(Ascii85Decoder::new().into_bufread(r, s.bufsize)),
         }
     }
 
     fn options(&self) -> BTreeMap<String, &'static str> {
-        BTreeMap::new()
+        let mut map = BTreeMap::new();
+        map.insert("bare".to_string(), "do not use delimiters");
+        map
     }
 
     fn can_reverse(&self) -> bool {
@@ -108,6 +113,7 @@ impl CodecTransform for Ascii85TransformFactory {
 pub struct Ascii85Decoder {
     start: bool,
     end: bool,
+    bare: bool,
 }
 
 impl Ascii85Decoder {
@@ -115,6 +121,7 @@ impl Ascii85Decoder {
         Ascii85Decoder {
             start: false,
             end: false,
+            bare: false,
         }
     }
 
@@ -160,24 +167,28 @@ impl Codec for Ascii85Decoder {
         let prefixlen = 2;
 
         if !self.start {
-            if src.len() < prefixlen {
-                return Ok(Status::SeqError(0, 0));
-            } else {
-                self.start = true;
-                if &src[0..prefixlen] != b"<~" {
-                    return Err(Error::InvalidSequence(
-                        "ascii85".to_string(),
-                        src[0..prefixlen].to_vec(),
-                    ));
+            match (src.len(), flush) {
+                (x, FlushState::Finish) if x < prefixlen => self.bare = true,
+                (x, FlushState::None) if x < prefixlen => return Ok(Status::SeqError(0, 0)),
+                _ => {
+                    self.start = true;
+                    let start = if &src[0..prefixlen] != b"<~" {
+                        self.bare = true;
+                        0
+                    } else {
+                        2
+                    };
+                    let r = self.transform(&src[start..], dst, flush)?;
+                    let (a, b) = r.unpack();
+                    return Ok(Status::Ok(a + start, b));
                 }
-                let r = self.transform(&src[prefixlen..], dst, flush)?;
-                let (a, b) = r.unpack();
-                return Ok(Status::Ok(a + prefixlen, b));
             }
         }
 
         let loc = src.iter().position(|&x| x == b'~');
-        let end = if let Some(x) = loc {
+        let end = if self.bare {
+            src.len()
+        } else if let Some(x) = loc {
             match (x, src.len(), self.end) {
                 (_, _, true) => return Err(Error::ExtraData),
                 (0, 2, false) => {
@@ -274,6 +285,31 @@ mod tests {
         );
         check("ascii85", b"    ", b"<~+<VdL~>");
 
+        check("ascii85,bare", b"", b"");
+        check("ascii85,bare", b"a", b"@/");
+        check("ascii85,bare", b"ab", b"@:B");
+        check("ascii85,bare", b"abc", b"@:E^");
+        check("ascii85,bare", b"abcd", b"@:E_W");
+        check("ascii85,bare", b"\x00", b"!!");
+        check("ascii85,bare", b"\x00\x00", b"!!!");
+        check("ascii85,bare", b"\x00\x00\x00", b"!!!!");
+        check("ascii85,bare", b"\x00\x00\x00\x00", b"z");
+        check(
+            "ascii85,bare",
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+            b"zzz",
+        );
+        check("ascii85,bare", b"\xff", b"rr");
+        check("ascii85,bare", b"\xff\xff", b"s8N");
+        check("ascii85,bare", b"\xff\xff\xff", b"s8W*");
+        check("ascii85,bare", b"\xff\xff\xff\xff", b"s8W-!");
+        check(
+            "ascii85,bare",
+            b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
+            b"s8W-!s8W-!s8W-!",
+        );
+        check("ascii85,bare", b"    ", b"+<VdL");
+
         // Example from Wikipedia.
         check("ascii85", b"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.", br#"<~9jqo^BlbD-BleB1DJ+*+F(f,q/0JhKF<GL>Cj@.4Gp$d7F!,L7@<6@)/0JDEF<G%<+EV:2F!,O<DJ+*.@<*K0@<6L(Df-\0Ec5e;DffZ(EZee.Bl.9pF"AGXBPCsi+DGm>@3BB/F*&OCAfu2/AKYi(DIb:@FD,*)+C]U=@3BN#EcYf8ATD3s@q?d$AftVqCh[NqF<G:8+EV:.+Cf>-FD5W8ARlolDIal(DId<j@<?3r@:F%a+D58'ATD4$Bl@l3De:,-DJs`8ARoFb/0JMK@qB4^F!,R<AKZ&-DfTqBG%G>uD.RTpAKYo'+CT/5+Cei#DII?(E,9)oF*2M7/c~>"#);
     }
@@ -281,6 +317,7 @@ mod tests {
     #[test]
     fn default_tests_ascii85() {
         tests::round_trip("ascii85");
+        tests::round_trip("ascii85,bare");
         tests::basic_configuration("ascii85");
         tests::invalid_data("ascii85");
     }

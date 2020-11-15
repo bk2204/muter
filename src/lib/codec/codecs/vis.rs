@@ -1,5 +1,6 @@
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::manual_range_contains))]
 
 use codec::Codec;
 use codec::CodecSettings;

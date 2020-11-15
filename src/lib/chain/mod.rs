@@ -120,7 +120,7 @@ impl<'a> Chain<'a> {
     }
 
     fn parse_unit(unit: &str, d: Direction) -> Result<ChainTransform, Error> {
-        if unit == "" {
+        if unit.is_empty() {
             return Err(Error::InvalidName(String::from(unit)));
         }
 
@@ -148,7 +148,7 @@ impl<'a> Chain<'a> {
             }
         };
 
-        if name == "" {
+        if name.is_empty() {
             return Err(Error::InvalidName(String::from(name)));
         }
 

@@ -122,7 +122,7 @@ fn main() {
             Arg::with_name("reverse")
                 .short("r")
                 .long("reverse")
-                .help("List of transforms to perform"),
+                .help("Reverse transforms in both order and direction"),
         )
         .arg(
             Arg::with_name("buffer-size")

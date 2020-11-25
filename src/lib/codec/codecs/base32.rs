@@ -118,7 +118,7 @@ impl CodecTransform for Base32TransformFactory {
         ))
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         BTreeMap::new()
     }
 
@@ -148,7 +148,7 @@ impl CodecTransform for Base32HexTransformFactory {
         ))
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         BTreeMap::new()
     }
 

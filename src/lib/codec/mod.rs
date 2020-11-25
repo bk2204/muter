@@ -130,7 +130,7 @@ pub enum FlushState {
 
 pub trait CodecTransform {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error>;
-    fn options(&self) -> BTreeMap<String, &'static str>;
+    fn options(&self) -> BTreeMap<String, String>;
     fn can_reverse(&self) -> bool;
     fn name(&self) -> &'static str;
 }

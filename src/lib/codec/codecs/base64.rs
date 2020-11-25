@@ -104,7 +104,7 @@ impl CodecTransform for Base64TransformFactory {
         }
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         BTreeMap::new()
     }
 
@@ -146,7 +146,7 @@ impl CodecTransform for URL64TransformFactory {
         }
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         BTreeMap::new()
     }
 

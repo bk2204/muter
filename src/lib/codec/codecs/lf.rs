@@ -31,9 +31,12 @@ impl CodecTransform for TransformFactory {
         Ok(Encoder::new(s.args.contains_key("empty")).into_bufread(r, s.bufsize))
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
-        map.insert("empty".to_string(), "print nothing if the input is empty");
+        map.insert(
+            "empty".to_string(),
+            "print nothing if the input is empty".to_string(),
+        );
         map
     }
 

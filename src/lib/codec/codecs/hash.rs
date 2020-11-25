@@ -155,23 +155,35 @@ impl CodecTransform for TransformFactory {
         Ok(Encoder::new(Self::digest(&args[0], length)?).into_bufread(r, s.bufsize))
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
-        map.insert("md5".to_string(), "use MD5 as the hash");
-        map.insert("sha1".to_string(), "use SHA-1 as the hash");
-        map.insert("sha224".to_string(), "use SHA-224 as the hash");
-        map.insert("sha256".to_string(), "use SHA-256 as the hash");
-        map.insert("sha384".to_string(), "use SHA-384 as the hash");
-        map.insert("sha512".to_string(), "use SHA-512 as the hash");
-        map.insert("sha3-224".to_string(), "use SHA3-224 as the hash");
-        map.insert("sha3-256".to_string(), "use SHA3-256 as the hash");
-        map.insert("sha3-384".to_string(), "use SHA3-384 as the hash");
-        map.insert("sha3-512".to_string(), "use SHA3-512 as the hash");
-        map.insert("blake2b".to_string(), "use BLAKE2b as the hash");
-        map.insert("blake2s".to_string(), "use BLAKE2s as the hash");
+        map.insert("md5".to_string(), "use MD5 as the hash".to_string());
+        map.insert("sha1".to_string(), "use SHA-1 as the hash".to_string());
+        map.insert("sha224".to_string(), "use SHA-224 as the hash".to_string());
+        map.insert("sha256".to_string(), "use SHA-256 as the hash".to_string());
+        map.insert("sha384".to_string(), "use SHA-384 as the hash".to_string());
+        map.insert("sha512".to_string(), "use SHA-512 as the hash".to_string());
+        map.insert(
+            "sha3-224".to_string(),
+            "use SHA3-224 as the hash".to_string(),
+        );
+        map.insert(
+            "sha3-256".to_string(),
+            "use SHA3-256 as the hash".to_string(),
+        );
+        map.insert(
+            "sha3-384".to_string(),
+            "use SHA3-384 as the hash".to_string(),
+        );
+        map.insert(
+            "sha3-512".to_string(),
+            "use SHA3-512 as the hash".to_string(),
+        );
+        map.insert("blake2b".to_string(), "use BLAKE2b as the hash".to_string());
+        map.insert("blake2s".to_string(), "use BLAKE2s as the hash".to_string());
         map.insert(
             "length".to_string(),
-            "specify the digest length in bytes for BLAKE2b and BLAKE2s",
+            "specify the digest length in bytes for BLAKE2b and BLAKE2s".to_string(),
         );
         map
     }

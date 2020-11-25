@@ -33,11 +33,11 @@ impl CodecTransform for TransformFactory {
         }
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
         map.insert(
             "length".to_string(),
-            "wrap at specified line length (default 80)",
+            "wrap at specified line length (default 80)".to_string(),
         );
         map
     }

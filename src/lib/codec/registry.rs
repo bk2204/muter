@@ -134,7 +134,7 @@ mod tests {
             return Ok(Box::new(io::Cursor::new(vec![0x61, 0x62, 0x63])));
         }
 
-        fn options(&self) -> BTreeMap<String, &'static str> {
+        fn options(&self) -> BTreeMap<String, String> {
             BTreeMap::new()
         }
 

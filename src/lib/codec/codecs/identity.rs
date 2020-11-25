@@ -33,7 +33,7 @@ impl CodecTransform for TransformFactory {
         )
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         BTreeMap::new()
     }
 

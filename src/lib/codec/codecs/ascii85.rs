@@ -95,9 +95,9 @@ impl CodecTransform for Ascii85TransformFactory {
         }
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
-        map.insert("bare".to_string(), "do not use delimiters");
+        map.insert("bare".to_string(), "do not use delimiters".to_string());
         map
     }
 

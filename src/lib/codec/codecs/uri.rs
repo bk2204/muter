@@ -328,10 +328,10 @@ impl CodecTransform for URITransformFactory {
         Self::generic_factory(r, s, false)
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
-        map.insert("lower".to_string(), "use lowercase letters");
-        map.insert("upper".to_string(), "use uppercase letters");
+        map.insert("lower".to_string(), "use lowercase letters".to_string());
+        map.insert("upper".to_string(), "use uppercase letters".to_string());
         map
     }
 
@@ -380,10 +380,10 @@ impl CodecTransform for FormTransformFactory {
         URITransformFactory::generic_factory(r, s, true)
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
-        map.insert("lower".to_string(), "use lowercase letters");
-        map.insert("upper".to_string(), "use uppercase letters");
+        map.insert("lower".to_string(), "use lowercase letters".to_string());
+        map.insert("upper".to_string(), "use uppercase letters".to_string());
         map
     }
 

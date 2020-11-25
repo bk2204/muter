@@ -31,7 +31,7 @@ impl CodecTransform for UuencodeTransformFactory {
         }
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         BTreeMap::new()
     }
 

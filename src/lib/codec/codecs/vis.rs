@@ -311,19 +311,28 @@ impl CodecTransform for VisTransformFactory {
         }
     }
 
-    fn options(&self) -> BTreeMap<String, &'static str> {
+    fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
-        map.insert("cstyle".to_string(), "encode using C-like escape sequences");
+        map.insert(
+            "cstyle".to_string(),
+            "encode using C-like escape sequences".to_string(),
+        );
         map.insert(
             "glob".to_string(),
-            "encode characters recognized by glob(3) and hash mark",
+            "encode characters recognized by glob(3) and hash mark".to_string(),
         );
-        map.insert("nl".to_string(), "encode newline");
-        map.insert("octal".to_string(), "encode using octal escape sequences");
-        map.insert("sp".to_string(), "encode space");
-        map.insert("space".to_string(), "encode space");
-        map.insert("tab".to_string(), "encode tab");
-        map.insert("white".to_string(), "encode space, tab, and newline");
+        map.insert("nl".to_string(), "encode newline".to_string());
+        map.insert(
+            "octal".to_string(),
+            "encode using octal escape sequences".to_string(),
+        );
+        map.insert("sp".to_string(), "encode space".to_string());
+        map.insert("space".to_string(), "encode space".to_string());
+        map.insert("tab".to_string(), "encode tab".to_string());
+        map.insert(
+            "white".to_string(),
+            "encode space, tab, and newline".to_string(),
+        );
         map
     }
 

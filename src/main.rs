@@ -14,6 +14,8 @@ extern crate rand_core;
 extern crate sha1;
 extern crate sha2;
 extern crate sha3;
+#[macro_use]
+extern crate tr;
 
 use muter::chain;
 use muter::codec;
@@ -104,6 +106,7 @@ The following transforms are available:
 }
 
 fn main() {
+    tr_init!(format!("{}/locale", env!("sharedir")));
     let reg = CodecRegistry::new();
     let help = help(&reg);
     let matches = App::new("muter")

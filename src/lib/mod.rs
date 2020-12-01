@@ -13,5 +13,7 @@ extern crate rand_core;
 extern crate sha1;
 extern crate sha2;
 extern crate sha3;
+#[macro_use]
+extern crate tr;
 pub mod chain;
 pub mod codec;

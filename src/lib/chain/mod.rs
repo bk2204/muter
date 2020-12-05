@@ -21,9 +21,13 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::MismatchedParentheses(ref seq) => write!(f, "mismatched parentheses: {:?}", seq),
-            Error::InvalidName(ref seq) => write!(f, "invalid transform name: {:?}", seq),
-            Error::InvalidArgument(ref seq) => write!(f, "invalid argument: {:?}", seq),
+            Error::MismatchedParentheses(ref seq) => {
+                write!(f, "{}", tr!("mismatched parentheses: {:?}", seq))
+            }
+            Error::InvalidName(ref seq) => {
+                write!(f, "{}", tr!("invalid transform name: {:?}", seq))
+            }
+            Error::InvalidArgument(ref seq) => write!(f, "{}", tr!("invalid argument: {:?}", seq)),
         }
     }
 }

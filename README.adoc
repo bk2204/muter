@@ -21,6 +21,9 @@ Muter is written in Rust and supports Rust 1.34.2 or newer.  You can simply run
 install Asciidoctor and GNU make, and type `make all doc`, and the man page will
 be in `doc/`.  The help output is also generally helpful.
 
+While Muter lacks translations, it is designed to be localized.  Please open an
+issue if you're interested in submitting a translation.
+
 If you're looking for the older Perl version, you can find it in the `perl`
 branch.
 

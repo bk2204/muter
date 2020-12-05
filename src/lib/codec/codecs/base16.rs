@@ -32,8 +32,8 @@ impl CodecTransform for TransformFactory {
 
     fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
-        map.insert("lower".to_string(), "use lowercase letters".to_string());
-        map.insert("upper".to_string(), "use uppercase letters".to_string());
+        map.insert("lower".to_string(), tr!("use lowercase letters"));
+        map.insert("upper".to_string(), tr!("use uppercase letters"));
         map
     }
 

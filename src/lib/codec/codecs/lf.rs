@@ -35,7 +35,7 @@ impl CodecTransform for TransformFactory {
         let mut map = BTreeMap::new();
         map.insert(
             "empty".to_string(),
-            "print nothing if the input is empty".to_string(),
+            tr!("print nothing if the input is empty"),
         );
         map
     }

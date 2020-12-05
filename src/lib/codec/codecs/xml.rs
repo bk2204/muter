@@ -93,14 +93,14 @@ impl CodecTransform for XMLTransformFactory {
 
     fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
-        map.insert("default".to_string(), "use XML entity names".to_string());
+        map.insert("default".to_string(), tr!("use XML entity names"));
         map.insert(
             "hex".to_string(),
-            "use hexadecimal entity names for XML entities".to_string(),
+            tr!("use hexadecimal entity names for XML entities"),
         );
         map.insert(
             "html".to_string(),
-            "use HTML-friendly entity names for XML entities".to_string(),
+            tr!("use HTML-friendly entity names for XML entities"),
         );
         map
     }

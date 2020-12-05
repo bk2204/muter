@@ -303,7 +303,7 @@ impl CodecTransform for TransformFactory {
         let mut map = BTreeMap::new();
         map.insert(
             "length".to_string(),
-            "wrap at specified line length (default 76; 0 disables)".to_string(),
+            tr!("wrap at specified line length (default 76; 0 disables)"),
         );
         map
     }

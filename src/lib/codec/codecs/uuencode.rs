@@ -61,7 +61,7 @@ impl Encoder {
         }
     }
 
-    fn transform_chunk(&self, inp: &[u8], outp: &mut [u8]) -> Result<(usize, usize), Error> {
+    fn transform_chunk(&self, inp: &[u8], outp: &mut [u8]) -> (usize, usize) {
         let (is, os) = (3, 4);
         let bits = is * 8 / os;
         let mask = (1u64 << bits) - 1;
@@ -85,7 +85,7 @@ impl Encoder {
 
         outp[b + 1] = b'\n';
 
-        Ok((a, b + 2))
+        (a, b + 2)
     }
 }
 
@@ -102,7 +102,7 @@ impl Codec for Encoder {
                     Ok(Status::StreamEnd(0, 2))
                 }
                 (FlushState::Finish, false, _, len) if len >= (os + 2) => {
-                    let (a, b) = self.transform_chunk(inp, outp)?;
+                    let (a, b) = self.transform_chunk(inp, outp);
                     outp[b..b + 2].copy_from_slice(b"`\n");
                     self.finished = true;
                     Ok(Status::StreamEnd(a, b + 2))
@@ -113,7 +113,7 @@ impl Codec for Encoder {
         }
         let ret = (0..chunks).fold(Ok((0, 0)), |_, i| {
             let max = cmp::min((i + 1) * is, inp.len());
-            let r = self.transform_chunk(&inp[i * is..max], &mut outp[i * os..(i + 1) * os])?;
+            let r = self.transform_chunk(&inp[i * is..max], &mut outp[i * os..(i + 1) * os]);
             Ok((i * is + r.0, i * os + r.1))
         })?;
         Ok(Status::Ok(ret.0, ret.1))

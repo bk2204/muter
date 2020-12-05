@@ -77,7 +77,7 @@ fn process(reg: &CodecRegistry, m: ArgMatches) -> io::Result<()> {
 }
 
 fn help(reg: &CodecRegistry) -> String {
-    let mut s: String = "
+    let mut s: String = tr!("
 Modify the bytes in the concatentation of INPUT (or standard input) by using the
 specification in CHAIN.
 
@@ -92,8 +92,7 @@ hex-encoded string, hashes it with SHA-256, and converts the result to base64.
 If --reverse is specified, reverse the order of transforms in order and in sense.
 
 The following transforms are available:
-"
-    .into();
+");
     let mut v: Vec<String> = vec![];
     for (name, xfrm) in reg.iter() {
         v.push(format!("  {}", name));
@@ -110,13 +109,13 @@ fn main() {
     let reg = CodecRegistry::new();
     let help = help(&reg);
     let matches = App::new("muter")
-        .about("Encodes and decodes byte sequences")
+        .about(tr!("Encodes and decodes byte sequences").as_str())
         .arg(
             Arg::with_name("chain")
                 .short("c")
                 .long("chain")
-                .value_name("CHAIN")
-                .help("List of transforms to perform")
+                .value_name(tr!("CHAIN").as_str())
+                .help(tr!("List of transforms to perform").as_str())
                 .required(true)
                 .takes_value(true)
                 .allow_hyphen_values(true),
@@ -125,17 +124,17 @@ fn main() {
             Arg::with_name("reverse")
                 .short("r")
                 .long("reverse")
-                .help("Reverse transforms in both order and direction"),
+                .help(tr!("Reverse transforms in both order and direction").as_str()),
         )
         .arg(
             Arg::with_name("buffer-size")
                 .long("buffer-size")
                 .takes_value(true)
-                .help("Size of buffer"),
+                .help(tr!("Size of buffer").as_str()),
         )
         .arg(
             Arg::with_name("INPUT")
-                .help("Input files to process")
+                .help(tr!("Input files to process").as_str())
                 .multiple(true)
                 .index(1),
         )

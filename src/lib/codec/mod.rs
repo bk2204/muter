@@ -32,25 +32,36 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::IO(ref seq) => write!(f, "I/O error: {:?}", seq),
-            Error::InvalidSequence(ref name, ref seq) => {
-                write!(f, "invalid sequence for codec '{}': {:?}", name, seq)
+            Error::IO(ref seq) => write!(f, "{}", tr!("I/O error: {:?}", seq)),
+            Error::InvalidSequence(ref name, ref seq) => write!(
+                f,
+                "{}: {:?}",
+                tr!("invalid sequence for codec '{}':", name),
+                seq
+            ),
+            Error::TruncatedData => write!(f, "{}", tr!("truncated data")),
+            Error::ExtraData => write!(f, "{}", tr!("extra data")),
+            Error::ForwardOnly(ref name) => {
+                write!(f, "{}", tr!("no reverse transform for {}", name))
             }
-            Error::TruncatedData => write!(f, "truncated data"),
-            Error::ExtraData => write!(f, "extra data"),
-            Error::ForwardOnly(ref name) => write!(f, "no reverse transform for {}", name),
-            Error::MissingArgument(ref name) => write!(f, "missing argument for {}", name),
-            Error::UnknownArgument(ref name) => write!(f, "no such argument: {}", name),
-            Error::InvalidArgument(ref name, ref val) => {
-                write!(f, "value for argument {} is invalid: {}", name, val)
+            Error::MissingArgument(ref name) => {
+                write!(f, "{}", tr!("missing argument for {}", name))
             }
-            Error::UnknownCodec(ref name) => write!(f, "no such codec: {}", name),
+            Error::UnknownArgument(ref name) => write!(f, "{}", tr!("no such argument: {}", name)),
+            Error::InvalidArgument(ref name, ref val) => write!(
+                f,
+                "{}",
+                tr!("value for argument {} is invalid: {}", name, val)
+            ),
+            Error::UnknownCodec(ref name) => write!(f, "{}", tr!("no such codec: {}", name)),
             Error::IncompatibleParameters(ref name1, ref name2) => write!(
                 f,
-                "invalid parameter combination: '{}' and '{}",
-                name1, name2
+                "{}",
+                tr!("invalid parameter combination: '{}' and '{}", name1, name2)
             ),
-            Error::SmallBuffer => write!(f, "buffer is too small to make forward progress"),
+            Error::SmallBuffer => {
+                write!(f, "{}", tr!("buffer is too small to make forward progress"))
+            }
         }
     }
 }

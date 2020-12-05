@@ -87,29 +87,35 @@ impl Base32TransformFactory {
         reverse: &'static [i8; 256],
         r: Box<io::BufRead>,
         s: CodecSettings,
-    ) -> Result<Box<io::BufRead>, Error> {
+    ) -> Box<io::BufRead> {
         match s.dir {
-            Direction::Forward => Ok(PaddedEncoder::new(
+            Direction::Forward => PaddedEncoder::new(
                 StatelessEncoder::new(move |inp, out| forward_transform(inp, out, forward), 8),
                 5,
                 8,
                 Some(b'='),
             )
-            .into_bufread(r, s.bufsize)),
-            Direction::Reverse => Ok(PaddedDecoder::new(
+            .into_bufread(r, s.bufsize),
+            Direction::Reverse => PaddedDecoder::new(
                 ChunkedDecoder::new(s.strict, name, 8, 5, reverse),
                 8,
                 5,
                 Some(b'='),
             )
-            .into_bufread(r, s.bufsize)),
+            .into_bufread(r, s.bufsize),
         }
     }
 }
 
 impl CodecTransform for Base32TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        Base32TransformFactory::factory_for(self.name(), &BASE32, &REV, r, s)
+        Ok(Base32TransformFactory::factory_for(
+            self.name(),
+            &BASE32,
+            &REV,
+            r,
+            s,
+        ))
     }
 
     fn options(&self) -> BTreeMap<String, &'static str> {
@@ -133,7 +139,13 @@ impl Base32HexTransformFactory {
 
 impl CodecTransform for Base32HexTransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        Base32TransformFactory::factory_for(self.name(), &BASE32HEX, &REVHEX, r, s)
+        Ok(Base32TransformFactory::factory_for(
+            self.name(),
+            &BASE32HEX,
+            &REVHEX,
+            r,
+            s,
+        ))
     }
 
     fn options(&self) -> BTreeMap<String, &'static str> {

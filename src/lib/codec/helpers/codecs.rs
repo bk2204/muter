@@ -172,12 +172,12 @@ impl<T: Codec> PaddedDecoder<T> {
         self.osize - (bits_per_unit - b * in_bits_per_char) / 8
     }
 
-    fn offsets(r: Status) -> Result<(usize, usize), Error> {
+    fn offsets(r: Status) -> (usize, usize) {
         match r {
-            Status::Ok(a, b) => Ok((a, b)),
-            Status::SeqError(a, b) => Ok((a, b)),
-            Status::BufError(a, b) => Ok((a, b)),
-            Status::StreamEnd(a, b) => Ok((a, b)),
+            Status::Ok(a, b) => (a, b),
+            Status::SeqError(a, b) => (a, b),
+            Status::BufError(a, b) => (a, b),
+            Status::StreamEnd(a, b) => (a, b),
         }
     }
 }
@@ -200,7 +200,7 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
         }
 
         let r = self.codec.transform(src, dst, flush)?;
-        let (a, b) = Self::offsets(r)?;
+        let (a, b) = Self::offsets(r);
         // This code relies on us only processing full chunks with the transform function.
         let padoffset = match (self.pad, flush) {
             (Some(byte), _) => src[..a].iter().position(|&x| x == byte),

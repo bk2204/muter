@@ -27,6 +27,12 @@ doc:
 		asciidoctor -b manpage -a compat-mode $$i; \
 	done
 
+deb: all doc
+	cargo deb
+
+test-deb: deb
+	lintian target/debian/muter_*.deb
+
 # We do not require both of these commands here since nightly Rust may be
 # missing one or more of these. When run under CI, they should be present for
 # stable Rust and catch any issues.
@@ -48,8 +54,11 @@ lint:
 ci: $(CI_TARGETS)
 
 ci-%: test/Dockerfile.%.stamp
-	docker run --rm $$(cat "$<") \
-		sh -c 'cd /usr/src/muter && make test-full'
+	mkdir -p target/assets
+	docker run --rm \
+		-v "$(PWD)/target/assets:/usr/src/muter/target/debian" \
+		$$(cat "$<") \
+		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || (cargo install cargo-deb && make test-deb))'
 
 test-full:
 	make all
@@ -64,7 +73,7 @@ test/Dockerfile.%: test/Dockerfile.%.erb $(INCLUDES)
 	test/template "$<" >"$@"
 
 clippy:
-	rm -rf target
+	rm -rf target/debug target/release
 	@# We exclude these lints here instead of in the file because Rust 1.24
 	@# doesn't support excluding clippy warnings.  Similarly, it doesn't support
 	@# the syntax these lints suggest.

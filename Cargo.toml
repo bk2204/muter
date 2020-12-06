@@ -34,3 +34,20 @@ gettext-rs = { version = "0.4", features = ["gettext-system"] }
 
 [dev-dependencies]
 pretty_assertions = "0.5"
+
+[package.metadata.deb]
+name = "muter"
+license-file = ["LICENSE", "0"]
+changelog = "CHANGELOG"
+extended-description = """\
+Muter manipulates streams of bytes, encoding and decoding them in various ways,
+such as base64 and URI percent-encoding, among other.  It is designed to be
+fast, portable, and flexible.
+"""
+section = "utils"
+priority = "optional"
+revision = "1"
+assets = [
+    ["target/release/muter", "usr/bin/", "755"],
+    ["doc/man/muter.1", "usr/share/man/man1/", "644"],
+]

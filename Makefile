@@ -5,6 +5,14 @@ DOCKER_STAMPS := $(patsubst %,test/Dockerfile.%.stamp,$(GROUPS))
 CI_TARGETS := $(patsubst %,ci-%,$(GROUPS))
 INCLUDES := $(wildcard test/include/*.erb)
 
+# Set this to a Docker target to build for a specific platform.
+PLATFORM ?=
+ifneq ($(PLATFORM),)
+PLATFORM_ARG := --platform $(PLATFORM)
+else
+PLATFORM_ARG :=
+endif
+
 all:
 	cargo build --release
 
@@ -65,6 +73,7 @@ ci: $(CI_TARGETS)
 ci-%: test/Dockerfile.%.stamp
 	mkdir -p target/assets
 	docker run --rm \
+		$(PLATFORM_ARG) \
 		-v "$(PWD)/target/assets:/usr/src/muter/target/debian" \
 		$$(cat "$<") \
 		sh -c 'cd /usr/src/muter && make test-full package && ([ "$*" = oldest ] || (cargo install cargo-deb && make test-deb))'
@@ -76,7 +85,7 @@ test-full:
 	make lint
 
 test/Dockerfile.%.stamp: test/Dockerfile.% $(SRC)
-	docker build --iidfile="$@" -f "$<" .
+	docker build $(PLATFORM_ARG) --iidfile="$@" -f "$<" .
 
 test/Dockerfile.%: test/Dockerfile.%.erb $(INCLUDES)
 	test/template "$<" >"$@"

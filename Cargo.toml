@@ -5,7 +5,7 @@ authors = ["brian m. carlson <sandals@crustytoothpaste.net>"]
 license = "MIT"
 repository = "https://github.com/bk2204/muter"
 description = "utility for converting data between various formats and encodings"
-exclude = [".github/**", ".gitignore", "Makefile", "test/**", "doc/**"]
+exclude = ["README.adoc", ".github/**", ".gitignore", "Makefile", "test/**", "doc/**"]
 
 [lib]
 name = "muter"

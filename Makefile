@@ -39,6 +39,9 @@ test-deb: deb
 	pandoc -f docbook -t commonmark -o $@ $@+
 	$(RM) $@+
 
+package: README.md
+	cargo package
+
 # We do not require both of these commands here since nightly Rust may be
 # missing one or more of these. When run under CI, they should be present for
 # stable Rust and catch any issues.

@@ -16,6 +16,7 @@ clean:
 		[ ! -f "$$i" ] || docker image rm -f "$$i"; \
 	done
 	$(RM) -f $(DOCKER_FILES) $(DOCKER_STAMPS)
+	$(RM) -f *.md *.md+
 	$(RM) -fr tmp
 	$(RM) -fr doc/man/*.1
 
@@ -32,6 +33,11 @@ deb: all doc
 
 test-deb: deb
 	lintian target/debian/muter_*.deb
+
+%.md: %.adoc
+	asciidoctor -o $@+ -b docbook5 $^
+	pandoc -f docbook -t commonmark -o $@ $@+
+	$(RM) $@+
 
 # We do not require both of these commands here since nightly Rust may be
 # missing one or more of these. When run under CI, they should be present for

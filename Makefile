@@ -67,7 +67,7 @@ ci-%: test/Dockerfile.%.stamp
 	docker run --rm \
 		-v "$(PWD)/target/assets:/usr/src/muter/target/debian" \
 		$$(cat "$<") \
-		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || (cargo install cargo-deb && make test-deb))'
+		sh -c 'cd /usr/src/muter && make test-full package && ([ "$*" = oldest ] || (cargo install cargo-deb && make test-deb))'
 
 test-full:
 	make all

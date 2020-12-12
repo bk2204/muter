@@ -11,7 +11,7 @@ jobs:
     - run: make ci-stretch
     - uses: actions/upload-artifact@v2
       with:
-        name: stretch-deb
+        name: stretch-amd64-deb
         path: target/assets/muter_*.deb
   build-buster:
     name: Linux (Debian buster)
@@ -22,7 +22,7 @@ jobs:
     - run: make ci-buster
     - uses: actions/upload-artifact@v2
       with:
-        name: buster-deb
+        name: buster-amd64-deb
         path: target/assets/muter_*.deb
   build-oldest:
     name: Linux (oldest Rust)

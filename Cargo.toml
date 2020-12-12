@@ -6,6 +6,8 @@ license = "MIT"
 repository = "https://github.com/bk2204/muter"
 description = "utility for converting data between various formats and encodings"
 exclude = ["README.adoc", ".github/**", ".gitignore", "Makefile", "test/**", "doc/**"]
+categories = ["command-line-utilities", "encoding"]
+keywords = ["encoding"]
 
 [lib]
 name = "muter"

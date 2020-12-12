@@ -23,16 +23,16 @@ clean:
 test:
 	cargo test
 
-doc:
-	for i in doc/man/*.adoc; do \
-		asciidoctor -b manpage -a compat-mode $$i; \
-	done
+doc: doc/man/muter.1
 
 deb: all doc
 	cargo deb
 
 test-deb: deb
 	lintian target/debian/muter_*.deb
+
+%.1: %.adoc
+	asciidoctor -b manpage -a compat-mode -o $@ $^
 
 %.md: %.adoc
 	asciidoctor -o $@+ -b docbook5 $^

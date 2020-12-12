@@ -10,7 +10,7 @@ all:
 
 clean:
 	cargo clean
-	$(RM) -fr target tmp Cargo.lock
+	$(RM) -fr target tmp
 	for i in "$(DOCKER_STAMPS)"; \
 	do \
 		[ ! -f "$$i" ] || docker image rm -f "$$i"; \

@@ -43,7 +43,7 @@ license-file = ["LICENSE", "0"]
 changelog = "CHANGELOG"
 extended-description = """\
 Muter manipulates streams of bytes, encoding and decoding them in various ways,
-such as base64 and URI percent-encoding, among other.  It is designed to be
+such as base64 and URI percent-encoding, among others.  It is designed to be
 fast, portable, and flexible.
 """
 section = "utils"

@@ -82,6 +82,10 @@ base32hex::
   Extended Hex Alphabet encoding, better known as 'base32hex'.
 base64::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 encoding.
+bubblebabble::
+  Implements the
+  https://web.mit.edu/kenta/www/one/bubblebabble/spec/jrtrjwzi/draft-huima-01.txt[Bubble Babble]
+  binary data encoding.
 crlf::
   Implements an LF to CRLF conversion.  CR bytes in the input are passed through
   unmodified.

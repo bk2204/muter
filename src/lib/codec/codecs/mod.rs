@@ -2,6 +2,7 @@ pub mod ascii85;
 pub mod base16;
 pub mod base32;
 pub mod base64;
+pub mod bubblebabble;
 pub mod crlf;
 pub mod hash;
 pub mod hex;

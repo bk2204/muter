@@ -52,6 +52,7 @@ The following transforms are available, many with multiple options:
 * base32
 * base32hex
 * base64
+* bubblebabble
 * crlf
 * form
 * hash

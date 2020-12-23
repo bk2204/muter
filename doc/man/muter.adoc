@@ -78,7 +78,7 @@ base16::
 base32::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32 encoding.
 base32hex::
-  Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32  with
+  Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32 with
   Extended Hex Alphabet encoding, better known as 'base32hex'.
 base64::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 encoding.
@@ -123,8 +123,7 @@ lf::
   output.  There is no corresponding reverse transform.
 modhex::
   Implements the
-  https://developers.yubico.com/yubico-c/Manuals/modhex.1.html[Yubico modhex
-  alphabet].
+  https://developers.yubico.com/yubico-c/Manuals/modhex.1.html[Yubico modhex alphabet].
 quotedprintable::
   Implements quoted-printable MIME encoding.
 uri::

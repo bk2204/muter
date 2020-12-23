@@ -5,7 +5,16 @@ authors = ["brian m. carlson <sandals@crustytoothpaste.net>"]
 license = "MIT"
 repository = "https://github.com/bk2204/muter"
 description = "utility for converting data between various formats and encodings"
-exclude = ["README.adoc", ".github/**", ".gitignore", "Makefile", "test/**", "doc/**"]
+readme = "README.md"
+include = [
+    "build.rs",
+    "src/**/*.rs",
+    "Cargo.toml",
+    "Cargo.lock",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG",
+]
 categories = ["command-line-utilities", "encoding"]
 keywords = ["encoding"]
 

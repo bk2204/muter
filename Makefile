@@ -48,7 +48,7 @@ test-deb: deb
 	$(RM) $@+
 
 package: README.md
-	cargo package
+	cargo package --locked
 
 # We do not require both of these commands here since nightly Rust may be
 # missing one or more of these. When run under CI, they should be present for

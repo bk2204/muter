@@ -1,31 +1,26 @@
 Muter
 =====
 
-Muter is a tool to convert to and from various data formats, such as
-hexadecimal, Base64, and URI encoding.
+Muter is a tool to convert to and from various data formats, such as hexadecimal, Base64, and URI encoding.
 
 == Use
 
-Muter takes a series of bytes like cat (as filenames or from standard input) and
-produces a byte sequence to standard out.  The bytes are modified by the
-argument to -c (--chain) that specifies the encodings to perform.
+Muter takes a series of bytes like cat (as filenames or from standard input) and produces a byte sequence to standard out.
+The bytes are modified by the argument to -c (--chain) that specifies the encodings to perform.
 
-For example, a chain of `-hex:base64` decodes hex input and then re-encodes the
-data in Base64.  `base64:uri` would Base64-encode the data, and then URI-encode
-it, but `url64` would just encode using the URL-safe version of Base64.
-A chain of `hash(sha256):hex` would hash the input data and then hex-encode the
-SHA-256 hash.
+For example, a chain of `-hex:base64` decodes hex input and then re-encodes the data in Base64.
+`base64:uri` would Base64-encode the data, and then URI-encode it, but `url64` would just encode using the URL-safe version of Base64.
+A chain of `hash(sha256):hex` would hash the input data and then hex-encode the SHA-256 hash.
 
-Muter is written in Rust and supports Rust 1.34.2 or newer.  You can simply run
-`cargo build --release` to build it.  If you'd like to build the documentation,
-install Asciidoctor and GNU make, and type `make all doc`, and the man page will
-be in `doc/`.  The help output is also generally helpful.
+Muter is written in Rust and supports Rust 1.34.2 or newer.
+You can simply run `cargo build --release` to build it.
+If you'd like to build the documentation, install Asciidoctor and GNU make, and type `make all doc`, and the man page will be in `doc/`.
+The help output is also generally helpful.
 
-While Muter lacks translations, it is designed to be localized.  Please open an
-issue if you're interested in submitting a translation.
+While Muter lacks translations, it is designed to be localized.
+Please open an issue if you're interested in submitting a translation.
 
-If you're looking for the older Perl version, you can find it in the `perl`
-branch.
+If you're looking for the older Perl version, you can find it in the `perl` branch.
 
 == Examples
 
@@ -76,7 +71,6 @@ We also generally prefer that the decoder encode all variants that the encoders 
 
 == Name
 
-Muter comes from the Spanish verb _mudar_ and the French verb _muter_, meaning
-_to mutate_, since what it does is, well, mutate data.
+Muter comes from the Spanish verb _mudar_ and the French verb _muter_, meaning _to mutate_, since what it does is, well, mutate data.
 
 The name is pronounced /ˈmjuːtər/ (MEW-ter).

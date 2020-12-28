@@ -13,52 +13,45 @@ muter - convert between various formats
 'muter' is a tool to process data by encoding and decoding it in various formats.
 The series of transforms being used is described by the chain.
 
-Like most Unix command line tools, 'muter' processes the files specified on the
-command line, or standard input if no files are specified.  It produces output
-to standard output.  Input and output are generally assumed to be a series of
-bytes; where character interpretation is required, UTF-8 is used.
+Like most Unix command line tools, 'muter' processes the files specified on the command line, or standard input if no files are specified.
+It produces output to standard output.
+Input and output are generally assumed to be a series of bytes; where character interpretation is required, UTF-8 is used.
 
-A chain is a series of transforms separated by colons.  A reverse transform
-(decoding) is specified by preceding the transform with a `-` character.  If a
-transform takes parameters, they are separated by commas and follow the
-transform either surrounded by parentheses or preceded by a comma.  Unknown
-parameters are ignored.
+A chain is a series of transforms separated by colons.
+A reverse transform (decoding) is specified by preceding the transform with a `-` character.
+If a transform takes parameters, they are separated by commas and follow the transform either surrounded by parentheses or preceded by a comma.
+Unknown parameters are ignored.
 
-Not all transforms have an reverse transforms.  For example, the 'hash'
-transform, which implements cryptographic hashes, is not practically invertible
-(we hope).  An error will be produced if you attempt to use an invalid
-transform.
+Not all transforms have an reverse transforms.
+For example, the 'hash' transform, which implements cryptographic hashes, is not practically invertible (we hope).
+An error will be produced if you attempt to use an invalid transform.
 
 Generally, a reverse transform will decode any variant of the forward transform.
-To preserve this invariant, related but incompatible transforms such as 'base64'
-and 'url64' are separate transforms.
+To preserve this invariant, related but incompatible transforms such as 'base64' and 'url64' are separate transforms.
 
 In general, 'muter' expects the input to its decoders to be well-formed.
-Passing broken or corrupt data will not generally produce useful results.  A
-strict decoding option may be provided in the future for improved robustness.
+Passing broken or corrupt data will not generally produce useful results.
+A strict decoding option may be provided in the future for improved robustness.
 
 == Options
 
 --buffer-size=<size>::
-  Specify the buffer size (in bytes) for processing data.  The default is 8192.
-  If this value is set too low for a given codec to make forward progress, an
-  error will be given.  Currently, no codec _requires_ a buffer size greater
-  than 64 bytes, although using such a small buffer will negatively impact
-  performance.
+  Specify the buffer size (in bytes) for processing data.
+  The default is 8192.
+  If this value is set too low for a given codec to make forward progress, an error will be given.
+  Currently, no codec _requires_ a buffer size greater than 64 bytes, although using such a small buffer will negatively impact performance.
 +
-This option is primarily for debugging purposes and need not be adjusted in
-ordinary use.
+This option is primarily for debugging purposes and need not be adjusted in ordinary use.
 
 -c<chain>::
 --chain=<chain>::
-  Specify the chain of transforms.  This option is mandatory.
+  Specify the chain of transforms.
+  This option is mandatory.
 
 -r::
 --reverse::
-  Reverse the chain of transforms and convert each forward transform to a reverse
-  transform, and vice versa.  Assuming all transforms can be inverted, running an
-  instance of 'muter' without this flag followed by an instance with this flag
-  and with the same chain returns the original data.
+  Reverse the chain of transforms and convert each forward transform to a reverse transform, and vice versa.
+  Assuming all transforms can be inverted, running an instance of 'muter' without this flag followed by an instance with this flag and with the same chain returns the original data.
 +
 It is not valid to specify this flag with transforms that have no inverse.
 
@@ -73,31 +66,27 @@ ascii85::
   Implements the https://en.wikipedia.org/wiki/Ascii85[Ascii85 encoding].
   If the 'bare' option is provided, the `<~` and `~>` affixes are not included.
 base16::
-  Equivalent to the 'hex' backend with the 'upper' argument.  Implements the
-  https://tools.ietf.org/html/rfc4648[RFC 4648] Base16 encoding.
+  Equivalent to the 'hex' backend with the 'upper' argument.
+  Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base16 encoding.
 base32::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32 encoding.
 base32hex::
-  Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32 with
-  Extended Hex Alphabet encoding, better known as 'base32hex'.
+  Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32 with Extended Hex Alphabet encoding, better known as 'base32hex'.
 base64::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 encoding.
 bubblebabble::
-  Implements the
-  https://web.mit.edu/kenta/www/one/bubblebabble/spec/jrtrjwzi/draft-huima-01.txt[Bubble Babble]
-  binary data encoding.
+  Implements the https://web.mit.edu/kenta/www/one/bubblebabble/spec/jrtrjwzi/draft-huima-01.txt[Bubble Babble] binary data encoding.
 crlf::
-  Implements an LF to CRLF conversion.  CR bytes in the input are passed through
-  unmodified.
+  Implements an LF to CRLF conversion.
+  CR bytes in the input are passed through unmodified.
 form::
-  Implements URI percent encoding, like 'uri', except it encodes space as `+`
-  instead of `%20`, as for use in  'application/x-www-form-urlencoded'.  This
-  used to be written `uri(form)`, which is no longer allowed.
+  Implements URI percent encoding, like 'uri', except it encodes space as `+` instead of `%20`, as for use in  'application/x-www-form-urlencoded'.
+  This used to be written `uri(form)`, which is no longer allowed.
 +
 Otherwise accepts the same options as 'uri' ('lower' and 'upper').
 hash::
-  Implements a cryptographic hash of the input data.  There is no corresponding
-  reverse transform.
+  Implements a cryptographic hash of the input data.
+  There is no corresponding reverse transform.
 +
 The following hash algorithms are supported:
 +
@@ -114,66 +103,58 @@ The following hash algorithms are supported:
 * sha384
 * sha512
 +
-The 'length' argument may additionally be passed to specify the length in bytes
-of a BLAKE2 hash.
+The 'length' argument may additionally be passed to specify the length in bytes of a BLAKE2 hash.
 hex::
-  Implements hex encoding.  Takes two options, 'lower' and 'upper', that control
-  which type of letters are used.
+  Implements hex encoding.
+  Takes two options, 'lower' and 'upper', that control which type of letters are used.
 identity::
-  Implements the identity transform.  Passes through the input unmodified.
+  Implements the identity transform.
+  Passes through the input unmodified.
 lf::
   Adds a newline to the end of the output if it does not already contain one.
-  If the 'empty' option is specified, skip adding the newline if there is no
-  output.  There is no corresponding reverse transform.
+  If the 'empty' option is specified, skip adding the newline if there is no output.
+  There is no corresponding reverse transform.
 modhex::
-  Implements the
-  https://developers.yubico.com/yubico-c/Manuals/modhex.1.html[Yubico modhex alphabet].
+  Implements the https://developers.yubico.com/yubico-c/Manuals/modhex.1.html[Yubico modhex alphabet].
 quotedprintable::
   Implements quoted-printable MIME encoding.
 uri::
   Implements URI percent encoding.
 +
-Takes two possible options.  'lower' and 'upper' control the type of hex
-character emitted.
+Takes two possible options.  'lower' and 'upper' control the type of hex character emitted.
 url64::
-  Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 Encoding
-  with URL and Filename Safe Alphabet.
+  Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 Encoding with URL and Filename Safe Alphabet.
 uuencode::
-  Implements UUencoding.  Note that the "begin" and "end" markers are not emitted.
+  Implements UUencoding.
+  Note that the "begin" and "end" markers are not emitted.
 vis::
-  Implements the **vis**(3) function found on the BSDs.  The options supported
-  correspond directly to the constants that function takes.
+  Implements the **vis**(3) function found on the BSDs.
+  The options supported correspond directly to the constants that function takes.
 +
-The default encoding, if neither 'cstyle' nor 'octal' is specified, is to
-encode control characters in the form `\^C`, control characters with the eighth
-bit set in the form `\M^C`, other characters with the eighth bit in the form
-`\M-C`, and space and meta-space as octal escapes.
+The default encoding, if neither 'cstyle' nor 'octal' is specified, is to encode control characters in the form `\^C`, control characters with the eighth bit set in the form `\M^C`, other characters with the eighth bit in the form `\M-C`, and space and meta-space as octal escapes.
 +
-The flags 'httpstyle' and 'mimestyle' are not implemented.  Instead, use the
-'uri' and 'quotedprintable' encoders.
+The flags 'httpstyle' and 'mimestyle' are not implemented.
+Instead, use the 'uri' and 'quotedprintable' encoders.
 wrap::
-  Implements line wrapping.  The forward transform wraps lines at 'length'
-  (default 80) characters unless they're already shorter.  The reverse
-  transforms strips all newlines from the input.  To wrap using CRLF line
-  endings, use this codec in conjunction with the 'crlf' codec.
+  Implements line wrapping.
+  The forward transform wraps lines at 'length' (default 80) characters unless they're already shorter.
+  The reverse transforms strips all newlines from the input.
+  To wrap using CRLF line endings, use this codec in conjunction with the 'crlf' codec.
 +
-Note that unlike most other codecs, using the forward and reverse transforms
-together do not round-trip all data.
+Note that unlike most other codecs, using the forward and reverse transforms together do not round-trip all data.
 xml::
-  Implements encoding of XML special characters.  Note that the reverse transform
-  decodes arbitrary decimal and hexadecimal entities into UTF-8.
+  Implements encoding of XML special characters.
+  Note that the reverse transform decodes arbitrary decimal and hexadecimal entities into UTF-8.
 
 == Examples
 
 * `muter -c -base64:uri`
 +
-Decode the standard input as Base64 and output it, encoding it using URI
-percent-encoding.
+Decode the standard input as Base64 and output it, encoding it using URI percent-encoding.
 * `muter -r -c -uri:base64`
 +
 Exactly the same as the above.
 * `muter -c -hex:hash(sha256):base64 file`
 +
-Read from 'file', which contains a single hex-encoded string, hash the result
-with SHA-256, and encode the result as base64.  This chain could also be written
-as `-hex:hash,sha256:base64`, which may be easier to type.
+Read from 'file', which contains a single hex-encoded string, hash the result with SHA-256, and encode the result as base64.
+This chain could also be written as `-hex:hash,sha256:base64`, which may be easier to type.

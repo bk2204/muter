@@ -104,6 +104,8 @@ The following hash algorithms are supported:
 * sha512
 +
 The 'length' argument may additionally be passed to specify the length in bytes of a BLAKE2 hash.
++
+Note that both MD5 and SHA-1 are completely insecure and should not be used unless it's unavoidable.
 hex::
   Implements hex encoding.
   Takes two options, 'lower' and 'upper', that control which type of letters are used.

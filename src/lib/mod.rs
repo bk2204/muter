@@ -4,6 +4,7 @@
 extern crate blake2;
 extern crate clap;
 extern crate digest;
+extern crate flate2;
 extern crate md5;
 #[cfg(test)]
 #[macro_use]

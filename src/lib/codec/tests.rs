@@ -30,6 +30,52 @@ fn prng(time: bool) -> ChaChaRng {
     ChaChaRng::seed_from_u64(seed)
 }
 
+pub fn matches_pattern<F: Fn(&[u8]) -> bool>(name: &'static str, f: F) {
+    for p in &[true, false] {
+        let mut prng = prng(*p);
+        for i in 0..512 {
+            matches_pattern_with_prng(name, &mut prng, i, &f);
+        }
+    }
+    for i in 0..512 {
+        matches_pattern_with_fill(name, i, &f);
+    }
+    matches_pattern_with_fill(name, 32768, &f);
+    matches_pattern_bytes(name, BYTE_SEQ, "all-bytes", &f);
+}
+
+fn matches_pattern_with_prng<F: Fn(&[u8]) -> bool>(
+    name: &'static str,
+    rng: &mut RngCore,
+    sz: usize,
+    f: F,
+) {
+    let mut v = vec![0u8; sz];
+    rng.fill_bytes(v.as_mut_slice());
+    matches_pattern_bytes(name, &v, "random", f);
+}
+
+fn matches_pattern_with_fill<F: Fn(&[u8]) -> bool>(name: &'static str, sz: usize, f: F) {
+    let v = vec![sz as u8; sz];
+    matches_pattern_bytes(name, &v, "fill", f);
+}
+
+fn matches_pattern_bytes<F: Fn(&[u8]) -> bool>(name: &'static str, inp: &[u8], desc: &str, f: F) {
+    let reg = CodecRegistry::new();
+    for &i in &[64, 65, 66, 67, 512] {
+        let c = Chain::new(&reg, name, i, true);
+        let outp = c.transform(inp.to_vec()).unwrap().to_vec();
+        assert!(
+            f(&outp),
+            "matches pattern {} ({} bytes, {}-byte chunks, {})",
+            name,
+            inp.len(),
+            i,
+            desc
+        );
+    }
+}
+
 pub fn round_trip(name: &'static str) {
     for p in &[true, false] {
         let mut prng = prng(*p);

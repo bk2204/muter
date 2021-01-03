@@ -46,8 +46,16 @@ impl CodecRegistry {
             Box::new(codec::codecs::crlf::TransformFactory::new()),
         );
         map.insert(
+            "deflate",
+            Box::new(codec::codecs::compress::DeflateTransformFactory::new()),
+        );
+        map.insert(
             "form",
             Box::new(codec::codecs::uri::FormTransformFactory::new()),
+        );
+        map.insert(
+            "gzip",
+            Box::new(codec::codecs::compress::GzipTransformFactory::new()),
         );
         map.insert(
             "hash",
@@ -90,6 +98,10 @@ impl CodecRegistry {
         map.insert(
             "xml",
             Box::new(codec::codecs::xml::XMLTransformFactory::new()),
+        );
+        map.insert(
+            "zlib",
+            Box::new(codec::codecs::compress::ZlibTransformFactory::new()),
         );
 
         CodecRegistry { map }

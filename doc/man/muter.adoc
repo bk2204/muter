@@ -63,6 +63,10 @@ It is not valid to specify this flag with transforms that have no inverse.
 'muter' includes several different backends.
 Unless otherwise noted, backends are reversible (that is, they both encode and decode), they round-trip (that is, encoding and decoding produces the same sequence of bytes for all valid values), and all variants of input produced by encoding are accepted when decoding without the need for any options.
 
+Backends that perform compression ('deflate', 'gzip', and 'zlib') are not guaranteed to produce stable output across versions.
+They will produce functionally equivalent output, but the exact sequence of bytes may change.
+However, a single version of muter will produce _deterministic_ output (that is, it will not include timestamps or other system-specific data).
+
 The following backends are included with muter:
 
 ascii85::
@@ -82,6 +86,8 @@ bubblebabble::
 crlf::
   Implements an LF to CRLF conversion.
   CR bytes in the input are passed through unmodified.
+deflate::
+  Implements raw deflate encoding.
 form::
   Implements URI percent encoding, like 'uri', except it encodes space as `+` instead of `%20`, as for use in  'application/x-www-form-urlencoded'.
   This used to be written `uri(form)`, which is no longer allowed.
@@ -109,6 +115,9 @@ The following hash algorithms are supported:
 The 'length' argument may additionally be passed to specify the length in bytes of a BLAKE2 hash.
 +
 Note that both MD5 and SHA-1 are completely insecure and should not be used unless it's unavoidable.
+gzip::
+  Implements the gzip encoding.
+  The encoded value will not contain a file name or timestamp, but such values are accepted (and ignored) when decoding.
 hex::
   Implements hex encoding.
   Takes two options, 'lower' and 'upper', that control which type of letters are used.
@@ -150,6 +159,8 @@ Note that unlike most other codecs, using the forward and reverse transforms tog
 xml::
   Implements encoding of XML special characters.
   Note that the reverse transform decodes arbitrary decimal and hexadecimal entities into UTF-8.
+zlib::
+  Implements the zlib encoding.
 
 == Examples
 

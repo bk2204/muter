@@ -60,6 +60,9 @@ It is not valid to specify this flag with transforms that have no inverse.
 
 == Backends
 
+'muter' includes several different backends.
+Unless otherwise noted, backends are reversible (that is, they both encode and decode), they round-trip (that is, encoding and decoding produces the same sequence of bytes for all valid values), and all variants of input produced by encoding are accepted when decoding without the need for any options.
+
 The following backends are included with muter:
 
 ascii85::

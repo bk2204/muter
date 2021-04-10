@@ -48,6 +48,7 @@ The following transforms are available, many with multiple options:
 * base32hex
 * base64
 * bubblebabble
+* checksum
 * crlf
 * form
 * hash

@@ -86,6 +86,13 @@ base64::
   The options 'pad' (the default) and 'nopad' control whether padding is used.
 bubblebabble::
   Implements the https://web.mit.edu/kenta/www/one/bubblebabble/spec/jrtrjwzi/draft-huima-01.txt[Bubble Babble] binary data encoding.
+checksum::
+  Implements a non-cryptographic hash of the input data.
+  There is no corresponding reverse transform.
++
+The following checksum algorithms are supported:
++
+* adler32
 crlf::
   Implements an LF to CRLF conversion.
   CR bytes in the input are passed through unmodified.

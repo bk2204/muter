@@ -42,6 +42,10 @@ impl CodecRegistry {
             Box::new(codec::codecs::bubblebabble::TransformFactory::new()),
         );
         map.insert(
+            "checksum",
+            Box::new(codec::codecs::checksum::TransformFactory::new()),
+        );
+        map.insert(
             "crlf",
             Box::new(codec::codecs::crlf::TransformFactory::new()),
         );

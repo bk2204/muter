@@ -1,3 +1,5 @@
+#![allow(clippy::upper_case_acronyms)]
+
 pub mod codecs;
 pub mod helpers;
 pub mod registry;

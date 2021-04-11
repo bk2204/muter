@@ -1,6 +1,7 @@
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 #![allow(ellipsis_inclusive_range_patterns)]
+#![allow(clippy::upper_case_acronyms)]
 
 use codec::helpers::codecs::StatelessEncoder;
 use codec::Codec;

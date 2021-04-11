@@ -35,7 +35,7 @@ fn source(values: Vec<&OsStr>, bufsize: usize) -> io::Result<Box<io::BufRead>> {
     }
     let files = values
         .iter()
-        .map(|name| Ok(fs::File::open(name)?))
+        .map(fs::File::open)
         .collect::<Result<Vec<_>, io::Error>>()?;
     Ok(Box::new(io::BufReader::with_capacity(
         bufsize,

@@ -33,6 +33,7 @@ autocfg = "0.1"
 clap = "2.32.0"
 digest = "0.8"
 blake2 = "0.8"
+blake3 = { version = "= 0.3.4", optional = true }
 flate2 = "1.0"
 md-5 = "0.8"
 multi_reader = "0.1"
@@ -43,6 +44,9 @@ rand_core = "0.4"
 rand_chacha = "0.1"
 tr = "0.1"
 gettext-rs = { version = "0.4", features = ["gettext-system"] }
+
+[features]
+modern = ["blake3"]
 
 [dev-dependencies]
 pretty_assertions = "0.5"

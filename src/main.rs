@@ -2,6 +2,8 @@
 #![allow(bare_trait_objects)]
 
 extern crate blake2;
+#[cfg(feature = "modern")]
+extern crate blake3;
 extern crate clap;
 extern crate digest;
 extern crate md5;

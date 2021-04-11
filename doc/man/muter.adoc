@@ -101,6 +101,7 @@ The following hash algorithms are supported:
 +
 * blake2b
 * blake2s
+* blake3
 * md5
 * sha1
 * sha224

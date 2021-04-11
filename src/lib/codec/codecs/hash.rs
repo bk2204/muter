@@ -15,6 +15,7 @@ use md5::Md5;
 use sha1::Sha1;
 use sha2::{Sha224, Sha256, Sha384, Sha512};
 use sha3::{Sha3_224, Sha3_256, Sha3_384, Sha3_512};
+use std::cmp;
 use std::collections::BTreeMap;
 use std::io;
 
@@ -22,6 +23,16 @@ trait Hash {
     fn input(&mut self, data: &[u8]);
     fn result_reset(&mut self) -> Box<[u8]>;
     fn output_size(&self) -> usize;
+    fn chunk_size(&self) -> usize;
+    fn read_final(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
+        let res = self.result_reset();
+        if buf.len() < res.len() {
+            return Err(Error::SmallBuffer);
+        }
+        let len = cmp::min(res.len(), buf.len());
+        buf[0..len].copy_from_slice(&res[0..len]);
+        Ok(len)
+    }
 }
 
 macro_rules! hash_defn {
@@ -36,6 +47,10 @@ macro_rules! hash_defn {
             }
 
             fn output_size(&self) -> usize {
+                DynDigest::output_size(self)
+            }
+
+            fn chunk_size(&self) -> usize {
                 DynDigest::output_size(self)
             }
         }
@@ -67,6 +82,10 @@ impl Hash for VarBlake2b {
     fn output_size(&self) -> usize {
         VariableOutput::output_size(self)
     }
+
+    fn chunk_size(&self) -> usize {
+        VariableOutput::output_size(self)
+    }
 }
 
 impl Hash for VarBlake2s {
@@ -82,6 +101,58 @@ impl Hash for VarBlake2s {
 
     fn output_size(&self) -> usize {
         VariableOutput::output_size(self)
+    }
+
+    fn chunk_size(&self) -> usize {
+        VariableOutput::output_size(self)
+    }
+}
+
+#[cfg(feature = "modern")]
+struct Blake3 {
+    len: usize,
+    hash: blake3::Hasher,
+    reader: Option<blake3::OutputReader>,
+}
+
+#[cfg(feature = "modern")]
+impl Blake3 {
+    fn new(len: usize) -> Blake3 {
+        Blake3 {
+            len,
+            hash: blake3::Hasher::new(),
+            reader: None,
+        }
+    }
+}
+
+#[cfg(feature = "modern")]
+impl Hash for Blake3 {
+    fn input(&mut self, data: &[u8]) {
+        self.hash.update(data);
+    }
+
+    // Not used.
+    fn result_reset(&mut self) -> Box<[u8]> {
+        self.hash.finalize().as_bytes().to_vec().into()
+    }
+
+    fn output_size(&self) -> usize {
+        self.len
+    }
+
+    fn chunk_size(&self) -> usize {
+        32
+    }
+
+    fn read_final(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
+        let mut rdr = self
+            .reader
+            .take()
+            .unwrap_or_else(|| self.hash.finalize_xof());
+        rdr.fill(buf);
+        self.reader = Some(rdr);
+        Ok(buf.len())
     }
 }
 
@@ -108,6 +179,11 @@ impl TransformFactory {
             ("blake2s", _) => {
                 let len = length.unwrap_or(32);
                 Ok(Box::new(Self::mapped_error(VarBlake2s::new(len), len)?))
+            }
+            #[cfg(feature = "modern")]
+            ("blake3", _) => {
+                let len = length.unwrap_or(32);
+                Ok(Box::new(Blake3::new(len)))
             }
             (_, Some(val)) => Err(Error::InvalidArgument(
                 "length".to_string(),
@@ -169,9 +245,11 @@ impl CodecTransform for TransformFactory {
         map.insert("sha3-512".to_string(), tr!("use SHA3-512 as the hash"));
         map.insert("blake2b".to_string(), tr!("use BLAKE2b as the hash"));
         map.insert("blake2s".to_string(), tr!("use BLAKE2s as the hash"));
+        #[cfg(feature = "modern")]
+        map.insert("blake3".to_string(), tr!("use BLAKE3 as the hash"));
         map.insert(
             "length".to_string(),
-            tr!("specify the digest length in bytes for BLAKE2b and BLAKE2s"),
+            tr!("specify the digest length in bytes for BLAKE2b, BLAKE2s, and BLAKE3"),
         );
         map
     }
@@ -187,6 +265,7 @@ impl CodecTransform for TransformFactory {
 
 pub struct Encoder {
     digest: Box<Hash>,
+    left: usize,
     done: bool,
 }
 
@@ -199,13 +278,19 @@ impl Codec for Encoder {
         match f {
             FlushState::None => Ok(Status::Ok(inp.len(), 0)),
             FlushState::Finish => {
-                let digestlen = self.digest.output_size();
+                let digestlen = self.digest.chunk_size();
                 if outp.len() < digestlen {
                     Ok(Status::BufError(inp.len(), 0))
                 } else {
-                    outp[0..digestlen].copy_from_slice(&self.digest.result_reset());
-                    self.done = true;
-                    Ok(Status::StreamEnd(inp.len(), digestlen))
+                    let to_read = cmp::min(self.left, digestlen);
+                    let read = self.digest.read_final(&mut outp[0..to_read])?;
+                    self.left -= read;
+                    if self.left == 0 {
+                        self.done = true;
+                        Ok(Status::StreamEnd(inp.len(), digestlen))
+                    } else {
+                        Ok(Status::Ok(inp.len(), read))
+                    }
                 }
             }
         }
@@ -216,14 +301,16 @@ impl Codec for Encoder {
     }
 
     fn buffer_size(&self) -> usize {
-        self.digest.output_size()
+        self.digest.chunk_size()
     }
 }
 
 impl Encoder {
     fn new(digest: Box<Hash>) -> Self {
+        let len = digest.output_size();
         Encoder {
             digest,
+            left: len,
             done: false,
         }
     }
@@ -239,6 +326,7 @@ mod tests {
         let reg = CodecRegistry::new();
         let codec = format!("hash({}):hex", algo);
         let dlen = outp.len() / 2;
+        eprintln!("algo = {}", algo);
         for i in vec![dlen, dlen + 1, dlen + 2, dlen + 3, 512] {
             let c = Chain::new(&reg, &codec, i, true);
             assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
@@ -349,6 +437,22 @@ mod tests {
                 b"508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982",
                 b"fa10ab775acf89b7d3c8a6e823d586f6b67bdbac4ce207fe145b7d3ac25cd28c",
                 b"c19280e2aa8a82a3c717b2f9ecbebfb1d559f8896d9916d1b955ce849ff40aa2"
+            ),
+            #[cfg(feature = "modern")]
+            (
+                "blake3",
+                b"af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+                b"6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85",
+                b"7bc2a2eeb95ddbf9b7ecf6adcb76b453091c58dc43955e1d9482b1942f08d19b",
+                b"dcfd319b4c791c48a334a3e499dfd8ea5a6de7a84f21a4bdbac7242e4ea84a54"
+            ),
+            #[cfg(feature = "modern")]
+            (
+                "blake3,length=128",
+                b"af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262e00f03e7b69af26b7faaf09fcd333050338ddfe085b8cc869ca98b206c08243a26f5487789e8f660afe6c99ef9e0c52b92e7393024a80459cf91f476f9ffdbda7001c22e159b402631f277ca96f2defdf1078282314e763699a31c5363165421",
+                b"6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d851fb250ae7393f5d02813b65d521a0d492d9ba09cf7ce7f4cffd900f23374bf0bc08a1fb0b38ed276181ccbd9f7b7edbddf9f86404ad7929605f6ffa3fb1ac87983105f013384f2f11d38879c985d47003804b905f0c38975e28d36804bb60d8c",
+                b"7bc2a2eeb95ddbf9b7ecf6adcb76b453091c58dc43955e1d9482b1942f08d19b0447a7a2deca621550350063fafd727f660f108bb992d0905f0f35b966d84ff3669be674e036b21539b97a1f91a43682f8da33fdf4a8b44694b4244cff0f82967eed813428408f1c8362a5c7bedf3e750b37e87cbef6daa3bdb911cfa60e8eae",
+                b"dcfd319b4c791c48a334a3e499dfd8ea5a6de7a84f21a4bdbac7242e4ea84a54c16d1cb63fe618909630408f1a39b87fe8639fcf4943d66b6b9f9d35650455edae03cbe953481c004195392933e88ee8ab7e0c1eba6eab77776eeefe378501e26451435b81e5171e2c980244530be30c577772a7c70b5198e26f2d6374443681"
             ),
         ];
         for &(algo, empty, abc, md, lotsa) in items {

@@ -13,8 +13,15 @@ else
 PLATFORM_ARG :=
 endif
 
+FEATURES ?=
+ifneq ($(FEATURES),)
+FEATURE_ARG := --features $(FEATURES)
+else
+FEATURE_ARG :=
+endif
+
 all:
-	cargo build --release
+	cargo build --release $(FEATURE_ARG)
 
 clean:
 	cargo clean
@@ -29,7 +36,7 @@ clean:
 	$(RM) -fr doc/man/*.1
 
 test:
-	cargo test
+	cargo test $(FEATURE_ARG)
 
 doc: doc/man/muter.1
 
@@ -95,7 +102,7 @@ clippy:
 	@# We exclude these lints here instead of in the file because Rust 1.24
 	@# doesn't support excluding clippy warnings.  Similarly, it doesn't support
 	@# the syntax these lints suggest.
-	cargo clippy -- \
+	cargo clippy $(FEATURE_ARG) -- \
 		-A clippy::range-plus-one -A clippy::needless-lifetimes -A clippy::unknown-clippy-lints \
 		-D warnings
 

@@ -50,7 +50,9 @@ The following transforms are available, many with multiple options:
 * bubblebabble
 * checksum
 * crlf
+* deflate
 * form
+* gzip
 * hash
 * hex
 * identity
@@ -63,6 +65,7 @@ The following transforms are available, many with multiple options:
 * vis
 * wrap
 * xml
+* zlib
 
 For a full description of the transforms that are available, see link:doc/man/muter.adoc[the manual page].
 

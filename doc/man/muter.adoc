@@ -77,8 +77,10 @@ base16::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base16 encoding.
 base32::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32 encoding.
+  The options 'pad' (the default) and 'nopad' control whether padding is used.
 base32hex::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32 with Extended Hex Alphabet encoding, better known as 'base32hex'.
+  The options 'pad' (the default) and 'nopad' control whether padding is used.
 base64::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 encoding.
   The options 'pad' (the default) and 'nopad' control whether padding is used.

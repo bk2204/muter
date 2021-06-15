@@ -87,39 +87,47 @@ impl Base32TransformFactory {
         reverse: &'static [i8; 256],
         r: Box<io::BufRead>,
         s: CodecSettings,
-    ) -> Box<io::BufRead> {
-        match s.dir {
+    ) -> Result<Box<io::BufRead>, Error> {
+        let pad = match (s.bool_arg("pad")?, s.bool_arg("nopad")?) {
+            (true, true) => {
+                return Err(Error::IncompatibleParameters("pad".into(), "nopad".into()))
+            }
+            (_, false) => Some(b'='),
+            (false, true) => None,
+        };
+        let codec = match s.dir {
             Direction::Forward => PaddedEncoder::new(
                 StatelessEncoder::new(move |inp, out| forward_transform(inp, out, forward), 8),
                 5,
                 8,
-                Some(b'='),
+                pad,
             )
             .into_bufread(r, s.bufsize),
             Direction::Reverse => PaddedDecoder::new(
                 ChunkedDecoder::new(s.strict, name, 8, 5, reverse),
                 8,
                 5,
-                Some(b'='),
+                pad,
             )
             .into_bufread(r, s.bufsize),
-        }
+        };
+        Ok(codec)
     }
 }
 
 impl CodecTransform for Base32TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        Ok(Base32TransformFactory::factory_for(
-            self.name(),
-            &BASE32,
-            &REV,
-            r,
-            s,
-        ))
+        Base32TransformFactory::factory_for(self.name(), &BASE32, &REV, r, s)
     }
 
     fn options(&self) -> BTreeMap<String, String> {
-        BTreeMap::new()
+        let mut map = BTreeMap::new();
+        map.insert("pad".to_string(), tr!("pad incomplete sequences with ="));
+        map.insert(
+            "nopad".to_string(),
+            tr!("do not pad incomplete sequences with ="),
+        );
+        map
     }
 
     fn can_reverse(&self) -> bool {
@@ -139,17 +147,17 @@ impl Base32HexTransformFactory {
 
 impl CodecTransform for Base32HexTransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        Ok(Base32TransformFactory::factory_for(
-            self.name(),
-            &BASE32HEX,
-            &REVHEX,
-            r,
-            s,
-        ))
+        Base32TransformFactory::factory_for(self.name(), &BASE32HEX, &REVHEX, r, s)
     }
 
     fn options(&self) -> BTreeMap<String, String> {
-        BTreeMap::new()
+        let mut map = BTreeMap::new();
+        map.insert("pad".to_string(), tr!("pad incomplete sequences with ="));
+        map.insert(
+            "nopad".to_string(),
+            tr!("do not pad incomplete sequences with ="),
+        );
+        map
     }
 
     fn can_reverse(&self) -> bool {
@@ -192,6 +200,20 @@ mod tests {
         check("base32", b"foob", b"MZXW6YQ=");
         check("base32", b"fooba", b"MZXW6YTB");
         check("base32", b"foobar", b"MZXW6YTBOI======");
+        check("base32,pad", b"", b"");
+        check("base32,pad", b"f", b"MY======");
+        check("base32,pad", b"fo", b"MZXQ====");
+        check("base32,pad", b"foo", b"MZXW6===");
+        check("base32,pad", b"foob", b"MZXW6YQ=");
+        check("base32,pad", b"fooba", b"MZXW6YTB");
+        check("base32,pad", b"foobar", b"MZXW6YTBOI======");
+        check("base32,nopad", b"", b"");
+        check("base32,nopad", b"f", b"MY");
+        check("base32,nopad", b"fo", b"MZXQ");
+        check("base32,nopad", b"foo", b"MZXW6");
+        check("base32,nopad", b"foob", b"MZXW6YQ");
+        check("base32,nopad", b"fooba", b"MZXW6YTB");
+        check("base32,nopad", b"foobar", b"MZXW6YTBOI");
     }
 
     #[test]
@@ -203,6 +225,20 @@ mod tests {
         check("base32hex", b"foob", b"CPNMUOG=");
         check("base32hex", b"fooba", b"CPNMUOJ1");
         check("base32hex", b"foobar", b"CPNMUOJ1E8======");
+        check("base32hex,pad", b"", b"");
+        check("base32hex,pad", b"f", b"CO======");
+        check("base32hex,pad", b"fo", b"CPNG====");
+        check("base32hex,pad", b"foo", b"CPNMU===");
+        check("base32hex,pad", b"foob", b"CPNMUOG=");
+        check("base32hex,pad", b"fooba", b"CPNMUOJ1");
+        check("base32hex,pad", b"foobar", b"CPNMUOJ1E8======");
+        check("base32hex,nopad", b"", b"");
+        check("base32hex,nopad", b"f", b"CO");
+        check("base32hex,nopad", b"fo", b"CPNG");
+        check("base32hex,nopad", b"foo", b"CPNMU");
+        check("base32hex,nopad", b"foob", b"CPNMUOG");
+        check("base32hex,nopad", b"fooba", b"CPNMUOJ1");
+        check("base32hex,nopad", b"foobar", b"CPNMUOJ1E8");
     }
 
     #[test]

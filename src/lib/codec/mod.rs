@@ -196,7 +196,12 @@ impl CodecSettings {
 }
 
 pub trait Codec {
-    fn transform(&mut self, &[u8], &mut [u8], FlushState) -> Result<Status, Error>;
+    fn transform(
+        &mut self,
+        input: &[u8],
+        output: &mut [u8],
+        flush: FlushState,
+    ) -> Result<Status, Error>;
     fn chunk_size(&self) -> usize;
     fn buffer_size(&self) -> usize;
 }

@@ -1,3 +1,14 @@
+muter (0.6.0-1) UNRELEASED; urgency=medium
+
+  * Implement several deflate-based codecs: deflate, gzip, and zlib.
+  * Add support for blake3 in the hash codec when built with the feature
+    "modern" and a suitably new version of Rust.
+  * Add support for two non-cryptographic checksums (adler32 and fletcher16) in
+    the codec "checksum".
+  * Fix a panic on invalid data in the vis decoder.
+
+ -- brian m. carlson <sandals@crustytoothpaste.net>  Tue, 15 Jun 2021 00:00:00 -0000
+
 muter (0.5.0-1) UNRELEASED; urgency=medium
 
   * Initial Debian package release.

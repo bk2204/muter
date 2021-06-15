@@ -81,6 +81,7 @@ base32hex::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base32 with Extended Hex Alphabet encoding, better known as 'base32hex'.
 base64::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 encoding.
+  The options 'pad' (the default) and 'nopad' control whether padding is used.
 bubblebabble::
   Implements the https://web.mit.edu/kenta/www/one/bubblebabble/spec/jrtrjwzi/draft-huima-01.txt[Bubble Babble] binary data encoding.
 crlf::
@@ -139,6 +140,7 @@ uri::
 Takes two possible options.  'lower' and 'upper' control the type of hex character emitted.
 url64::
   Implements the https://tools.ietf.org/html/rfc4648[RFC 4648] Base64 Encoding with URL and Filename Safe Alphabet.
+  The options 'pad' and 'nopad' (the default) control whether padding is used.
 uuencode::
   Implements UUencoding.
   Note that the "begin" and "end" markers are not emitted.

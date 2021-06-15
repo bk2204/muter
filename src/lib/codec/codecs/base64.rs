@@ -87,26 +87,39 @@ impl Base64TransformFactory {
 
 impl CodecTransform for Base64TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+        let pad = match (s.bool_arg("pad")?, s.bool_arg("nopad")?) {
+            (true, true) => {
+                return Err(Error::IncompatibleParameters("pad".into(), "nopad".into()))
+            }
+            (_, false) => Some(b'='),
+            (false, true) => None,
+        };
         match s.dir {
             Direction::Forward => Ok(PaddedEncoder::new(
                 StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &BASE64), 4),
                 3,
                 4,
-                Some(b'='),
+                pad,
             )
             .into_bufread(r, s.bufsize)),
             Direction::Reverse => Ok(PaddedDecoder::new(
                 ChunkedDecoder::new(s.strict, "base64", 4, 3, &REV),
                 4,
                 3,
-                Some(b'='),
+                pad,
             )
             .into_bufread(r, s.bufsize)),
         }
     }
 
     fn options(&self) -> BTreeMap<String, String> {
-        BTreeMap::new()
+        let mut map = BTreeMap::new();
+        map.insert("pad".to_string(), tr!("pad incomplete sequences with ="));
+        map.insert(
+            "nopad".to_string(),
+            tr!("do not pad incomplete sequences with ="),
+        );
+        map
     }
 
     fn can_reverse(&self) -> bool {
@@ -129,26 +142,39 @@ impl URL64TransformFactory {
 
 impl CodecTransform for URL64TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
+        let pad = match (s.bool_arg("pad")?, s.bool_arg("nopad")?) {
+            (true, true) => {
+                return Err(Error::IncompatibleParameters("pad".into(), "nopad".into()))
+            }
+            (false, _) => None,
+            (true, false) => Some(b'='),
+        };
         match s.dir {
             Direction::Forward => Ok(PaddedEncoder::new(
                 StatelessEncoder::new(move |inp, out| forward_transform(inp, out, &URL64), 4),
                 3,
                 4,
-                None,
+                pad,
             )
             .into_bufread(r, s.bufsize)),
             Direction::Reverse => Ok(PaddedDecoder::new(
                 ChunkedDecoder::new(s.strict, "url64", 4, 3, &URLREV),
                 4,
                 3,
-                None,
+                pad,
             )
             .into_bufread(r, s.bufsize)),
         }
     }
 
     fn options(&self) -> BTreeMap<String, String> {
-        BTreeMap::new()
+        let mut map = BTreeMap::new();
+        map.insert("pad".to_string(), tr!("pad incomplete sequences with ="));
+        map.insert(
+            "nopad".to_string(),
+            tr!("do not pad incomplete sequences with ="),
+        );
+        map
     }
 
     fn can_reverse(&self) -> bool {
@@ -188,6 +214,20 @@ mod tests {
         check("base64", b"foob", b"Zm9vYg==");
         check("base64", b"fooba", b"Zm9vYmE=");
         check("base64", b"foobar", b"Zm9vYmFy");
+        check("base64,pad", b"", b"");
+        check("base64,pad", b"f", b"Zg==");
+        check("base64,pad", b"fo", b"Zm8=");
+        check("base64,pad", b"foo", b"Zm9v");
+        check("base64,pad", b"foob", b"Zm9vYg==");
+        check("base64,pad", b"fooba", b"Zm9vYmE=");
+        check("base64,pad", b"foobar", b"Zm9vYmFy");
+        check("base64,nopad", b"", b"");
+        check("base64,nopad", b"f", b"Zg");
+        check("base64,nopad", b"fo", b"Zm8");
+        check("base64,nopad", b"foo", b"Zm9v");
+        check("base64,nopad", b"foob", b"Zm9vYg");
+        check("base64,nopad", b"fooba", b"Zm9vYmE");
+        check("base64,nopad", b"foobar", b"Zm9vYmFy");
     }
 
     #[test]
@@ -199,6 +239,20 @@ mod tests {
         check("url64", b"foob", b"Zm9vYg");
         check("url64", b"fooba", b"Zm9vYmE");
         check("url64", b"foobar", b"Zm9vYmFy");
+        check("url64,pad", b"", b"");
+        check("url64,pad", b"f", b"Zg==");
+        check("url64,pad", b"fo", b"Zm8=");
+        check("url64,pad", b"foo", b"Zm9v");
+        check("url64,pad", b"foob", b"Zm9vYg==");
+        check("url64,pad", b"fooba", b"Zm9vYmE=");
+        check("url64,pad", b"foobar", b"Zm9vYmFy");
+        check("url64,nopad", b"", b"");
+        check("url64,nopad", b"f", b"Zg");
+        check("url64,nopad", b"fo", b"Zm8");
+        check("url64,nopad", b"foo", b"Zm9v");
+        check("url64,nopad", b"foob", b"Zm9vYg");
+        check("url64,nopad", b"fooba", b"Zm9vYmE");
+        check("url64,nopad", b"foobar", b"Zm9vYmFy");
     }
 
     #[test]

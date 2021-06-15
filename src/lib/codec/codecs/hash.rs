@@ -228,7 +228,7 @@ impl CodecTransform for TransformFactory {
                 ));
             }
         };
-        Ok(Encoder::new(Self::digest(&args[0], length)?).into_bufread(r, s.bufsize))
+        Ok(Encoder::new(Self::digest(args[0], length)?).into_bufread(r, s.bufsize))
     }
 
     fn options(&self) -> BTreeMap<String, String> {

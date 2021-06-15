@@ -55,6 +55,43 @@ impl Hash for Adler32 {
     }
 }
 
+struct Fletcher16 {
+    a: u8,
+    b: u8,
+}
+
+impl Fletcher16 {
+    fn new() -> Fletcher16 {
+        Fletcher16 { a: 0, b: 0 }
+    }
+}
+
+impl Hash for Fletcher16 {
+    fn input(&mut self, data: &[u8]) {
+        let (a, b) = data.chunks(4096).fold((self.a, self.b), |(a, b), chunk| {
+            let (x, y) = chunk
+                .iter()
+                .fold((a as u32, b as u32), |(mut a, mut b), &x| {
+                    a += x as u32;
+                    b += a;
+                    (a, b)
+                });
+            ((x % 255) as u8, (y % 255) as u8)
+        });
+        self.a = a;
+        self.b = b;
+    }
+
+    fn result_reset(&mut self) -> Box<[u8]> {
+        let x: u16 = (self.b as u16) << 8 | self.a as u16;
+        x.to_be_bytes().to_vec().into_boxed_slice()
+    }
+
+    fn output_size(&self) -> usize {
+        2
+    }
+}
+
 #[derive(Default)]
 pub struct TransformFactory {}
 
@@ -68,6 +105,7 @@ impl TransformFactory {
     fn digest(name: &str, length: Option<usize>) -> Result<Box<Hash>, Error> {
         match (name, length) {
             ("adler32", _) => Ok(Box::new(Adler32::new())),
+            ("fletcher16", _) => Ok(Box::new(Fletcher16::new())),
             _ => Err(Error::UnknownArgument(name.to_string())),
         }
     }
@@ -103,6 +141,10 @@ impl CodecTransform for TransformFactory {
     fn options(&self) -> BTreeMap<String, String> {
         let mut map = BTreeMap::new();
         map.insert("adler32".to_string(), tr!("use Adler32 as the checksum"));
+        map.insert(
+            "fletcher16".to_string(),
+            tr!("use Fletcher16 as the checksum"),
+        );
         map
     }
 
@@ -195,6 +237,15 @@ mod tests {
             b"12345678901234567890123456789012345678901234567890123456789012345678901234567890",
             b"97b61069",
         );
+    }
+
+    #[test]
+    fn fletcher16() {
+        // Test vectors from Wikipedia.
+        check("fletcher16", b"", b"0000");
+        check("fletcher16", b"abcde", b"c8f0");
+        check("fletcher16", b"abcdef", b"2057");
+        check("fletcher16", b"abcdefgh", b"0627");
     }
 
     #[test]

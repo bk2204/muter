@@ -531,10 +531,14 @@ impl Decoder {
                     (Some((_, &c)), _) if c >= b'0' && c <= b'7' => {
                         iter.next();
                         match iter.next() {
-                            Some((j, &c2)) => {
+                            Some((j, &c2)) if c2 >= b'0' && c2 <= b'7' => {
                                 dst[0] = ((c - b'0') << 3) | (c2 - b'0');
                                 Ok(Status::Ok(j + 1, 1))
                             }
+                            Some((_, &c2)) => Err(Error::InvalidSequence(
+                                "vis".to_string(),
+                                vec![b'\\', b'0', c, c2],
+                            )),
                             None => Ok(moredata),
                         }
                     }
@@ -703,6 +707,8 @@ mod tests {
         check_failure!(b"abc\\M-", Error::TruncatedData);
         check_failure!(b"abc\\M^", Error::TruncatedData);
         check_failure!(b"abc\\Mx", Error::InvalidSequence(_, _));
+        check_failure!(b"abc\\00!", Error::InvalidSequence(_, _));
+        check_failure!(b"abc\\00a", Error::InvalidSequence(_, _));
     }
 
     #[test]

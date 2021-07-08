@@ -6,6 +6,7 @@ muter (0.6.0-1) UNRELEASED; urgency=medium
   * Add support for two non-cryptographic checksums (adler32 and fletcher16) in
     the codec "checksum".
   * Fix a panic on invalid data in the vis decoder.
+  * Increase the buffer size to 64 KiB.
 
  -- brian m. carlson <sandals@crustytoothpaste.net>  Tue, 15 Jun 2021 00:00:00 -0000
 

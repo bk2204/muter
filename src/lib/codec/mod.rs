@@ -14,7 +14,7 @@ use std::io;
 use std::io::prelude::*;
 use std::ops;
 
-pub const DEFAULT_BUFFER_SIZE: usize = 8192;
+pub const DEFAULT_BUFFER_SIZE: usize = 65536;
 
 #[derive(Debug)]
 pub enum Error {

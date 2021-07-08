@@ -37,7 +37,7 @@ A strict decoding option may be provided in the future for improved robustness.
 
 --buffer-size=<size>::
   Specify the buffer size (in bytes) for processing data.
-  The default is 8192.
+  The default is 65536.
   If this value is set too low for a given codec to make forward progress, an error will be given.
   Currently, no codec _requires_ a buffer size greater than 64 bytes, although using such a small buffer will negatively impact performance.
 +

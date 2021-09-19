@@ -11,6 +11,7 @@ pub mod hex;
 pub mod identity;
 pub mod lf;
 pub mod quotedprintable;
+pub mod swab;
 #[cfg(test)]
 mod tests;
 pub mod uri;

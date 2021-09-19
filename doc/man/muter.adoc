@@ -143,6 +143,10 @@ modhex::
   Implements the https://developers.yubico.com/yubico-c/Manuals/modhex.1.html[Yubico modhex alphabet].
 quotedprintable::
   Implements quoted-printable MIME encoding.
+swab::
+  Swaps the endianness of bytes in the chunk size specified by the 'length' option.
+  The value given must be positive but need not be a power of two.
+  There is no corresponding reverse transform; the forward transform is its own inverse.
 uri::
   Implements URI percent encoding.
 +

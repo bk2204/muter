@@ -76,6 +76,10 @@ impl CodecRegistry {
             Box::new(codec::codecs::hex::ModHexTransformFactory::new()),
         );
         map.insert(
+            "swab",
+            Box::new(codec::codecs::swab::TransformFactory::new()),
+        );
+        map.insert(
             "quotedprintable",
             Box::new(codec::codecs::quotedprintable::TransformFactory::new()),
         );

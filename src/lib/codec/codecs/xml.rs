@@ -128,7 +128,7 @@ macro_rules! unpack {
         match $val {
             Ok(x) => x,
             Err(_) => return $err,
-        };
+        }
     };
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "muter"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["brian m. carlson <sandals@crustytoothpaste.net>"]
 license = "MIT"
 repository = "https://github.com/bk2204/muter"

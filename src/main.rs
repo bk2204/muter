@@ -31,9 +31,31 @@ use clap::{App, Arg, ArgMatches};
 
 const BUFFER_SIZE: usize = codec::DEFAULT_BUFFER_SIZE;
 
+#[cfg(windows)]
+fn stdin() -> impl io::Read {
+    use std::os::windows::io::{AsRawHandle, FromRawHandle};
+    unsafe { fs::File::from_raw_handle(io::stdin().as_raw_handle()) }
+}
+
+#[cfg(unix)]
+fn stdin() -> impl io::Read {
+    io::stdin()
+}
+
+#[cfg(windows)]
+fn stdout() -> impl io::Write {
+    use std::os::windows::io::{AsRawHandle, FromRawHandle};
+    unsafe { fs::File::from_raw_handle(io::stdout().as_raw_handle()) }
+}
+
+#[cfg(unix)]
+fn stdout() -> impl io::Write {
+    io::stdout()
+}
+
 fn source(values: Vec<&OsStr>, bufsize: usize) -> io::Result<Box<io::BufRead>> {
     if values.is_empty() {
-        return Ok(Box::new(io::BufReader::with_capacity(bufsize, io::stdin())));
+        return Ok(Box::new(io::BufReader::with_capacity(bufsize, stdin())));
     }
     let files = values
         .iter()
@@ -74,7 +96,7 @@ fn create_chain(reg: &CodecRegistry, m: ArgMatches) -> io::Result<Box<io::BufRea
 
 fn process(reg: &CodecRegistry, m: ArgMatches) -> io::Result<()> {
     let mut transform = create_chain(reg, m)?;
-    std::io::copy(&mut transform, &mut io::stdout())?;
+    std::io::copy(&mut transform, &mut stdout())?;
     Ok(())
 }
 

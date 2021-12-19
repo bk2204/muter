@@ -86,21 +86,27 @@ pub fn round_trip(name: &'static str) {
         round_trip_with_fill(name, i);
     }
     round_trip_with_fill(name, 32768);
-    round_trip_bytes(name, BYTE_SEQ, "all-bytes");
+    round_trip_bytes(name, BYTE_SEQ, "all-bytes", None);
+}
+
+pub fn round_trip_stripped_whitespace(name: &'static str) {
+    round_trip_bytes(name, BYTE_SEQ, "all-bytes", Some(b" \r\n"));
+    round_trip_bytes(name, BYTE_SEQ, "all-bytes", Some(b"\r\n"));
+    round_trip_bytes(name, BYTE_SEQ, "all-bytes", Some(b"\n"));
 }
 
 fn round_trip_with_prng(name: &'static str, rng: &mut RngCore, sz: usize) {
     let mut v = vec![0u8; sz];
     rng.fill_bytes(v.as_mut_slice());
-    round_trip_bytes(name, &v, "random");
+    round_trip_bytes(name, &v, "random", None);
 }
 
 fn round_trip_with_fill(name: &'static str, sz: usize) {
     let v = vec![sz as u8; sz];
-    round_trip_bytes(name, &v, "fill");
+    round_trip_bytes(name, &v, "fill", None);
 }
 
-fn round_trip_bytes(name: &'static str, inp: &[u8], desc: &str) {
+fn round_trip_bytes(name: &'static str, inp: &[u8], desc: &str, trailing: Option<&[u8]>) {
     let reg = CodecRegistry::new();
     for &i in &[64, 65, 66, 67, 512] {
         let c = Chain::new(&reg, name, i, true);
@@ -109,21 +115,26 @@ fn round_trip_bytes(name: &'static str, inp: &[u8], desc: &str) {
         assert_eq!(
             c.reverse().transform(outp.to_vec()).unwrap(),
             inp,
-            "round-trip {} ({} bytes, {}-byte chunks, {})",
-            name,
-            inp.len(),
-            i,
-            desc
-        );
-        let c = Chain::new(&reg, name, i, false);
-        assert_eq!(
-            c.reverse().transform(outp.to_vec()).unwrap(),
-            inp,
             "round-trip {} ({} bytes, {}-byte chunks, {}, strict)",
             name,
             inp.len(),
             i,
             desc
+        );
+        let mut v = outp.to_vec();
+        if let Some(suffix) = trailing {
+            v.extend(suffix);
+        }
+        let c = Chain::new(&reg, name, i, false);
+        assert_eq!(
+            c.reverse().transform(v).unwrap(),
+            inp,
+            "round-trip {} ({} bytes, {}-byte chunks, {}, non-strict, whitespace: {:?})",
+            name,
+            inp.len(),
+            i,
+            desc,
+            trailing
         );
     }
 }

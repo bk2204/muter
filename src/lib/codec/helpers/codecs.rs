@@ -376,6 +376,72 @@ impl<T: Codec> Codec for AffixEncoder<T> {
     }
 }
 
+/// A trait to help implement non-strict decoding.
+///
+/// In some codecs, like the `hex` codec, every byte is encoded.  In non-strict mode, we'd want to
+/// ignore characters which are not in the encoded alphabet, such as carriage returns, line feeds,
+/// and other whitespace.  This trait implementa
+pub trait FilteredDecoder {
+    /// Returns true if the decoder is in strict mode.
+    fn strict(&self) -> bool;
+    /// Returns true if the byte is valid in this encoding and false otherwise.
+    fn filter_byte(&self, b: u8) -> bool;
+    fn filter_sequence(&self, src: &[u8]) -> (Vec<u8>, Vec<usize>) {
+        // This Vec maps total filtered input bytes processed to total unfiltered input bytes
+        // processed.  Thus, the word "offset" is not the index of the byte in the Vec.
+        let mut offsets = Vec::with_capacity(src.len());
+        offsets.push(0);
+        src.iter()
+            .enumerate()
+            .filter(|(_i, &b)| self.filter_byte(b))
+            .fold(
+                (Vec::with_capacity(src.len()), offsets),
+                |(mut dest, mut offsets), (i, &b)| {
+                    dest.push(b);
+                    offsets.push(i + 1);
+                    (dest, offsets)
+                },
+            )
+    }
+    fn fix_offsets(&self, offsets: &[usize], res: Result<Status, Error>) -> Result<Status, Error> {
+        match res {
+            Ok(Status::Ok(a, b)) => Ok(Status::Ok(offsets[a], b)),
+            Ok(Status::SeqError(a, b)) => Ok(Status::SeqError(offsets[a], b)),
+            Ok(Status::BufError(a, b)) => Ok(Status::BufError(offsets[a], b)),
+            Ok(Status::StreamEnd(a, b)) => Ok(Status::StreamEnd(offsets[a], b)),
+            Err(e) => Err(e),
+        }
+    }
+    /// The main transform.
+    ///
+    /// This function should process data as if it were operating completely in strict mode.  The
+    /// behavior is the same as `Codec::transform`.
+    fn internal_transform(
+        &mut self,
+        input: &[u8],
+        output: &mut [u8],
+        flush: FlushState,
+    ) -> Result<Status, Error>;
+    /// The main implementation of the `FilteredDecoder`.
+    ///
+    /// This function should be called from `Codec::transform` and performs the filtering in
+    /// non-strict mode.
+    fn wrap_transform(
+        &mut self,
+        input: &[u8],
+        output: &mut [u8],
+        flush: FlushState,
+    ) -> Result<Status, Error> {
+        if self.strict() {
+            return self.internal_transform(input, output, flush);
+        }
+        let (buf, offsets) = self.filter_sequence(input);
+        let res = self.internal_transform(&buf, output, flush);
+        self.fix_offsets(&offsets, res)
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::{AffixEncoder, PaddedDecoder, PaddedEncoder, StatelessEncoder};

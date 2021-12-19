@@ -182,8 +182,20 @@ impl<T: Codec> PaddedDecoder<T> {
     }
 }
 
-impl<T: Codec> Codec for PaddedDecoder<T> {
-    fn transform(
+impl<T: Codec + FilteredDecoder> FilteredDecoder for PaddedDecoder<T> {
+    fn strict(&self) -> bool {
+        self.codec.strict()
+    }
+
+    fn filter_byte(&self, b: u8) -> bool {
+        if let Some(pad) = self.pad {
+            b == pad || self.codec.filter_byte(b)
+        } else {
+            self.codec.filter_byte(b)
+        }
+    }
+
+    fn internal_transform(
         &mut self,
         src: &[u8],
         dst: &mut [u8],
@@ -213,6 +225,17 @@ impl<T: Codec> Codec for PaddedDecoder<T> {
         };
 
         Ok(Status::Ok(a, b - trimbytes))
+    }
+}
+
+impl<T: Codec + FilteredDecoder> Codec for PaddedDecoder<T> {
+    fn transform(
+        &mut self,
+        src: &[u8],
+        dst: &mut [u8],
+        flush: FlushState,
+    ) -> Result<Status, Error> {
+        self.wrap_transform(src, dst, flush)
     }
 
     fn chunk_size(&self) -> usize {
@@ -273,8 +296,21 @@ impl ChunkedDecoder {
     }
 }
 
-impl Codec for ChunkedDecoder {
-    fn transform(&mut self, inp: &[u8], outp: &mut [u8], f: FlushState) -> Result<Status, Error> {
+impl FilteredDecoder for ChunkedDecoder {
+    fn strict(&self) -> bool {
+        self.strict
+    }
+
+    fn filter_byte(&self, b: u8) -> bool {
+        self.table[b as usize] != -1
+    }
+
+    fn internal_transform(
+        &mut self,
+        inp: &[u8],
+        outp: &mut [u8],
+        f: FlushState,
+    ) -> Result<Status, Error> {
         let (is, os) = (self.inpsize, self.outsize);
         let n = cmp::min(inp.len() / is, outp.len() / os);
         for (i, j) in (0..n).map(|x| (x * is, x * os)) {
@@ -289,6 +325,12 @@ impl Codec for ChunkedDecoder {
             }
             _ => Ok(Status::Ok(n * is, n * os)),
         }
+    }
+}
+
+impl Codec for ChunkedDecoder {
+    fn transform(&mut self, inp: &[u8], outp: &mut [u8], f: FlushState) -> Result<Status, Error> {
+        self.wrap_transform(inp, outp, f)
     }
 
     fn chunk_size(&self) -> usize {
@@ -440,7 +482,6 @@ pub trait FilteredDecoder {
         self.fix_offsets(&offsets, res)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

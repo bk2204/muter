@@ -258,6 +258,7 @@ mod tests {
     #[test]
     fn default_tests_base64() {
         tests::round_trip("base64");
+        tests::round_trip_stripped_whitespace("base64");
         tests::basic_configuration("base64");
         tests::invalid_data("base64");
     }
@@ -265,6 +266,7 @@ mod tests {
     #[test]
     fn default_tests_url64() {
         tests::round_trip("url64");
+        tests::round_trip_stripped_whitespace("url64");
         tests::basic_configuration("url64");
         tests::invalid_data("url64");
     }

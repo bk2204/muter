@@ -244,6 +244,7 @@ mod tests {
     #[test]
     fn default_tests_base32() {
         tests::round_trip("base32");
+        tests::round_trip_stripped_whitespace("base32");
         tests::basic_configuration("base32");
         tests::invalid_data("base32");
     }
@@ -251,6 +252,7 @@ mod tests {
     #[test]
     fn default_tests_base32hex() {
         tests::round_trip("base32hex");
+        tests::round_trip_stripped_whitespace("base32hex");
         tests::basic_configuration("base32hex");
         tests::invalid_data("base32hex");
     }

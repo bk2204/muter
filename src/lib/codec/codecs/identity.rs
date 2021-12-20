@@ -27,10 +27,7 @@ impl TransformFactory {
 
 impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
-        Ok(
-            StatelessEncoder::new(move |inp, out| transform(inp, out), 1)
-                .into_bufread(r, s.bufsize),
-        )
+        Ok(StatelessEncoder::new(transform, 1).into_bufread(r, s.bufsize))
     }
 
     fn options(&self) -> BTreeMap<String, String> {

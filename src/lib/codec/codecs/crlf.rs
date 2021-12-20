@@ -26,11 +26,9 @@ impl TransformFactory {
 impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
-            Direction::Forward => Ok(StatelessEncoder::new(
-                |inp, out| Self::forward_transform(inp, out),
-                3,
-            )
-            .into_bufread(r, s.bufsize)),
+            Direction::Forward => {
+                Ok(StatelessEncoder::new(Self::forward_transform, 3).into_bufread(r, s.bufsize))
+            }
             Direction::Reverse => Ok(Decoder::new().into_bufread(r, s.bufsize)),
         }
     }

@@ -2,6 +2,7 @@
 #![allow(bare_trait_objects)]
 
 use codec::helpers::codecs::AffixEncoder;
+use codec::helpers::codecs::FilteredDecoder;
 use codec::helpers::codecs::PaddedEncoder;
 use codec::Codec;
 use codec::CodecSettings;
@@ -91,7 +92,7 @@ impl CodecTransform for Ascii85TransformFactory {
                         .into_bufread(r, s.bufsize))
                 }
             }
-            Direction::Reverse => Ok(Ascii85Decoder::new().into_bufread(r, s.bufsize)),
+            Direction::Reverse => Ok(Ascii85Decoder::new(s.strict).into_bufread(r, s.bufsize)),
         }
     }
 
@@ -114,14 +115,16 @@ pub struct Ascii85Decoder {
     start: bool,
     end: bool,
     bare: bool,
+    strict: bool,
 }
 
 impl Ascii85Decoder {
-    fn new() -> Self {
+    fn new(strict: bool) -> Self {
         Ascii85Decoder {
             start: false,
             end: false,
             bare: false,
+            strict,
         }
     }
 
@@ -156,8 +159,16 @@ impl Ascii85Decoder {
     }
 }
 
-impl Codec for Ascii85Decoder {
-    fn transform(
+impl FilteredDecoder for Ascii85Decoder {
+    fn strict(&self) -> bool {
+        self.strict
+    }
+
+    fn filter_byte(&self, b: u8) -> bool {
+        b >= 33 && (b <= 117 || b == b'z' || b == b'~')
+    }
+
+    fn internal_transform(
         &mut self,
         src: &[u8],
         dst: &mut [u8],
@@ -178,7 +189,7 @@ impl Codec for Ascii85Decoder {
                     } else {
                         2
                     };
-                    let r = self.transform(&src[start..], dst, flush)?;
+                    let r = self.internal_transform(&src[start..], dst, flush)?;
                     let (a, b) = r.unpack();
                     return Ok(Status::Ok(a + start, b));
                 }
@@ -197,7 +208,7 @@ impl Codec for Ascii85Decoder {
                 }
                 (_, len, false) if x + 1 == len => x,
                 (_, len, false) if x + 2 == len && src[x + 1] == b'>' => {
-                    let r = self.transform(&src[0..x], dst, FlushState::Finish)?;
+                    let r = self.internal_transform(&src[0..x], dst, FlushState::Finish)?;
                     let dstconsumed = r.unpack().1;
                     self.end = true;
                     return Ok(Status::StreamEnd(src.len(), dstconsumed));
@@ -228,6 +239,17 @@ impl Codec for Ascii85Decoder {
             j += rj;
         }
         Ok(Status::Ok(i, j))
+    }
+}
+
+impl Codec for Ascii85Decoder {
+    fn transform(
+        &mut self,
+        src: &[u8],
+        dst: &mut [u8],
+        flush: FlushState,
+    ) -> Result<Status, Error> {
+        self.wrap_transform(src, dst, flush)
     }
 
     fn chunk_size(&self) -> usize {
@@ -318,6 +340,8 @@ mod tests {
     fn default_tests_ascii85() {
         tests::round_trip("ascii85");
         tests::round_trip("ascii85,bare");
+        tests::round_trip_stripped_whitespace("ascii85");
+        tests::round_trip_stripped_whitespace("ascii85,bare");
         tests::basic_configuration("ascii85");
         tests::invalid_data("ascii85");
     }

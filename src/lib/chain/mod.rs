@@ -76,6 +76,7 @@ impl<'a> Chain<'a> {
         }
     }
 
+    #[must_use]
     pub fn reverse(self) -> Self {
         let mut obj = self.clone();
         obj.dir = obj.dir.invert();

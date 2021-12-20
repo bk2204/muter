@@ -1,6 +1,7 @@
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 
+use codec::helpers::codecs::FilteredDecoder;
 use codec::Codec;
 use codec::CodecSettings;
 use codec::CodecTransform;
@@ -56,7 +57,7 @@ impl CodecTransform for TransformFactory {
     fn factory(&self, r: Box<io::BufRead>, s: CodecSettings) -> Result<Box<io::BufRead>, Error> {
         match s.dir {
             Direction::Forward => Ok(Encoder::new().into_bufread(r, s.bufsize)),
-            Direction::Reverse => Ok(Decoder::new().into_bufread(r, s.bufsize)),
+            Direction::Reverse => Ok(Decoder::new(s.strict).into_bufread(r, s.bufsize)),
         }
     }
 
@@ -171,14 +172,16 @@ pub struct Decoder {
     c: usize,
     started: bool,
     finished: bool,
+    strict: bool,
 }
 
 impl Decoder {
-    fn new() -> Self {
+    fn new(strict: bool) -> Self {
         Self {
             c: 1,
             started: false,
             finished: false,
+            strict,
         }
     }
 
@@ -255,8 +258,21 @@ impl Decoder {
     }
 }
 
-impl Codec for Decoder {
-    fn transform(&mut self, inp: &[u8], outp: &mut [u8], f: FlushState) -> Result<Status, Error> {
+impl FilteredDecoder for Decoder {
+    fn strict(&self) -> bool {
+        self.strict
+    }
+
+    fn filter_byte(&self, b: u8) -> bool {
+        REVV[b as usize] != -1 || REVC[b as usize] != -1 || b == b'-'
+    }
+
+    fn internal_transform(
+        &mut self,
+        inp: &[u8],
+        outp: &mut [u8],
+        f: FlushState,
+    ) -> Result<Status, Error> {
         let (inp, outp, extra) = if !self.started {
             if inp.is_empty() {
                 return Ok(Status::SeqError(0, 0));
@@ -294,6 +310,12 @@ impl Codec for Decoder {
             Self::transform_chunk(&inp[i * is..il], &mut outp[i * os..ol], c)
         })?;
         Ok(Status::Ok(chunks * is + extra, chunks * os))
+    }
+}
+
+impl Codec for Decoder {
+    fn transform(&mut self, inp: &[u8], outp: &mut [u8], f: FlushState) -> Result<Status, Error> {
+        self.wrap_transform(inp, outp, f)
     }
 
     fn chunk_size(&self) -> usize {

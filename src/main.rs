@@ -65,7 +65,7 @@ fn create_chain(reg: &CodecRegistry, m: ArgMatches) -> io::Result<Box<io::BufRea
             .into())
         }
     };
-    let mut c = chain::Chain::new(reg, chain, bufsize, true);
+    let mut c = chain::Chain::new(reg, chain, bufsize, !m.is_present("no-strict"));
     if m.is_present("reverse") {
         c = c.reverse();
     }
@@ -133,6 +133,17 @@ fn main() {
                 .long("buffer-size")
                 .takes_value(true)
                 .help(tr!("Size of buffer").as_str()),
+        )
+        .arg(
+            Arg::with_name("strict")
+                .long("strict")
+                .help(tr!("Enable strict decoding (default)").as_str()),
+        )
+        .arg(
+            Arg::with_name("no-strict")
+                .long("no-strict")
+                .conflicts_with("strict")
+                .help(tr!("Enable non-strict decoding").as_str()),
         )
         .arg(
             Arg::with_name("INPUT")

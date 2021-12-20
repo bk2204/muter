@@ -48,6 +48,16 @@ This option is primarily for debugging purposes and need not be adjusted in ordi
   Specify the chain of transforms.
   This option is mandatory.
 
+--strict::
+--no-strict::
+  Specify whether decoding should be strict (the default) or not.
+  If a codec encodes all input bytes, in non-strict mode it will ignore bytes that are not part of any valid encoding.
++
+Note that in non-strict mode, it is currently possible that if a large number of invalid bytes are provided, that the decoder will get stuck not making any progress.
++
+If your goal is just to strip out LF bytes, you can prefix your chain with `-wrap`.
+Similarly, if you just want to strip out CRLF sequences, you can prefix your chain with `-crlf:-wrap`.
+
 -r::
 --reverse::
   Reverse the chain of transforms and convert each forward transform to a reverse transform, and vice versa.

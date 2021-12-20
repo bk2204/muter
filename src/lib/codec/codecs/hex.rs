@@ -1,6 +1,7 @@
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 
+use codec::helpers::codecs::FilteredDecoder;
 use codec::helpers::codecs::StatelessEncoder;
 use codec::Codec;
 use codec::CodecSettings;
@@ -143,8 +144,21 @@ impl Decoder {
     }
 }
 
-impl Codec for Decoder {
-    fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
+impl FilteredDecoder for Decoder {
+    fn strict(&self) -> bool {
+        self.strict
+    }
+
+    fn filter_byte(&self, b: u8) -> bool {
+        self.rev[b as usize] != -1
+    }
+
+    fn internal_transform(
+        &mut self,
+        src: &[u8],
+        dst: &mut [u8],
+        f: FlushState,
+    ) -> Result<Status, Error> {
         match f {
             FlushState::None if src.len() < 2 => {
                 return Ok(Status::SeqError(0, 0));
@@ -155,20 +169,10 @@ impl Codec for Decoder {
             _ => (),
         }
 
-        let vec: Vec<u8> = if self.strict {
-            src.iter().cloned().take(dst.len() * 2).collect()
-        } else {
-            src.iter()
-                .cloned()
-                .filter(|&x| self.rev[x as usize] != -1)
-                .take(dst.len() * 2)
-                .collect()
-        };
-
-        let bytes = vec.len() / 2;
+        let bytes = cmp::min(src.len() / 2, dst.len());
         let mut consumed = 0;
         for (i, j) in (0..bytes).map(|x| (x * 2, x)) {
-            let (x, y) = (vec[i], vec[i + 1]);
+            let (x, y) = (src[i], src[i + 1]);
             let v: i16 = (i16::from(self.rev[x as usize]) << 4) | i16::from(self.rev[y as usize]);
             if v < 0 {
                 return Err(Error::InvalidSequence("hex".to_string(), vec![x, y]));
@@ -181,6 +185,12 @@ impl Codec for Decoder {
             FlushState::Finish if consumed == src.len() => Ok(Status::StreamEnd(consumed, bytes)),
             _ => Ok(Status::Ok(consumed, bytes)),
         }
+    }
+}
+
+impl Codec for Decoder {
+    fn transform(&mut self, src: &[u8], dst: &mut [u8], f: FlushState) -> Result<Status, Error> {
+        self.wrap_transform(src, dst, f)
     }
 
     fn chunk_size(&self) -> usize {
@@ -241,11 +251,15 @@ mod tests {
         tests::round_trip("hex");
         tests::round_trip("hex,upper");
         tests::round_trip("hex,lower");
+        tests::round_trip_stripped_whitespace("hex");
+        tests::round_trip_stripped_whitespace("hex,upper");
+        tests::round_trip_stripped_whitespace("hex,lower");
         tests::basic_configuration("hex");
         tests::invalid_data("hex");
 
         tests::round_trip("modhex");
         tests::basic_configuration("modhex");
+        tests::round_trip_stripped_whitespace("modhex");
         tests::invalid_data("modhex");
     }
 

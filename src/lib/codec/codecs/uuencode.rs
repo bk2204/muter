@@ -2,6 +2,7 @@
 #![allow(bare_trait_objects)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy::manual_range_contains))]
 
+use codec::helpers::codecs::FilteredDecoder;
 use codec::Codec;
 use codec::CodecSettings;
 use codec::CodecTransform;
@@ -196,6 +197,33 @@ impl Decoder {
 
 impl Codec for Decoder {
     fn transform(&mut self, inp: &[u8], outp: &mut [u8], f: FlushState) -> Result<Status, Error> {
+        self.wrap_transform(inp, outp, f)
+    }
+
+    fn chunk_size(&self) -> usize {
+        62
+    }
+
+    fn buffer_size(&self) -> usize {
+        45
+    }
+}
+
+impl FilteredDecoder for Decoder {
+    fn strict(&self) -> bool {
+        self.strict
+    }
+
+    fn filter_byte(&self, b: u8) -> bool {
+        Self::valid_char(b) || b == b'\n'
+    }
+
+    fn internal_transform(
+        &mut self,
+        inp: &[u8],
+        outp: &mut [u8],
+        f: FlushState,
+    ) -> Result<Status, Error> {
         let (is, os) = (62, 45);
         let chunks = match f {
             FlushState::None => cmp::min(inp.len() / is, outp.len() / os),
@@ -212,14 +240,6 @@ impl Codec for Decoder {
             Ok((i * is + r.0, i * os + r.1))
         })?;
         Ok(Status::Ok(ret.0, ret.1))
-    }
-
-    fn chunk_size(&self) -> usize {
-        62
-    }
-
-    fn buffer_size(&self) -> usize {
-        45
     }
 }
 
@@ -265,6 +285,7 @@ mod tests {
     #[test]
     fn default_tests() {
         tests::round_trip("uuencode");
+        tests::round_trip_stripped_whitespace("uuencode");
         tests::basic_configuration("uuencode");
         tests::invalid_data("uuencode");
     }

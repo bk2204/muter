@@ -84,6 +84,7 @@ ci-%: test/Dockerfile.%.stamp
 	docker run --rm \
 		$(PLATFORM_ARG) \
 		-v "$(PWD)/target/assets:/usr/src/muter/target/debian" \
+		-e CARGO_NET_GIT_FETCH_WITH_CLI=true \
 		$$(cat "$<") \
 		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || expr "$$(uname -m)" : arm || (cargo install --version=$(CARGO_DEB_VERSION) cargo-deb && make package test-deb))'
 

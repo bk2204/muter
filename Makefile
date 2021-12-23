@@ -20,6 +20,8 @@ else
 FEATURE_ARG :=
 endif
 
+CARGO_DEB_VERSION = 1.28.0
+
 all:
 	cargo build --release $(FEATURE_ARG)
 
@@ -83,7 +85,7 @@ ci-%: test/Dockerfile.%.stamp
 		$(PLATFORM_ARG) \
 		-v "$(PWD)/target/assets:/usr/src/muter/target/debian" \
 		$$(cat "$<") \
-		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || expr "$$(uname -m)" : arm || (cargo install cargo-deb && make package test-deb))'
+		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || expr "$$(uname -m)" : arm || (cargo install --version=$(CARGO_DEB_VERSION) cargo-deb && make package test-deb))'
 
 test-full:
 	make all

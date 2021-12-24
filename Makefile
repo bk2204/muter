@@ -1,5 +1,5 @@
 # Test configuration.
-GROUPS := stretch buster stable nightly oldest
+GROUPS := buster stable nightly oldest
 DOCKER_FILES := $(patsubst %,test/Dockerfile.%,$(GROUPS))
 DOCKER_STAMPS := $(patsubst %,test/Dockerfile.%.stamp,$(GROUPS))
 CI_TARGETS := $(patsubst %,ci-%,$(GROUPS))

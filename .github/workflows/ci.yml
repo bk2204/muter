@@ -2,17 +2,6 @@ name: ci
 on: [push, pull_request]
 
 jobs:
-  build-stretch:
-    name: Linux (Debian stretch)
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-ruby@v1
-    - run: make ci-stretch
-    - uses: actions/upload-artifact@v2
-      with:
-        name: stretch-amd64-deb
-        path: target/assets/muter_*.deb
   build-buster:
     name: Linux (Debian buster amd64)
     runs-on: ubuntu-latest

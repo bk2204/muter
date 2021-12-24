@@ -474,6 +474,16 @@ mod tests {
         }
     }
 
+    fn check_decode(inp: &[u8], outp: &[u8]) {
+        let reg = CodecRegistry::new();
+        for i in vec![76, 77, 78, 79, 512] {
+            let c = Chain::new(&reg, "-quotedprintable", i, true);
+            assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
+            let c = Chain::new(&reg, "-quotedprintable", i, false);
+            assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
+        }
+    }
+
     macro_rules! check_failure {
         ($inp:expr, $x:pat) => {
             let reg = CodecRegistry::new();
@@ -568,6 +578,13 @@ TUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~=7F=80=81=82=83=84=85=86=87=88=
 =BB=BC=BD=BE=BF=C0=C1=C2=C3=C4=C5=C6=C7=C8=C9=CA=CB=CC=CD=CE=CF=D0=D1=D2=D3=
 =D4=D5=D6=D7=D8=D9=DA=DB=DC=DD=DE=DF=E0=E1=E2=E3=E4=E5=E6=E7=E8=E9=EA=EB=EC=
 =ED=EE=EF=F0=F1=F2=F3=F4=F5=F6=F7=F8=F9=FA=FB=FC=FD=FE=FF"##,
+        );
+        // From RFC 2045.
+        check_decode(
+            br##"Now's the time =
+for all folk to come=
+ to the aid of their country."##,
+            b"Now's the time for all folk to come to the aid of their country.",
         );
     }
 }

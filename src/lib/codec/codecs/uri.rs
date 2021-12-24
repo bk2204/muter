@@ -362,7 +362,7 @@ impl URITransformFactory {
                     .into_bufread(r, s.bufsize),
                 )
             }
-            Direction::Reverse => Ok(Decoder::new(s.strict, form).into_bufread(r, s.bufsize)),
+            Direction::Reverse => Ok(Decoder::new(form).into_bufread(r, s.bufsize)),
         }
     }
 }
@@ -398,16 +398,12 @@ impl CodecTransform for FormTransformFactory {
 }
 
 pub struct Decoder {
-    strict: bool,
     special_plus: bool,
 }
 
 impl Decoder {
-    fn new(strict: bool, special_plus: bool) -> Self {
-        Decoder {
-            strict,
-            special_plus,
-        }
+    fn new(special_plus: bool) -> Self {
+        Decoder { special_plus }
     }
 }
 
@@ -441,12 +437,7 @@ impl Codec for Decoder {
                     }
                 }
                 b'+' if self.special_plus => dst[j] = b' ',
-                _ => {
-                    if self.strict {
-                        return Err(Error::InvalidSequence("uri".to_string(), vec![*x]));
-                    }
-                    dst[j] = *x;
-                }
+                _ => dst[j] = *x,
             }
             j += 1;
         }
@@ -503,6 +494,17 @@ mod tests {
         }
     }
 
+    fn check_decode(name: &str, inp: &[u8], outp: &[u8]) {
+        let reg = CodecRegistry::new();
+        let reverse = format!("-{}", name);
+        for i in vec![4, 5, 6, 7, 8, 512] {
+            let c = Chain::new(&reg, &reverse, i, true);
+            assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
+            let c = Chain::new(&reg, &reverse, i, false);
+            assert_eq!(c.transform(inp.to_vec()).unwrap(), outp);
+        }
+    }
+
     macro_rules! check_failure {
         ($rev:expr, $inp:expr, $x:pat) => {
             let reg = CodecRegistry::new();
@@ -544,6 +546,13 @@ mod tests {
     #[test]
     fn encodes_bytes_form() {
         check_form(b"a b", b"a+b", b"a+b");
+    }
+
+    #[test]
+    fn decodes_bytes() {
+        check_decode("uri", b"a%20b/", b"a b/");
+        check_decode("uri", b"a+b/", b"a+b/");
+        check_decode("form", b"a+b/", b"a b/");
     }
 
     fn rejects_invalid(rev: &str) {

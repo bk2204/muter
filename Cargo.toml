@@ -65,5 +65,5 @@ priority = "optional"
 revision = "1"
 assets = [
     ["target/release/muter", "usr/bin/", "755"],
-    ["doc/man/muter.1", "usr/share/man/man1/", "644"],
+    ["doc/man/muter.1.gz", "usr/share/man/man1/", "644"],
 ]

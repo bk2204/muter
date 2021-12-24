@@ -40,7 +40,7 @@ clean:
 test:
 	cargo test $(FEATURE_ARG)
 
-doc: doc/man/muter.1
+doc: doc/man/muter.1 doc/man/muter.1.gz
 
 deb: all doc
 	cargo deb
@@ -50,6 +50,9 @@ test-deb: deb
 
 %.1: %.adoc
 	asciidoctor -b manpage -a compat-mode -o $@ $^
+
+%.1.gz: %.1
+	gzip -9nk $^
 
 %.md: %.adoc
 	asciidoctor -o $@+ -b docbook5 $^

@@ -49,6 +49,53 @@ jobs:
       with:
         name: buster-arm64-deb
         path: target/assets/muter_*.deb
+  build-bullseye:
+    name: Linux (Debian bullseye amd64)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - run: make ci-bullseye
+    - uses: actions/upload-artifact@v2
+      with:
+        name: bullseye-amd64-deb
+        path: target/assets/muter_*.deb
+  build-bullseye-armel:
+    name: Linux (Debian bullseye armel)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - run: |
+        echo '{"experimental": true}' | sudo tee /etc/docker/daemon.json
+        sudo systemctl restart docker.service
+        docker version -f '{{.Server.Experimental}}'
+    - uses: docker/setup-qemu-action@v1
+    - run: make ci-bullseye
+      env:
+        PLATFORM: linux/arm/v5
+    - uses: actions/upload-artifact@v2
+      with:
+        name: bullseye-armel-deb
+        path: target/assets/muter_*.deb
+  build-bullseye-arm64:
+    name: Linux (Debian bullseye arm64)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+    - run: |
+        echo '{"experimental": true}' | sudo tee /etc/docker/daemon.json
+        sudo systemctl restart docker.service
+        docker version -f '{{.Server.Experimental}}'
+    - uses: docker/setup-qemu-action@v1
+    - run: make ci-bullseye
+      env:
+        PLATFORM: linux/arm64
+    - uses: actions/upload-artifact@v2
+      with:
+        name: bullseye-arm64-deb
+        path: target/assets/muter_*.deb
   build-oldest:
     name: Linux (oldest Rust)
     runs-on: ubuntu-latest

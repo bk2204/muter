@@ -103,6 +103,14 @@ checksum::
 The following checksum algorithms are supported:
 +
 * adler32
+* fletcher16
+* fletcher32
++
+For codecs that read in multiple bytes at a time, the default is to read in big-endian order.
+The endianness for reading can be specified with 'be' or 'le'.
++
+The checksums are output in a big-endian way.
+If you'd prefer a little-endian encoding, use the 'swab' transform.
 crlf::
   Implements an LF to CRLF conversion.
   CR bytes in the input are passed through unmodified.

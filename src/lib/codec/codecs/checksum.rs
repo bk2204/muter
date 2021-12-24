@@ -10,12 +10,37 @@ use codec::FlushState;
 use codec::Status;
 use codec::TransformableCodec;
 use std::collections::BTreeMap;
+use std::convert::TryInto;
 use std::io;
 
 trait Hash {
     fn input(&mut self, data: &[u8]);
     fn result_reset(&mut self) -> Box<[u8]>;
+    fn input_size(&self) -> usize;
     fn output_size(&self) -> usize;
+}
+
+#[derive(Copy, Clone, PartialEq, Eq)]
+enum Endianness {
+    Little,
+    Big,
+}
+
+impl Endianness {
+    fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "le" => Some(Endianness::Little),
+            "be" => Some(Endianness::Big),
+            _ => None,
+        }
+    }
+
+    fn to_u16(self, b: &[u8]) -> u16 {
+        match self {
+            Endianness::Big => u16::from_be_bytes(b.try_into().unwrap()),
+            Endianness::Little => u16::from_le_bytes(b.try_into().unwrap()),
+        }
+    }
 }
 
 struct Adler32 {
@@ -48,6 +73,10 @@ impl Hash for Adler32 {
     fn result_reset(&mut self) -> Box<[u8]> {
         let x: u32 = (self.b as u32) << 16 | self.a as u32;
         x.to_be_bytes().to_vec().into_boxed_slice()
+    }
+
+    fn input_size(&self) -> usize {
+        1
     }
 
     fn output_size(&self) -> usize {
@@ -87,8 +116,72 @@ impl Hash for Fletcher16 {
         x.to_be_bytes().to_vec().into_boxed_slice()
     }
 
+    fn input_size(&self) -> usize {
+        1
+    }
+
     fn output_size(&self) -> usize {
         2
+    }
+}
+
+struct Fletcher32 {
+    a: u16,
+    b: u16,
+    endianness: Endianness,
+}
+
+impl Fletcher32 {
+    fn new(endianness: Endianness) -> Fletcher32 {
+        Fletcher32 {
+            a: 0,
+            b: 0,
+            endianness,
+        }
+    }
+}
+
+impl Hash for Fletcher32 {
+    fn input(&mut self, data: &[u8]) {
+        let (data, overflow): (&[u8], &[u8]) = if data.len() % 2 == 0 {
+            (data, b"")
+        } else {
+            (&data[0..data.len() - 1], &data[data.len() - 1..])
+        };
+        let (a, b) = data.chunks(720).fold((self.a, self.b), |(a, b), chunk| {
+            let (x, y) = chunk
+                .chunks(2)
+                .fold((a as u32, b as u32), |(mut a, mut b), chunk| {
+                    a += self.endianness.to_u16(chunk) as u32;
+                    b += a;
+                    (a, b)
+                });
+            ((x % 65535) as u16, (y % 65535) as u16)
+        });
+        let (a, b) = if overflow.len() == 1 {
+            let buf = [overflow[0], 0];
+            let (mut a, mut b) = (a as u32, b as u32);
+            a += self.endianness.to_u16(&buf) as u32;
+            b += a;
+            ((a % 65535) as u16, (b % 65535) as u16)
+        } else {
+            (a, b)
+        };
+        self.a = a;
+        self.b = b;
+    }
+
+    fn result_reset(&mut self) -> Box<[u8]> {
+        let x: u32 = (self.b as u32) << 16 | self.a as u32;
+        x.to_be_bytes().to_vec().into_boxed_slice()
+    }
+
+    fn input_size(&self) -> usize {
+        2
+    }
+
+    fn output_size(&self) -> usize {
+        4
     }
 }
 
@@ -102,10 +195,15 @@ impl TransformFactory {
 }
 
 impl TransformFactory {
-    fn digest(name: &str, length: Option<usize>) -> Result<Box<Hash>, Error> {
+    fn digest(
+        name: &str,
+        length: Option<usize>,
+        endianness: Endianness,
+    ) -> Result<Box<Hash>, Error> {
         match (name, length) {
             ("adler32", _) => Ok(Box::new(Adler32::new())),
             ("fletcher16", _) => Ok(Box::new(Fletcher16::new())),
+            ("fletcher32", _) => Ok(Box::new(Fletcher32::new(endianness))),
             _ => Err(Error::UnknownArgument(name.to_string())),
         }
     }
@@ -119,11 +217,16 @@ impl CodecTransform for TransformFactory {
         }
 
         let length = s.int_arg("length")?;
+        let endianness: Vec<_> = s
+            .args
+            .iter()
+            .filter_map(|(s, _)| Endianness::from_str(s))
+            .collect();
         let args: Vec<_> = s
             .args
             .iter()
             .map(|(s, _)| s)
-            .filter(|&s| s != "length")
+            .filter(|&s| s != "length" && Endianness::from_str(s).is_none())
             .collect();
         match args.len() {
             0 => return Err(Error::MissingArgument("checksum".to_string())),
@@ -135,7 +238,17 @@ impl CodecTransform for TransformFactory {
                 ));
             }
         };
-        Ok(Encoder::new(Self::digest(args[0], length)?).into_bufread(r, s.bufsize))
+        let endianness = match endianness.len() {
+            0 => Endianness::Big,
+            1 => endianness[0],
+            _ => {
+                return Err(Error::IncompatibleParameters(
+                    "be".to_string(),
+                    "le".to_string(),
+                ));
+            }
+        };
+        Ok(Encoder::new(Self::digest(args[0], length, endianness)?).into_bufread(r, s.bufsize))
     }
 
     fn options(&self) -> BTreeMap<String, String> {
@@ -144,6 +257,10 @@ impl CodecTransform for TransformFactory {
         map.insert(
             "fletcher16".to_string(),
             tr!("use Fletcher16 as the checksum"),
+        );
+        map.insert(
+            "fletcher32".to_string(),
+            tr!("use Fletcher32 as the checksum"),
         );
         map
     }
@@ -167,17 +284,27 @@ impl Codec for Encoder {
         if self.done {
             return Ok(Status::StreamEnd(0, 0));
         }
-        self.digest.input(inp);
+        let read = match f {
+            FlushState::None => {
+                let last = inp.len() - (inp.len() % self.digest.input_size());
+                self.digest.input(&inp[0..last]);
+                last
+            }
+            FlushState::Finish => {
+                self.digest.input(inp);
+                inp.len()
+            }
+        };
         match f {
-            FlushState::None => Ok(Status::Ok(inp.len(), 0)),
+            FlushState::None => Ok(Status::Ok(read, 0)),
             FlushState::Finish => {
                 let digestlen = self.digest.output_size();
                 if outp.len() < digestlen {
-                    Ok(Status::BufError(inp.len(), 0))
+                    Ok(Status::BufError(read, 0))
                 } else {
                     outp[0..digestlen].copy_from_slice(&self.digest.result_reset());
                     self.done = true;
-                    Ok(Status::StreamEnd(inp.len(), digestlen))
+                    Ok(Status::StreamEnd(read, digestlen))
                 }
             }
         }
@@ -246,6 +373,21 @@ mod tests {
         check("fletcher16", b"abcde", b"c8f0");
         check("fletcher16", b"abcdef", b"2057");
         check("fletcher16", b"abcdefgh", b"0627");
+    }
+
+    #[test]
+    fn fletcher32() {
+        // Test vectors from Wikipedia.
+        check("fletcher32,le", b"", b"00000000");
+        check("fletcher32,le", b"abcde", b"f04fc729");
+        check("fletcher32,le", b"abcdef", b"56502d2a");
+        check("fletcher32,le", b"abcdefgh", b"ebe19591");
+        // Generated with a small Ruby program.
+        check("fletcher32,be", b"", b"00000000");
+        check("fletcher32,be", b"abcde", b"4ff029c7");
+        check("fletcher32,be", b"abcdef", b"50562a2d");
+        check("fletcher32,be", b"abcdefg", b"e183912d");
+        check("fletcher32,be", b"abcdefgh", b"e1eb9195");
     }
 
     #[test]

@@ -1,3 +1,13 @@
+muter (0.7.0-1) UNRELEASED; urgency=medium
+
+  * Implement non-strict decoding with --no-strict.
+  * Don't reject decoding characters outside of the unreserved set for the uri
+    and form codecs.
+  * Reject lowercase-encoded quoted-printable.
+  * Add support for the fletcher32 checksum.
+
+ -- brian m. carlson <sandals@crustytoothpaste.net>  Fri, 24 Dec 2021 00:00:00 -0000
+
 muter (0.6.0-1) UNRELEASED; urgency=medium
 
   * Implement several deflate-based codecs: deflate, gzip, and zlib.

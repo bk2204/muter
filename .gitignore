@@ -7,3 +7,5 @@ target/
 *.md
 test/Dockerfile.*
 !test/Dockerfile.*.erb
+Vagrantfile
+.vagrant

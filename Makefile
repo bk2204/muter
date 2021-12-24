@@ -22,6 +22,8 @@ endif
 
 CARGO_DEB_VERSION = 1.28.0
 
+FREEBSD_VERSION ?= 13
+
 all:
 	cargo build --release $(FEATURE_ARG)
 
@@ -91,11 +93,19 @@ ci-%: test/Dockerfile.%.stamp
 		$$(cat "$<") \
 		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || expr "$$(uname -m)" : arm || (cargo install --version=$(CARGO_DEB_VERSION) cargo-deb && make package test-deb))'
 
+ci-freebsd:
+	vagrant init generic/freebsd$(FREEBSD_VERSION)
+	vagrant up
+	vagrant ssh -- sudo pkg install -y curl gettext git gmake rubygem-asciidoctor rust
+	vagrant ssh -- git init /home/vagrant/muter
+	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter
+	vagrant ssh -- "cd /home/vagrant/muter && git checkout $$(git rev-parse HEAD) && gmake test-full FEATURES=$(FEATURES)"
+
 test-full:
-	make all
-	make doc
-	make test
-	make lint
+	$(MAKE) all
+	$(MAKE) doc
+	$(MAKE) test
+	$(MAKE) lint
 
 test/Dockerfile.%.stamp: test/Dockerfile.% $(SRC)
 	docker build $(PLATFORM_ARG) --iidfile="$@" -f "$<" .

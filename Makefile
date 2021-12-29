@@ -57,7 +57,7 @@ test-deb: deb
 	$(ASCIIDOCTOR) -b manpage -a compat-mode -o $@ $^
 
 %.1.gz: %.1
-	gzip -9nk $^
+	gzip -9fnk $^
 
 %.md: %.adoc
 	asciidoctor -o $@+ -b docbook5 $^

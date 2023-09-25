@@ -12,7 +12,7 @@ For example, a chain of `-hex:base64` decodes hex input and then re-encodes the 
 `base64:uri` would Base64-encode the data, and then URI-encode it, but `url64` would just encode using the URL-safe version of Base64.
 A chain of `hash(sha256):hex` would hash the input data and then hex-encode the SHA-256 hash.
 
-Muter is written in Rust and supports Rust 1.34.2 or newer.
+Muter is written in Rust and supports Rust 1.41.1 or newer.
 You can simply run `cargo build --release` to build it.
 If you'd like to build the documentation, install Asciidoctor and GNU make, and type `make all doc`, and the man page will be in `doc/`.
 The help output is also generally helpful.

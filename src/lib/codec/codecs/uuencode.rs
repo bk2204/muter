@@ -187,7 +187,7 @@ impl Decoder {
 
             let mut k = 0;
             while k < os && j + k < first {
-                outp[j + k] = ((x as u64) >> ((os - 1 - k) * 8) & 0xff) as u8;
+                outp[j + k] = (x >> ((os - 1 - k) * 8) & 0xff) as u8;
                 k += 1;
             }
         }

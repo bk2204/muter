@@ -94,7 +94,7 @@ ci-%: test/Dockerfile.%.stamp
 		-v "$(PWD)/target/assets:/usr/src/muter/target/debian" \
 		-e CARGO_NET_GIT_FETCH_WITH_CLI=true \
 		$$(cat "$<") \
-		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || expr "$$(uname -m)" : arm || (cargo install --version=$(CARGO_DEB_VERSION) cargo-deb && make package test-deb))'
+		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || expr "$$(uname -m)" : arm || (cargo install --version=$(CARGO_DEB_VERSION) --locked cargo-deb && make package test-deb))'
 
 ci-freebsd:
 	vagrant init generic/freebsd$(FREEBSD_VERSION)

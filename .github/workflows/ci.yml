@@ -76,7 +76,7 @@ jobs:
         FEATURES: modern
   build-freebsd:
     name: FreeBSD
-    runs-on: macos-10.15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
       with:
@@ -85,7 +85,7 @@ jobs:
     - run: make ci-freebsd
   build-netbsd:
     name: NetBSD
-    runs-on: macos-10.15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
       with:

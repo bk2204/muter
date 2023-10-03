@@ -108,10 +108,10 @@ ci-netbsd:
 	vagrant init generic/netbsd$(NETBSD_VERSION)
 	vagrant up
 	vagrant ssh -- sudo /usr/pkg/bin/pkgin update
-	vagrant ssh -- sudo /usr/pkg/bin/pkgin -y install ca-certificates curl gettext gettext-lib git gmake ruby27-asciidoctor rust
+	vagrant ssh -- sudo /usr/pkg/bin/pkgin -y install mozilla-rootcerts-openssl curl gettext gettext-lib git gmake ruby31-asciidoctor rust
 	vagrant ssh -- git init /home/vagrant/muter
 	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter
-	vagrant ssh -- "cd /home/vagrant/muter && git checkout $$(git rev-parse HEAD) && gmake test-full ASCIIDOCTOR=asciidoctor27  CARGO_HTTP_MULTIPLEXING=false FEATURES=$(FEATURES) GETTEXT_DIR=/usr/pkg LD_LIBRARY_PATH=/usr/pkg/lib"
+	vagrant ssh -- "cd /home/vagrant/muter && git checkout $$(git rev-parse HEAD) && gmake test-full ASCIIDOCTOR=asciidoctor31  CARGO_HTTP_MULTIPLEXING=false FEATURES=$(FEATURES) GETTEXT_DIR=/usr/pkg LD_LIBRARY_PATH=/usr/pkg/lib"
 
 test-full:
 	$(MAKE) all

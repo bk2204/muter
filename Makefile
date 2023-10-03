@@ -101,7 +101,7 @@ ci-freebsd:
 	vagrant up
 	vagrant ssh -- sudo pkg install -y curl gettext git gmake rubygem-asciidoctor rust
 	vagrant ssh -- git init /home/vagrant/muter
-	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter
+	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter HEAD:refs/heads/dev
 	vagrant ssh -- "cd /home/vagrant/muter && git checkout $$(git rev-parse HEAD) && gmake test-full FEATURES=$(FEATURES)"
 
 ci-netbsd:
@@ -110,7 +110,7 @@ ci-netbsd:
 	vagrant ssh -- sudo /usr/pkg/bin/pkgin update
 	vagrant ssh -- sudo /usr/pkg/bin/pkgin -y install mozilla-rootcerts-openssl curl gettext gettext-lib git gmake ruby31-asciidoctor rust
 	vagrant ssh -- git init /home/vagrant/muter
-	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter
+	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter HEAD:refs/heads/dev
 	vagrant ssh -- "cd /home/vagrant/muter && git checkout $$(git rev-parse HEAD) && gmake test-full ASCIIDOCTOR=asciidoctor31  CARGO_HTTP_MULTIPLEXING=false FEATURES=$(FEATURES) GETTEXT_DIR=/usr/pkg LD_LIBRARY_PATH=/usr/pkg/lib"
 
 test-full:

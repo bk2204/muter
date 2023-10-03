@@ -278,11 +278,11 @@ impl ChunkedDecoder {
         let (is, os, bits) = (self.inpsize, self.outsize, self.outsize * 8 / self.inpsize);
         let iter = inp.iter().enumerate();
         let x: i64 = if self.strict {
-            iter.map(|(k, &v)| i64::from(self.table[(v as usize)]) << ((is - 1 - k) * bits))
+            iter.map(|(k, &v)| i64::from(self.table[v as usize]) << ((is - 1 - k) * bits))
                 .sum()
         } else {
             iter.filter(|&(_, &x)| self.table[x as usize] != -1)
-                .map(|(k, &v)| i64::from(self.table[(v as usize)]) << ((is - 1 - k) * bits))
+                .map(|(k, &v)| i64::from(self.table[v as usize]) << ((is - 1 - k) * bits))
                 .sum()
         };
 

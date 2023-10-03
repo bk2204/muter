@@ -119,13 +119,13 @@ impl CodecRegistry {
         self.map.insert(k, f);
     }
 
-    pub fn iter<'a>(&'a self) -> Iter<'a> {
+    pub fn iter(&self) -> Iter<'_> {
         self.map.iter()
     }
 
-    pub fn create<'a>(
+    pub fn create(
         &self,
-        name: &'a str,
+        name: &str,
         r: Box<io::BufRead>,
         s: CodecSettings,
     ) -> Result<Box<io::BufRead>, Error> {

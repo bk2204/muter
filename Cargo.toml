@@ -30,7 +30,7 @@ path = "src/main.rs"
 autocfg = "0.1"
 
 [dependencies]
-clap = "2.32.0"
+clap = { version = "2.32.0", default-features = false }
 digest = "0.8"
 blake2 = "0.8"
 blake3 = { version = "= 0.3.4", optional = true }

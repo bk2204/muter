@@ -1,7 +1,0 @@
-FROM debian:buster
-
-<%= erb 'test/include/apt.erb' -%>
-
-RUN apt-get -y install rustc cargo
-
-<%= erb 'test/include/main.erb' -%>

@@ -305,9 +305,8 @@ impl FilteredDecoder for Decoder {
         }
 
         let (il, ol) = (inp.len(), outp.len());
-        self.c = (0..chunks).fold(Ok(self.c), |res, i| {
-            let c = res?;
-            Self::transform_chunk(&inp[i * is..il], &mut outp[i * os..ol], c)
+        self.c = (0..chunks).try_fold(self.c, |res, i| {
+            Self::transform_chunk(&inp[i * is..il], &mut outp[i * os..ol], res)
         })?;
         Ok(Status::Ok(chunks * is + extra, chunks * os))
     }

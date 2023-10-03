@@ -212,12 +212,7 @@ impl CodecTransform for TransformFactory {
         }
 
         let length = s.int_arg("length")?;
-        let args: Vec<_> = s
-            .args
-            .iter()
-            .map(|(s, _)| s)
-            .filter(|&s| s != "length")
-            .collect();
+        let args: Vec<_> = s.args.keys().filter(|&s| s != "length").collect();
         match args.len() {
             0 => return Err(Error::MissingArgument("hash".to_string())),
             1 => (),

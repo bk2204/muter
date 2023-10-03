@@ -162,8 +162,8 @@ impl CodecSettings {
         name: &str,
     ) -> Result<Option<T>, Error> {
         match self.args.get(name) {
-            Some(&None) => Err(Error::MissingArgument(name.to_string())),
-            Some(&Some(ref val)) => match val.parse() {
+            Some(None) => Err(Error::MissingArgument(name.to_string())),
+            Some(Some(val)) => match val.parse() {
                 Ok(x) => Ok(Some(x)),
                 Err(_) => Err(Error::InvalidArgument(name.to_string(), val.clone())),
             },
@@ -189,8 +189,8 @@ impl CodecSettings {
 
     fn bool_arg(&self, name: &str) -> Result<bool, Error> {
         match self.args.get(name) {
-            Some(&None) => Ok(true),
-            Some(&Some(ref val)) => Err(Error::InvalidArgument(name.to_string(), val.clone())),
+            Some(None) => Ok(true),
+            Some(Some(val)) => Err(Error::InvalidArgument(name.to_string(), val.clone())),
             None => Ok(false),
         }
     }

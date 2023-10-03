@@ -1,5 +1,5 @@
 # Test configuration.
-GROUPS := buster bullseye stable nightly oldest
+GROUPS := bullseye stable nightly oldest
 DOCKER_FILES := $(patsubst %,test/Dockerfile.%,$(GROUPS))
 DOCKER_STAMPS := $(patsubst %,test/Dockerfile.%.stamp,$(GROUPS))
 CI_TARGETS := $(patsubst %,ci-%,$(GROUPS))
@@ -94,24 +94,24 @@ ci-%: test/Dockerfile.%.stamp
 		-v "$(PWD)/target/assets:/usr/src/muter/target/debian" \
 		-e CARGO_NET_GIT_FETCH_WITH_CLI=true \
 		$$(cat "$<") \
-		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || expr "$$(uname -m)" : arm || (cargo install --version=$(CARGO_DEB_VERSION) cargo-deb && make package test-deb))'
+		sh -c 'cd /usr/src/muter && make test-full && ([ "$*" = oldest ] || expr "$$(uname -m)" : arm || (cargo install --version=$(CARGO_DEB_VERSION) --locked cargo-deb && make package test-deb))'
 
 ci-freebsd:
 	vagrant init generic/freebsd$(FREEBSD_VERSION)
 	vagrant up
 	vagrant ssh -- sudo pkg install -y curl gettext git gmake rubygem-asciidoctor rust
 	vagrant ssh -- git init /home/vagrant/muter
-	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter
+	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter HEAD:refs/heads/dev
 	vagrant ssh -- "cd /home/vagrant/muter && git checkout $$(git rev-parse HEAD) && gmake test-full FEATURES=$(FEATURES)"
 
 ci-netbsd:
 	vagrant init generic/netbsd$(NETBSD_VERSION)
 	vagrant up
 	vagrant ssh -- sudo /usr/pkg/bin/pkgin update
-	vagrant ssh -- sudo /usr/pkg/bin/pkgin -y install ca-certificates curl gettext gettext-lib git gmake ruby27-asciidoctor rust
+	vagrant ssh -- sudo /usr/pkg/bin/pkgin -y install mozilla-rootcerts-openssl curl gettext gettext-lib git gmake ruby31-asciidoctor rust
 	vagrant ssh -- git init /home/vagrant/muter
-	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter
-	vagrant ssh -- "cd /home/vagrant/muter && git checkout $$(git rev-parse HEAD) && gmake test-full ASCIIDOCTOR=asciidoctor27  CARGO_HTTP_MULTIPLEXING=false FEATURES=$(FEATURES) GETTEXT_DIR=/usr/pkg LD_LIBRARY_PATH=/usr/pkg/lib"
+	GIT_SSH_COMMAND='f() { shift; vagrant ssh -- "$$@"; };f' git push vagrant@localhost:/home/vagrant/muter HEAD:refs/heads/dev
+	vagrant ssh -- "cd /home/vagrant/muter && git checkout $$(git rev-parse HEAD) && gmake test-full ASCIIDOCTOR=asciidoctor31  CARGO_HTTP_MULTIPLEXING=false FEATURES=$(FEATURES) GETTEXT_DIR=/usr/pkg LD_LIBRARY_PATH=/usr/pkg/lib"
 
 test-full:
 	$(MAKE) all

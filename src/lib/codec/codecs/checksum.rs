@@ -224,8 +224,7 @@ impl CodecTransform for TransformFactory {
             .collect();
         let args: Vec<_> = s
             .args
-            .iter()
-            .map(|(s, _)| s)
+            .keys()
             .filter(|&s| s != "length" && Endianness::from_str(s).is_none())
             .collect();
         match args.len() {

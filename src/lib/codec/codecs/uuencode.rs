@@ -112,7 +112,7 @@ impl Codec for Encoder {
                 (_, _, _, _) => Ok(Status::SeqError(0, 0)),
             };
         }
-        let ret = (0..chunks).fold(Ok((0, 0)), |_, i| {
+        let ret = (0..chunks).try_fold((0, 0), |_, i| {
             let max = cmp::min((i + 1) * is, inp.len());
             let r = self.transform_chunk(&inp[i * is..max], &mut outp[i * os..(i + 1) * os]);
             Ok((i * is + r.0, i * os + r.1))
@@ -187,7 +187,7 @@ impl Decoder {
 
             let mut k = 0;
             while k < os && j + k < first {
-                outp[j + k] = ((x as u64) >> ((os - 1 - k) * 8) & 0xff) as u8;
+                outp[j + k] = (x >> ((os - 1 - k) * 8) & 0xff) as u8;
                 k += 1;
             }
         }
@@ -234,7 +234,7 @@ impl FilteredDecoder for Decoder {
             return Ok(Status::SeqError(0, 0));
         }
 
-        let ret = (0..chunks).fold(Ok((0, 0)), |_, i| {
+        let ret = (0..chunks).try_fold((0, 0), |_, i| {
             let max = cmp::min((i + 1) * is, inp.len());
             let r = self.transform_chunk(&inp[i * is..max], &mut outp[i * os..(i + 1) * os])?;
             Ok((i * is + r.0, i * os + r.1))

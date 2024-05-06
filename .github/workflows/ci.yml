@@ -6,7 +6,7 @@ jobs:
     name: Linux (Debian bullseye amd64)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-ruby@v1
     - run: make ci-bullseye
     - uses: actions/upload-artifact@v2
@@ -17,7 +17,7 @@ jobs:
     name: Linux (Debian bullseye armel)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-ruby@v1
     - run: |
         echo '{"experimental": true}' | sudo tee /etc/docker/daemon.json
@@ -35,7 +35,7 @@ jobs:
     name: Linux (Debian bullseye arm64)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-ruby@v1
     - run: |
         echo '{"experimental": true}' | sudo tee /etc/docker/daemon.json
@@ -53,14 +53,14 @@ jobs:
     name: Linux (oldest Rust)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-ruby@v1
     - run: make ci-oldest
   build-stable:
     name: Linux (Rust stable)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-ruby@v1
     - run: make ci-stable
       env:
@@ -69,7 +69,7 @@ jobs:
     name: Linux (Rust nightly)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-ruby@v1
     - run: make ci-nightly
       env:
@@ -78,7 +78,7 @@ jobs:
     name: FreeBSD
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - uses: actions/setup-ruby@v1
@@ -95,7 +95,7 @@ jobs:
     name: NetBSD
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Enable KVM group perms
@@ -111,7 +111,7 @@ jobs:
     name: macOS
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - run: brew install ruby asciidoctor rust
     - run: make test-full
       env:

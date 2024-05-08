@@ -1,13 +1,6 @@
 extern crate autocfg;
 
 fn main() {
-    let ac = autocfg::new();
-    ac.emit_rustc_version(1, 37);
-    ac.emit_trait_cfg(
-        "std::ops::RangeBounds<std::ops::Range<usize>>",
-        "has_range_bounds",
-    );
-
     // Ideally we'd allow arbitrary byte paths here, but Rust's env! doesn't support that.  If this
     // becomes a problem, we can always percent-encode as a workaround.
     let sharedir = match (

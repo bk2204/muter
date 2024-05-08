@@ -237,33 +237,11 @@ impl<R: BufRead, C: Codec> CodecReader<R, C> {
         }
     }
 
-    #[cfg(rustc_1_37)]
     fn memmove<B>(sl: &mut [u8], src: B, dest: usize)
     where
         B: ops::RangeBounds<usize> + IntoIterator<Item = usize>,
     {
         sl.copy_within(src, dest)
-    }
-
-    #[cfg(all(not(rustc_1_37), has_range_bounds))]
-    fn memmove<B>(sl: &mut [u8], src: B, dest: usize)
-    where
-        B: ops::RangeBounds<usize> + IntoIterator<Item = usize>,
-    {
-        match src.start_bound() {
-            ops::Bound::Included(&x) if x == dest => return,
-            _ => (),
-        };
-        for (j, i) in src.into_iter().enumerate() {
-            sl[j] = sl[i + dest];
-        }
-    }
-
-    #[cfg(all(not(rustc_1_37), not(has_range_bounds)))]
-    fn memmove(sl: &mut [u8], src: ops::Range<usize>, dest: usize) {
-        for (j, i) in src.into_iter().enumerate() {
-            sl[j] = sl[i + dest];
-        }
     }
 }
 

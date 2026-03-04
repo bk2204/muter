@@ -9,7 +9,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-ruby@v1
     - run: make ci-bullseye
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v6
       with:
         name: bullseye-amd64-deb
         path: target/assets/muter_*.deb
@@ -27,7 +27,7 @@ jobs:
     - run: make ci-bullseye
       env:
         PLATFORM: linux/arm/v5
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v6
       with:
         name: bullseye-armel-deb
         path: target/assets/muter_*.deb
@@ -45,7 +45,7 @@ jobs:
     - run: make ci-bullseye
       env:
         PLATFORM: linux/arm64
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v6
       with:
         name: bullseye-arm64-deb
         path: target/assets/muter_*.deb

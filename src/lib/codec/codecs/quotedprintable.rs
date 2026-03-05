@@ -363,7 +363,7 @@ impl Codec for Encoder {
             if let Some(linelen) = self.linelen {
                 // +1 for b'='.  Note that we don't count the LF, since the RFC says not to.
                 if enclen + curline + 1 > linelen {
-                    outp[j..j + 2].copy_from_slice(&[b'=', b'\n']);
+                    outp[j..j + 2].copy_from_slice(b"=\n");
                     j += 2;
                     curline = 0;
                 }

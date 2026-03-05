@@ -219,8 +219,8 @@ impl CodecTransform for TransformFactory {
         let length = s.int_arg("length")?;
         let endianness: Vec<_> = s
             .args
-            .iter()
-            .filter_map(|(s, _)| Endianness::from_str(s))
+            .keys()
+            .filter_map(|s| Endianness::from_str(s))
             .collect();
         let args: Vec<_> = s
             .args

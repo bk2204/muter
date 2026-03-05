@@ -17,6 +17,7 @@ include = [
 ]
 categories = ["command-line-utilities", "encoding"]
 keywords = ["encoding"]
+rust-version = "1.41.1"
 
 [lib]
 name = "muter"

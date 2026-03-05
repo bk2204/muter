@@ -116,7 +116,7 @@ impl<'a> Chain<'a> {
         }
     }
 
-    fn parse(chain: &str, dir: Direction) -> Result<Vec<ChainTransform>, Error> {
+    fn parse(chain: &str, dir: Direction) -> Result<Vec<ChainTransform<'_>>, Error> {
         let iter = chain.split(':').map(|s| Self::parse_unit(s, dir));
         match dir {
             Direction::Forward => iter.collect(),
@@ -124,7 +124,7 @@ impl<'a> Chain<'a> {
         }
     }
 
-    fn parse_unit(unit: &str, d: Direction) -> Result<ChainTransform, Error> {
+    fn parse_unit(unit: &str, d: Direction) -> Result<ChainTransform<'_>, Error> {
         if unit.is_empty() {
             return Err(Error::InvalidName(String::from(unit)));
         }
